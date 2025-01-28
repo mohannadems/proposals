@@ -82,8 +82,10 @@ const authSlice = createSlice({
         state.loading = false;
         state.tokens = action.payload.data;
         state.isAuthenticated = true;
+        // Fix the token path to match your response structure
         setAuthToken(action.payload.data.access_token);
       })
+
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || "Login failed";

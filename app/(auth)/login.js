@@ -19,7 +19,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as LocalAuthentication from "expo-local-authentication";
 import { login } from "../../store/slices/auth.slice";
 import AuthInput from "../../components/forms/AuthInput";
-import { storeToken } from "../../services/api";
 
 const BIOMETRIC_KEY = "BIOMETRIC_CREDENTIALS";
 
@@ -141,8 +140,6 @@ export default function LoginScreen() {
   };
 
   const handleSuccessfulLogin = async (loginCredentials) => {
-    const { access_token } = response.data.data;
-    await setAuthToken(access_token);
     if (isBiometricSupported) {
       // Check if we already have saved credentials
       const existingCredentials = await AsyncStorage.getItem(BIOMETRIC_KEY);
