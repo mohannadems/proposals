@@ -1,4 +1,3 @@
-// app/(tabs)/profile.js
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -24,6 +23,12 @@ export default function ProfileScreen() {
     error,
   } = useSelector((state) => state.profile);
   const [refreshing, setRefreshing] = useState(false);
+
+  const handleLogout = () => {
+    // Add your logout logic here
+    console.log("User logged out");
+    router.replace("/login"); // Redirect to login screen after logout
+  };
 
   const ProfileSection = ({ title, children }) => (
     <View style={styles.section}>
@@ -55,6 +60,11 @@ export default function ProfileScreen() {
     >
       <LinearGradient colors={["#4169E1", "#D4AF37"]} style={styles.header}>
         <View style={styles.profileHeader}>
+          {/* Logout Button */}
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <MaterialIcons name="logout" size={24} color="#fff" />
+          </TouchableOpacity>
+
           <View style={styles.avatarContainer}>
             {profile.avatar ? (
               <Image source={{ uri: profile.avatar }} style={styles.avatar} />
@@ -299,5 +309,13 @@ const styles = StyleSheet.create({
     color: "#FF3B30",
     marginLeft: 8,
     flex: 1,
+  },
+  logoutButton: {
+    position: "absolute",
+    top: 40,
+    right: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    padding: 10,
+    borderRadius: 20,
   },
 });

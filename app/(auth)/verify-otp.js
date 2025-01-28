@@ -1,130 +1,185 @@
 import React, { useState } from "react";
 import {
   View,
-  StyleSheet,
   Text,
+  StyleSheet,
   TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
   ActivityIndicator,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { verifyOTP } from "../../store/slices/auth.slice";
-import { COLORS } from "../../constants/colors";
 import { router } from "expo-router";
+import { MaterialIcons } from "@expo/vector-icons";
+import { verifyOTP } from "../../store/slices/auth.slice";
 import OTPTextInput from "react-native-otp-textinput";
 
-const VerifyOTPScreen = () => {
-  const [otp, setOTP] = useState("");
+export default function VerifyOTPScreen() {
   const dispatch = useDispatch();
-  const { loading, error } = useSelector((state) => state.auth);
-  const email = useSelector((state) => state.auth.tempEmail);
+  const { loading, error, tempEmail } = useSelector((state) => state.auth);
+  const [otp, setOTP] = useState("");
+  const [validationError, setValidationError] = useState("");
 
   const handleVerify = async () => {
-    if (otp.length === 6) {
-      const result = await dispatch(verifyOTP({ email, otp }));
-      if (!result.error) {
+    // Clear previous errors
+    setValidationError("");
+
+    // Validate OTP format
+    if (!otp || otp.length !== 6) {
+      setValidationError("Please enter a valid 6-digit code");
+      return;
+    }
+
+    try {
+      const result = await dispatch(
+        verifyOTP({
+          email: tempEmail,
+          otp: otp,
+        })
+      ).unwrap();
+
+      if (result) {
         router.replace("/(tabs)/home");
       }
+    } catch (error) {
+      // Error is handled by redux slice
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Verify Your Email</Text>
-      <Text style={styles.subtitle}>
-        Please enter the verification code sent to your email
-      </Text>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={styles.container}
+    >
+      <View style={styles.header}>
+        <MaterialIcons name="verified" size={60} color="#4169E1" />
+        <Text style={styles.title}>Verify Your Email</Text>
+        <Text style={styles.subtitle}>
+          Enter the 6-digit code sent to {tempEmail}
+        </Text>
+      </View>
 
-      <OTPTextInput
-        handleTextChange={setOTP}
-        inputCount={6}
-        tintColor={COLORS.primary}
-        offTintColor={COLORS.border}
-        textInputStyle={styles.otpCell}
-        containerStyle={styles.otpContainer}
-      />
+      <View style={styles.otpContainer}>
+        <OTPTextInput
+          handleTextChange={setOTP}
+          inputCount={6}
+          tintColor="#4169E1"
+          offTintColor={validationError ? "#FF3B30" : "#E5E5EA"}
+          textInputStyle={[
+            styles.otpInput,
+            validationError && styles.otpInputError,
+          ]}
+          containerStyle={styles.otpInputContainer}
+        />
+
+        {(validationError || error) && (
+          <View style={styles.errorContainer}>
+            <MaterialIcons name="error" size={16} color="#FF3B30" />
+            <Text style={styles.errorText}>{validationError || error}</Text>
+          </View>
+        )}
+      </View>
 
       <TouchableOpacity
-        style={[styles.button, loading && styles.buttonDisabled]}
+        style={[styles.verifyButton, loading && styles.buttonDisabled]}
         onPress={handleVerify}
-        disabled={loading || otp.length !== 6}
+        disabled={loading}
       >
         {loading ? (
-          <ActivityIndicator color={COLORS.white} />
+          <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>Verify</Text>
+          <Text style={styles.buttonText}>Verify Email</Text>
         )}
       </TouchableOpacity>
 
-      {error && <Text style={styles.errorText}>{error}</Text>}
-
       <TouchableOpacity style={styles.resendButton}>
-        <Text style={styles.resendText}>Resend Code</Text>
+        <Text style={styles.resendText}>Didn't receive the code?</Text>
+        <Text style={styles.resendLink}>Resend Code</Text>
       </TouchableOpacity>
-    </View>
+    </KeyboardAvoidingView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
-    padding: 20,
-    justifyContent: "center",
+    backgroundColor: "#fff",
+    padding: 24,
+  },
+  header: {
+    alignItems: "center",
+    marginTop: 60,
+    marginBottom: 40,
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    textAlign: "center",
-    marginBottom: 10,
-    color: COLORS.text,
+    color: "#333",
+    marginTop: 20,
+    marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
+    color: "#666",
     textAlign: "center",
-    marginBottom: 30,
-    color: COLORS.text,
-    opacity: 0.7,
+    marginBottom: 32,
   },
   otpContainer: {
-    marginBottom: 20,
+    alignItems: "center",
+    marginBottom: 32,
   },
-  otpCell: {
+  otpInputContainer: {
+    marginBottom: 16,
+  },
+  otpInput: {
     width: 45,
     height: 45,
     borderWidth: 1,
     borderRadius: 8,
     fontSize: 24,
-    color: COLORS.text,
-    backgroundColor: COLORS.white,
+    backgroundColor: "#fff",
   },
-  button: {
-    backgroundColor: COLORS.primary,
-    height: 48,
+  otpInputError: {
+    borderColor: "#FF3B30",
+  },
+  errorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FF3B3010",
+    padding: 12,
     borderRadius: 8,
+    width: "100%",
+  },
+  errorText: {
+    color: "#FF3B30",
+    marginLeft: 8,
+    fontSize: 14,
+  },
+  verifyButton: {
+    height: 56,
+    backgroundColor: "#4169E1",
+    borderRadius: 28,
     justifyContent: "center",
     alignItems: "center",
+    marginBottom: 16,
   },
   buttonDisabled: {
     opacity: 0.7,
   },
   buttonText: {
-    color: COLORS.white,
-    fontSize: 16,
+    color: "#fff",
+    fontSize: 18,
     fontWeight: "600",
   },
-  errorText: {
-    color: COLORS.error,
-    textAlign: "center",
-    marginTop: 10,
-  },
   resendButton: {
-    marginTop: 20,
     alignItems: "center",
   },
   resendText: {
-    color: COLORS.primary,
-    fontSize: 14,
+    color: "#666",
+    marginBottom: 4,
+  },
+  resendLink: {
+    color: "#4169E1",
+    fontWeight: "600",
   },
 });
-
-export default VerifyOTPScreen;

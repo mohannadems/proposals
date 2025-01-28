@@ -4,21 +4,24 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Dimensions,
+  Alert,
+  TouchableWithoutFeedback,
+  Keyboard,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { router } from "expo-router";
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
-import * as LocalAuthentication from "expo-local-authentication";
 import { LinearGradient } from "expo-linear-gradient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as LocalAuthentication from "expo-local-authentication";
 import { login } from "../../store/slices/auth.slice";
 import AuthInput from "../../components/forms/AuthInput";
+import { storeToken } from "../../services/api";
 
-const { width } = Dimensions.get("window");
+const BIOMETRIC_KEY = "BIOMETRIC_CREDENTIALS";
 
 export default function LoginScreen() {
   const dispatch = useDispatch();
@@ -27,142 +30,298 @@ export default function LoginScreen() {
     email: "",
     password: "",
   });
+  const [validationErrors, setValidationErrors] = useState({
+    email: "",
+    password: "",
+  });
+  const [touched, setTouched] = useState({
+    email: false,
+    password: false,
+  });
   const [isBiometricSupported, setIsBiometricSupported] = useState(false);
+  const [isBiometricEnabled, setIsBiometricEnabled] = useState(false);
 
   useEffect(() => {
-    checkBiometricSupport();
+    checkBiometricAvailability();
   }, []);
 
-  const checkBiometricSupport = async () => {
-    const compatible = await LocalAuthentication.hasHardwareAsync();
-    setIsBiometricSupported(compatible);
+  const checkBiometricAvailability = async () => {
+    try {
+      const compatible = await LocalAuthentication.hasHardwareAsync();
+      const enrolled = await LocalAuthentication.isEnrolledAsync();
+      const savedCredentials = await AsyncStorage.getItem(BIOMETRIC_KEY);
+
+      // Log for debugging
+      console.log("Biometric status:", {
+        compatible,
+        enrolled,
+        hasSavedCredentials: !!savedCredentials,
+      });
+
+      // Only set these if all conditions are met
+      setIsBiometricSupported(compatible && enrolled);
+      setIsBiometricEnabled(Boolean(savedCredentials));
+    } catch (error) {
+      console.error("Biometric check failed:", error);
+    }
+  };
+
+  const validateEmail = (email) => {
+    if (!email.trim()) return "Email is required";
+    const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+    if (!emailRegex.test(email)) return "Please enter a valid email address";
+    return "";
+  };
+
+  const validatePassword = (password) => {
+    if (!password) return "Password is required";
+    if (password.length < 8) return "Password must be at least 8 characters";
+    return "";
+  };
+
+  const handleChange = (field, value) => {
+    setCredentials((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+
+    if (touched[field]) {
+      const validationFunction =
+        field === "email" ? validateEmail : validatePassword;
+      const error = validationFunction(value);
+      setValidationErrors((prev) => ({
+        ...prev,
+        [field]: error,
+      }));
+    }
+  };
+
+  const handleBlur = (field) => {
+    setTouched((prev) => ({
+      ...prev,
+      [field]: true,
+    }));
+
+    const validationFunction =
+      field === "email" ? validateEmail : validatePassword;
+    const error = validationFunction(credentials[field]);
+    setValidationErrors((prev) => ({
+      ...prev,
+      [field]: error,
+    }));
   };
 
   const handleBiometricAuth = async () => {
     try {
       const result = await LocalAuthentication.authenticateAsync({
-        promptMessage: "Log in with Face ID",
-        fallbackLabel: "Use password instead",
+        promptMessage: "Login with Face ID",
+        disableDeviceFallback: false,
+        fallbackLabel: "Enter passcode",
       });
 
       if (result.success) {
-        // Here you would typically retrieve stored credentials
-        // and dispatch the login action
-        handleLogin({
-          email: "stored-email",
-          password: "stored-password",
-        });
+        const savedCredentials = await AsyncStorage.getItem(BIOMETRIC_KEY);
+        if (savedCredentials) {
+          const parsedCredentials = JSON.parse(savedCredentials);
+          // Call login directly with saved credentials
+          const loginResult = await dispatch(login(parsedCredentials)).unwrap();
+          if (loginResult) {
+            router.replace("/(tabs)/home");
+          }
+        }
       }
     } catch (error) {
-      console.log("Biometric auth error:", error);
+      console.error("Biometric auth error:", error);
+      setValidationErrors((prev) => ({
+        ...prev,
+        general:
+          "Face ID authentication failed. Please try again or use your password.",
+      }));
+    }
+  };
+
+  const handleSuccessfulLogin = async (loginCredentials) => {
+    const { access_token } = response.data.data;
+    await setAuthToken(access_token);
+    if (isBiometricSupported) {
+      // Check if we already have saved credentials
+      const existingCredentials = await AsyncStorage.getItem(BIOMETRIC_KEY);
+      if (!existingCredentials) {
+        Alert.alert(
+          "Enable Face ID",
+          "Would you like to enable Face ID for quick login next time?",
+          [
+            {
+              text: "No",
+              style: "cancel",
+            },
+            {
+              text: "Yes",
+              onPress: async () => {
+                try {
+                  await AsyncStorage.setItem(
+                    BIOMETRIC_KEY,
+                    JSON.stringify({
+                      email: loginCredentials.email,
+                      password: loginCredentials.password,
+                    })
+                  );
+                  setIsBiometricEnabled(true);
+                  Alert.alert(
+                    "Success",
+                    "Face ID has been enabled for future logins"
+                  );
+                } catch (error) {
+                  console.error("Failed to save biometric credentials:", error);
+                  Alert.alert(
+                    "Error",
+                    "Failed to enable Face ID. Please try again later."
+                  );
+                }
+              },
+            },
+          ]
+        );
+      }
     }
   };
 
   const handleLogin = async (loginCredentials = credentials) => {
+    const emailError = validateEmail(loginCredentials.email);
+    const passwordError = validatePassword(loginCredentials.password);
+
+    setValidationErrors({
+      email: emailError,
+      password: passwordError,
+    });
+
+    setTouched({
+      email: true,
+      password: true,
+    });
+
+    if (emailError || passwordError) {
+      return;
+    }
+
     try {
       const result = await dispatch(login(loginCredentials)).unwrap();
       if (result) {
-        router.replace("/(tabs)/home");
+        await handleSuccessfulLogin(loginCredentials);
+        router.replace("/(tabs)/home"); // Replace the stack with the home screen
       }
     } catch (error) {
-      // Error is handled by the redux slice
+      setValidationErrors((prev) => ({
+        ...prev,
+        general: "Invalid email or password. Please try again.",
+      }));
     }
   };
-
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-    >
-      <LinearGradient
-        colors={["rgba(65, 105, 225, 0.1)", "rgba(212, 175, 55, 0.1)"]}
-        style={StyleSheet.absoluteFill}
-      />
-
-      <View style={styles.topDecoration}>
-        <FontAwesome
-          name="heart"
-          size={24}
-          color="#B65165"
-          style={styles.decorationHeart}
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.container}
+      >
+        <LinearGradient
+          colors={["rgba(65, 105, 225, 0.1)", "rgba(212, 175, 55, 0.1)"]}
+          style={StyleSheet.absoluteFill}
         />
-      </View>
 
-      <View style={styles.content}>
-        <View style={styles.logoContainer}>
-          <Text style={styles.welcomeText}>Welcome Back</Text>
-          <Text style={styles.subtitle}>
-            Ready to continue your journey to love?
-          </Text>
+        <View style={styles.topDecoration}>
+          <FontAwesome
+            name="heart"
+            size={24}
+            color="#B65165"
+            style={styles.decorationHeart}
+          />
         </View>
 
-        <View style={styles.formContainer}>
-          <AuthInput
-            label="Email"
-            value={credentials.email}
-            onChangeText={(text) =>
-              setCredentials((prev) => ({ ...prev, email: text }))
-            }
-            placeholder="Enter your email"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            leftIcon="email"
-          />
+        <View style={styles.content}>
+          <View style={styles.logoContainer}>
+            <Text style={styles.welcomeText}>Welcome Back</Text>
+            <Text style={styles.subtitle}>
+              Ready to continue your journey to love?
+            </Text>
+          </View>
 
-          <AuthInput
-            label="Password"
-            value={credentials.password}
-            onChangeText={(text) =>
-              setCredentials((prev) => ({ ...prev, password: text }))
-            }
-            placeholder="Enter your password"
-            secureTextEntry
-            leftIcon="lock"
-          />
+          <View style={styles.formContainer}>
+            <AuthInput
+              label="Email"
+              value={credentials.email}
+              onChangeText={(text) => handleChange("email", text)}
+              onBlur={() => handleBlur("email")}
+              error={validationErrors.email}
+              touched={touched.email}
+              placeholder="Enter your email"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              leftIcon="email"
+            />
 
-          <TouchableOpacity style={styles.forgotPassword}>
-            <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-          </TouchableOpacity>
+            <AuthInput
+              label="Password"
+              value={credentials.password}
+              onChangeText={(text) => handleChange("password", text)}
+              onBlur={() => handleBlur("password")}
+              error={validationErrors.password}
+              touched={touched.password}
+              placeholder="Enter your password"
+              secureTextEntry
+              leftIcon="lock"
+            />
+
+            <TouchableOpacity style={styles.forgotPassword}>
+              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+            </TouchableOpacity>
+
+            {validationErrors.general && (
+              <View style={styles.errorContainer}>
+                <MaterialIcons name="error" size={20} color="#FF3B30" />
+                <Text style={styles.errorText}>{validationErrors.general}</Text>
+              </View>
+            )}
+
+            <TouchableOpacity
+              style={[styles.loginButton, loading && styles.buttonDisabled]}
+              onPress={() => handleLogin()}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <FontAwesome name="heart" size={20} color="#fff" />
+                  <Text style={styles.loginButtonText}>Continue Journey</Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            {isBiometricEnabled && ( // Change from isBiometricSupported to isBiometricEnabled
+              <TouchableOpacity
+                style={styles.biometricButton}
+                onPress={handleBiometricAuth}
+              >
+                <MaterialIcons name="face" size={24} color="#B65165" />
+                <Text style={styles.biometricButtonText}>
+                  Sign in with Face ID
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
           <TouchableOpacity
-            style={[styles.loginButton, loading && styles.buttonDisabled]}
-            onPress={() => handleLogin()}
-            disabled={loading}
+            style={styles.registerLink}
+            onPress={() => router.push("/(auth)/register")}
           >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <>
-                <FontAwesome name="heart" size={20} color="#fff" />
-                <Text style={styles.loginButtonText}>Continue Journey</Text>
-              </>
-            )}
+            <Text style={styles.registerLinkText}>
+              New to finding love?{" "}
+              <Text style={styles.registerLinkBold}>Sign Up</Text>
+            </Text>
           </TouchableOpacity>
-
-          {isBiometricSupported && (
-            <TouchableOpacity
-              style={styles.biometricButton}
-              onPress={handleBiometricAuth}
-            >
-              <MaterialIcons name="face" size={24} color="#B65165" />
-              <Text style={styles.biometricButtonText}>Quick Sign In</Text>
-            </TouchableOpacity>
-          )}
-
-          {error && <Text style={styles.errorText}>{error}</Text>}
         </View>
-
-        <TouchableOpacity
-          style={styles.registerLink}
-          onPress={() => router.push("/(auth)/register")}
-        >
-          <Text style={styles.registerLinkText}>
-            New to finding love?{" "}
-            <Text style={styles.registerLinkBold}>Sign Up</Text>
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 }
 
@@ -187,11 +346,6 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: "center",
     marginBottom: 40,
-  },
-  logo: {
-    width: width * 0.5,
-    height: width * 0.3,
-    marginBottom: 20,
   },
   welcomeText: {
     fontSize: 28,
@@ -258,10 +412,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
   },
+  errorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FF3B3010",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
   errorText: {
     color: "#FF3B30",
-    textAlign: "center",
-    marginTop: 16,
+    marginLeft: 8,
+    fontSize: 14,
   },
   registerLink: {
     marginTop: 24,

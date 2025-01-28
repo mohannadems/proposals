@@ -1,20 +1,43 @@
 import React from "react";
-import { View, TextInput, Text, StyleSheet } from "react-native";
-import { COLORS } from "../../constants/colors";
+import { View, Text, TextInput, StyleSheet } from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
 
-const AuthInput = ({ label, error, touched, ...props }) => {
+export default function AuthInput({
+  label,
+  error,
+  touched,
+  leftIcon,
+  ...props
+}) {
   return (
     <View style={styles.container}>
       <Text style={styles.label}>{label}</Text>
-      <TextInput
-        style={[styles.input, error && touched && styles.errorInput]}
-        placeholderTextColor="#999"
-        {...props}
-      />
-      {error && touched && <Text style={styles.errorText}>{error}</Text>}
+      <View
+        style={[styles.inputContainer, touched && error && styles.inputError]}
+      >
+        {leftIcon && (
+          <MaterialIcons
+            name={leftIcon}
+            size={20}
+            color={touched && error ? "#FF3B30" : "#B65165"}
+            style={styles.icon}
+          />
+        )}
+        <TextInput
+          style={styles.input}
+          placeholderTextColor="#999"
+          {...props}
+        />
+      </View>
+      {touched && error && (
+        <View style={styles.errorContainer}>
+          <MaterialIcons name="error" size={16} color="#FF3B30" />
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      )}
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -23,25 +46,38 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     marginBottom: 8,
-    color: COLORS.text,
+    color: "#333",
+    fontWeight: "500",
+  },
+  inputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E5E5EA",
+    borderRadius: 8,
+    backgroundColor: "#fff",
+    paddingHorizontal: 12,
+  },
+  inputError: {
+    borderColor: "#FF3B30",
+  },
+  icon: {
+    marginRight: 8,
   },
   input: {
+    flex: 1,
     height: 48,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 8,
-    paddingHorizontal: 16,
     fontSize: 16,
-    backgroundColor: COLORS.white,
+    color: "#333",
   },
-  errorInput: {
-    borderColor: COLORS.error,
-  },
-  errorText: {
-    color: COLORS.error,
-    fontSize: 12,
+  errorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 4,
   },
+  errorText: {
+    color: "#FF3B30",
+    fontSize: 12,
+    marginLeft: 4,
+  },
 });
-
-export default AuthInput;

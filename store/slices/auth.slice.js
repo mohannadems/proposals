@@ -43,11 +43,14 @@ export const verifyOTP = createAsyncThunk(
   "auth/verifyOTP",
   async (otpData, { rejectWithValue }) => {
     try {
-      const response = await authService.verifyOTP(otpData);
-      return response;
+      const response = await api.post("/verify-otp", {
+        email: otpData.email,
+        otp: otpData.otp,
+      });
+      return response.data;
     } catch (error) {
       return rejectWithValue(
-        error.response?.data || { message: "OTP verification failed" }
+        error.response?.data?.message || "OTP verification failed"
       );
     }
   }

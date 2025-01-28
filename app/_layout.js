@@ -8,7 +8,40 @@ export default function RootLayout() {
   return (
     <Provider store={store}>
       <SafeAreaProvider>
-        <RootLayoutNav />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen
+            name="index"
+            options={{
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen
+            name="welcome"
+            options={{
+              headerShown: false,
+            }}
+          />
+          <Stack.Screen
+            name="(auth)"
+            options={{
+              headerShown: false,
+              gestureEnabled: false,
+            }}
+          />
+          <Stack.Screen
+            name="(tabs)"
+            options={{
+              headerShown: false,
+              gestureEnabled: false,
+            }}
+          />
+          <Stack.Screen
+            name="(profile)"
+            options={{
+              gestureEnabled: true,
+            }}
+          />
+        </Stack>
       </SafeAreaProvider>
     </Provider>
   );
@@ -16,11 +49,28 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      <Stack.Screen name="(profile)" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+    <Stack>
+      <Stack.Screen
+        name="(auth)"
+        options={{
+          headerShown: false,
+          gestureEnabled: false, // Disable swipe only for auth screens
+        }}
+      />
+      <Stack.Screen
+        name="(tabs)"
+        options={{
+          headerShown: false,
+          gestureEnabled: true, // Enable swipe for other screens
+        }}
+      />
+      <Stack.Screen
+        name="(profile)"
+        options={{
+          headerShown: true,
+          gestureEnabled: true, // Enable swipe for profile screens
+        }}
+      />
     </Stack>
   );
 }
