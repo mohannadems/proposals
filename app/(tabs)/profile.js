@@ -99,7 +99,11 @@ export default function ProfileScreen() {
               <MaterialIcons name="camera-alt" size={20} color="#fff" />
             </TouchableOpacity>
           </View>
-          <Text style={styles.userName}>{profile?.name}</Text>
+          <Text style={styles.userName}>
+            <Text style={styles.first_name}>{profile?.first_name}</Text>{" "}
+            <Text style={styles.last_name}>{profile?.last_name}</Text>
+          </Text>
+
           <View style={styles.bioContainer}>
             <Text style={styles.bioText}>
               {profile?.profile_status === "active" ? "Active" : "Inactive"}
@@ -234,6 +238,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     marginBottom: 8,
   },
+
   bioContainer: {
     backgroundColor: "rgba(255,255,255,0.2)",
     padding: 12,

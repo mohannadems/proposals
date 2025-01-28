@@ -37,14 +37,37 @@ export default function VerifyOTPScreen() {
           otp: otp,
         })
       ).unwrap();
+      console.log(tempEmail, "valid");
 
+      // Consider adding more explicit routing logic
       if (result) {
         router.replace("/(tabs)/home");
       }
     } catch (error) {
-      // Error is handled by redux slice
+      // Explicitly handle and display errors
+      setValidationError(error || "Verification failed");
     }
   };
+  const handleResendOTP = async () => {
+    try {
+      await dispatch(resendOTP(tempEmail)).unwrap();
+      // Optional: Show a success toast or alert
+      Alert.alert("OTP Resent", "A new code has been sent to your email");
+    } catch (error) {
+      // Handle resend error
+      Alert.alert("Resend Failed", error.message || "Could not resend OTP");
+    }
+  };
+
+  // Update the resendButton TouchableOpacity
+  <TouchableOpacity
+    style={styles.resendButton}
+    onPress={handleResendOTP}
+    disabled={loading}
+  >
+    <Text style={styles.resendText}>Didn't receive the code?</Text>
+    <Text style={styles.resendLink}>Resend Code</Text>
+  </TouchableOpacity>;
 
   return (
     <KeyboardAvoidingView

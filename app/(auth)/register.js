@@ -19,6 +19,10 @@ import { LinearGradient } from "expo-linear-gradient";
 import { register } from "../../store/slices/auth.slice";
 import AuthInput from "../../components/forms/AuthInput";
 import GenderSelect from "../../components/forms/GenderSelect";
+import {
+  validateField,
+  validateFormStep,
+} from "../../utils/register-validation"; // Import the new validation utility
 
 const { height } = Dimensions.get("window");
 
@@ -26,7 +30,8 @@ export default function RegisterScreen() {
   const dispatch = useDispatch();
   const { loading, error } = useSelector((state) => state.auth);
   const [formData, setFormData] = useState({
-    name: "",
+    first_name: "",
+    last_name: "",
     email: "",
     phone_number: "",
     password: "",
@@ -34,7 +39,8 @@ export default function RegisterScreen() {
     gender: "",
   });
   const [validationErrors, setValidationErrors] = useState({
-    name: "",
+    first_name: "",
+    last_name: "",
     email: "",
     phone_number: "",
     password: "",
@@ -42,7 +48,8 @@ export default function RegisterScreen() {
     gender: "",
   });
   const [touched, setTouched] = useState({
-    name: false,
+    first_name: false,
+    last_name: false,
     email: false,
     phone_number: false,
     password: false,
@@ -51,53 +58,6 @@ export default function RegisterScreen() {
   });
   const [step, setStep] = useState(1);
 
-  const validateField = (field, value) => {
-    switch (field) {
-      case "name":
-        if (!value.trim()) return "Name is required";
-        if (value.length < 2) return "Name must be at least 2 characters";
-        if (!/^[a-zA-Z\s]*$/.test(value))
-          return "Name can only contain letters and spaces";
-        return "";
-
-      case "email":
-        if (!value.trim()) return "Email is required";
-        const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
-        if (!emailRegex.test(value))
-          return "Please enter a valid email address";
-        return "";
-
-      case "phone_number":
-        if (!value.trim()) return "Phone number is required";
-        if (!/^[0-9]{10}$/.test(value.replace(/\D/g, "")))
-          return "Please enter a valid 10-digit phone number";
-        return "";
-
-      case "password":
-        if (!value) return "Password is required";
-        if (value.length < 8) return "Password must be at least 8 characters";
-        if (!/[A-Z]/.test(value))
-          return "Password must contain at least one uppercase letter";
-        if (!/[a-z]/.test(value))
-          return "Password must contain at least one lowercase letter";
-        if (!/[0-9]/.test(value))
-          return "Password must contain at least one number";
-        return "";
-
-      case "password_confirmation":
-        if (!value) return "Please confirm your password";
-        if (value !== formData.password) return "Passwords do not match";
-        return "";
-
-      case "gender":
-        if (!value) return "Please select your gender";
-        return "";
-
-      default:
-        return "";
-    }
-  };
-
   const handleChange = (field, value) => {
     setFormData((prev) => ({
       ...prev,
@@ -105,7 +65,7 @@ export default function RegisterScreen() {
     }));
 
     if (touched[field]) {
-      const error = validateField(field, value);
+      const error = validateField(field, value, formData);
       setValidationErrors((prev) => ({
         ...prev,
         [field]: error,
@@ -119,49 +79,54 @@ export default function RegisterScreen() {
       [field]: true,
     }));
 
-    const error = validateField(field, formData[field]);
+    const error = validateField(field, formData[field], formData);
     setValidationErrors((prev) => ({
       ...prev,
       [field]: error,
     }));
   };
 
-  const validateStep = (stepNumber) => {
-    const fieldsToValidate =
-      stepNumber === 1
-        ? ["name", "email", "phone_number"]
-        : ["gender", "password", "password_confirmation"];
+  const handleNextStep = () => {
+    const stepValidation = validateFormStep(1, formData);
 
-    const newErrors = {};
-    let isValid = true;
-
-    fieldsToValidate.forEach((field) => {
-      const error = validateField(field, formData[field]);
-      newErrors[field] = error;
-      if (error) isValid = false;
-
-      setTouched((prev) => ({
-        ...prev,
-        [field]: true,
-      }));
-    });
-
-    setValidationErrors((prev) => ({
+    // Update touched state for all first step fields
+    setTouched((prev) => ({
       ...prev,
-      ...newErrors,
+      first_name: true,
+      last_name: true,
+      email: true,
+      phone_number: true,
     }));
 
-    return isValid;
-  };
+    // Update validation errors
+    setValidationErrors((prev) => ({
+      ...prev,
+      ...stepValidation.errors,
+    }));
 
-  const handleNextStep = () => {
-    if (validateStep(1)) {
+    if (stepValidation.isValid) {
       setStep(2);
     }
   };
 
   const handleRegister = async () => {
-    if (!validateStep(2)) {
+    const stepValidation = validateFormStep(2, formData);
+
+    // Update touched state for all second step fields
+    setTouched((prev) => ({
+      ...prev,
+      gender: true,
+      password: true,
+      password_confirmation: true,
+    }));
+
+    // Update validation errors
+    setValidationErrors((prev) => ({
+      ...prev,
+      ...stepValidation.errors,
+    }));
+
+    if (!stepValidation.isValid) {
       return;
     }
 
@@ -191,13 +156,24 @@ export default function RegisterScreen() {
   const renderStepOne = () => (
     <>
       <AuthInput
-        label="Full Name"
-        value={formData.name}
-        onChangeText={(text) => handleChange("name", text)}
-        onBlur={() => handleBlur("name")}
-        error={validationErrors.name}
-        touched={touched.name}
-        placeholder="How should we call you?"
+        label="First Name"
+        value={formData.first_name}
+        onChangeText={(text) => handleChange("first_name", text)}
+        onBlur={() => handleBlur("first_name")}
+        error={validationErrors.first_name}
+        touched={touched.first_name}
+        placeholder="Your first name"
+        leftIcon="person"
+      />
+
+      <AuthInput
+        label="Last Name"
+        value={formData.last_name}
+        onChangeText={(text) => handleChange("last_name", text)}
+        onBlur={() => handleBlur("last_name")}
+        error={validationErrors.last_name}
+        touched={touched.last_name}
+        placeholder="Your last name"
         leftIcon="person"
       />
 

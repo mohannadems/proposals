@@ -19,6 +19,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as LocalAuthentication from "expo-local-authentication";
 import { login } from "../../store/slices/auth.slice";
 import AuthInput from "../../components/forms/AuthInput";
+import { validateLoginCredentials } from "../../utils/login-validation"; // Import the new validation utility
 
 const BIOMETRIC_KEY = "BIOMETRIC_CREDENTIALS";
 
@@ -65,19 +66,6 @@ export default function LoginScreen() {
     }
   };
 
-  const validateEmail = (email) => {
-    if (!email.trim()) return "Email is required";
-    const emailRegex = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
-    if (!emailRegex.test(email)) return "Please enter a valid email address";
-    return "";
-  };
-
-  const validatePassword = (password) => {
-    if (!password) return "Password is required";
-    if (password.length < 8) return "Password must be at least 8 characters";
-    return "";
-  };
-
   const handleChange = (field, value) => {
     setCredentials((prev) => ({
       ...prev,
@@ -85,12 +73,10 @@ export default function LoginScreen() {
     }));
 
     if (touched[field]) {
-      const validationFunction =
-        field === "email" ? validateEmail : validatePassword;
-      const error = validationFunction(value);
+      const errors = validateLoginCredentials(credentials);
       setValidationErrors((prev) => ({
         ...prev,
-        [field]: error,
+        [field]: errors[field] || "",
       }));
     }
   };
@@ -101,12 +87,10 @@ export default function LoginScreen() {
       [field]: true,
     }));
 
-    const validationFunction =
-      field === "email" ? validateEmail : validatePassword;
-    const error = validationFunction(credentials[field]);
+    const errors = validateLoginCredentials(credentials);
     setValidationErrors((prev) => ({
       ...prev,
-      [field]: error,
+      [field]: errors[field] || "",
     }));
   };
 
@@ -184,20 +168,16 @@ export default function LoginScreen() {
   };
 
   const handleLogin = async (loginCredentials = credentials) => {
-    const emailError = validateEmail(loginCredentials.email);
-    const passwordError = validatePassword(loginCredentials.password);
+    const errors = validateLoginCredentials(loginCredentials);
 
-    setValidationErrors({
-      email: emailError,
-      password: passwordError,
-    });
+    setValidationErrors(errors);
 
     setTouched({
       email: true,
       password: true,
     });
 
-    if (emailError || passwordError) {
+    if (Object.keys(errors).length > 0) {
       return;
     }
 
@@ -214,6 +194,7 @@ export default function LoginScreen() {
       }));
     }
   };
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <KeyboardAvoidingView
@@ -294,7 +275,7 @@ export default function LoginScreen() {
               )}
             </TouchableOpacity>
 
-            {isBiometricEnabled && ( // Change from isBiometricSupported to isBiometricEnabled
+            {isBiometricEnabled && (
               <TouchableOpacity
                 style={styles.biometricButton}
                 onPress={handleBiometricAuth}
