@@ -279,7 +279,16 @@ export default function ProfileScreen() {
             {profile.first_name} {profile.last_name}
             {progress === 100 && " ✓"}
           </Text>
-          <Text style={styles.userStatus}>{profile.profile_status}</Text>
+          <View style={styles.statusContainer}>
+            <View
+              style={
+                profile.profile_status === "Active"
+                  ? styles.greenDot
+                  : styles.grayDot
+              }
+            />
+            <Text style={styles.userStatus}>{profile.profile_status}</Text>
+          </View>
           {profile.profile?.bio && (
             <Text style={styles.userBio}>{profile.profile.bio}</Text>
           )}

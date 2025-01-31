@@ -167,4 +167,26 @@ export default StyleSheet.create({
     marginTop: 15,
     lineHeight: 24,
   },
+  statusContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  greenDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: COLORS.success,
+    marginRight: 5,
+  },
+  grayDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: "gray",
+    marginRight: 5,
+  },
+  userStatus: {
+    fontSize: 14,
+    color: "white",
+  },
 });
