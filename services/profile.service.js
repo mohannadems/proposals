@@ -9,13 +9,4 @@ export const profileService = {
       throw error;
     }
   },
-
-  updateProfile: async (profileData) => {
-    try {
-      const response = await api.post("/profile/update", profileData);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
 };

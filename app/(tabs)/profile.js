@@ -1,23 +1,19 @@
-// app/(tabs)/profile.js
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
   ActivityIndicator,
-  RefreshControl,
+  Image,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
 import { COLORS } from "../../constants/colors";
 import { fetchProfile } from "../../store/slices/profile.slice";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { logout } from "../../store/slices/auth.slice";
+import styles from "../../styles/ProfileScreenStyles";
 
 const ProfileSection = ({ title, children }) => (
   <View style={styles.section}>
@@ -48,277 +44,221 @@ export default function ProfileScreen() {
     dispatch(fetchProfile());
   }, [dispatch]);
 
-  const loadProfile = async () => {
-    try {
-      await dispatch(fetchProfile()).unwrap();
-    } catch (error) {
-      console.error("Failed to load profile:", error);
-    }
+  const handleLogout = () => {
+    dispatch(logout());
   };
 
-  const handleLogout = async () => {
-    try {
-      await AsyncStorage.removeItem("BIOMETRIC_KEY");
-      dispatch(logout());
-      router.replace("/(auth)/login");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
+  const calculateProgress = () => {
+    if (!profile) return 0;
+    const fields = [
+      "first_name",
+      "last_name",
+      "birth_date",
+      "gender",
+      "height",
+      "weight",
+      "hair_color",
+      "skin_color",
+      "marital_status",
+      "hobbies",
+      "pets",
+      "sports_activities",
+      "smoking_tool",
+      "drinking_status",
+      "specialization",
+      "position_level",
+      "education_level",
+      "country",
+      "nationality",
+      "housing_status",
+      "financial_status",
+    ];
+    const filledFields = fields.filter((field) => profile[field]);
+    return Math.round((filledFields.length / fields.length) * 100);
   };
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#B65165" />
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>Loading profile...</Text>
       </View>
     );
   }
 
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>An error occurred: {error}</Text>
+      </View>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>No profile data available.</Text>
+      </View>
+    );
+  }
+
+  const progress = calculateProgress();
+
   return (
-    <ScrollView
-      style={styles.container}
-      refreshControl={
-        <RefreshControl
-          refreshing={loading}
-          onRefresh={loadProfile}
-          colors={[COLORS.primary]}
-        />
-      }
-    >
-      <LinearGradient colors={["#B65165", "#AB0CFB"]} style={styles.header}>
+    <ScrollView style={styles.container}>
+      <LinearGradient
+        colors={[COLORS.primary, COLORS.secondary]}
+        style={styles.header}
+      >
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <MaterialIcons name="logout" size={24} color={COLORS.white} />
+        </TouchableOpacity>
         <View style={styles.profileHeader}>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <MaterialIcons name="logout" size={24} color="#fff" />
-          </TouchableOpacity>
-
-          <View style={styles.avatarContainer}>
-            <View style={[styles.avatar, styles.avatarPlaceholder]}>
-              <MaterialIcons name="person" size={40} color="#fff" />
-            </View>
-            <TouchableOpacity style={styles.editAvatarButton}>
-              <MaterialIcons name="camera-alt" size={20} color="#fff" />
-            </TouchableOpacity>
-          </View>
+          <Image
+            source={
+              profile.profile?.avatar_url
+                ? { uri: profile.profile.avatar_url }
+                : require("../../assets/images/wh.jpg")
+            }
+            style={styles.avatar}
+          />
           <Text style={styles.userName}>
-            <Text style={styles.first_name}>{profile?.first_name}</Text>{" "}
-            <Text style={styles.last_name}>{profile?.last_name}</Text>
+            {profile.first_name} {profile.last_name}
           </Text>
-
-          <View style={styles.bioContainer}>
-            <Text style={styles.bioText}>
-              {profile?.profile_status === "active" ? "Active" : "Inactive"}
-            </Text>
+          <Text style={styles.userStatus}>{profile.profile_status}</Text>
+        </View>
+        <View style={styles.progressContainer}>
+          <Text style={styles.progressText}>
+            Profile Completion: {progress}%
+          </Text>
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: `${progress}%` }]} />
           </View>
         </View>
       </LinearGradient>
 
       <View style={styles.content}>
-        <TouchableOpacity
-          style={styles.editButton}
-          onPress={() => router.push("/(profile)/edit")}
-        >
-          <MaterialIcons name="edit" size={20} color="#fff" />
-          <Text style={styles.editButtonText}>Complete Your Profile</Text>
-        </TouchableOpacity>
-
-        <ProfileSection title="Account Information">
-          <ProfileItem icon="email" label="Email" value={profile?.email} />
+        <ProfileSection title="Information">
+          <ProfileItem
+            icon="person"
+            label="First Name"
+            value={profile.first_name}
+          />
+          <ProfileItem
+            icon="person-outline"
+            label="Last Name"
+            value={profile.last_name}
+          />
+          <ProfileItem icon="email" label="Email" value={profile.email} />
           <ProfileItem
             icon="phone"
             label="Phone Number"
-            value={profile?.phone_number}
+            value={profile.phone_number}
           />
-          <ProfileItem icon="person" label="Gender" value={profile?.gender} />
-          <ProfileItem icon="verified" label="Status" value={profile?.status} />
+          <ProfileItem icon="wc" label="Gender" value={profile.gender} />
+        </ProfileSection>
+        <ProfileSection title="Personal Information">
+          <ProfileItem
+            icon="cake"
+            label="Date of Birth"
+            value={profile.profile?.date_of_birth}
+          />
+          <ProfileItem
+            icon="height"
+            label="Height"
+            value={profile.profile?.height}
+          />
+          <ProfileItem
+            icon="fitness-center"
+            label="Weight"
+            value={profile.profile?.weight}
+          />
+          <ProfileItem
+            icon="color-lens"
+            label="Hair Color"
+            value={profile.profile?.hair_color}
+          />
+          <ProfileItem
+            icon="palette"
+            label="Skin Color"
+            value={profile.profile?.skin_color}
+          />
+          <ProfileItem
+            icon="favorite"
+            label="Marital Status"
+            value={profile.profile?.marital_status}
+          />
         </ProfileSection>
 
-        <ProfileSection title="Verification Status">
+        <ProfileSection title="Lifestyle & Interests">
           <ProfileItem
-            icon="check-circle"
-            label="Email Verification"
-            value={profile?.email_verified_at ? "Verified" : "Not Verified"}
+            icon="local-activity"
+            label="Hobbies"
+            value={profile.profile?.hobbies?.join(", ")}
           />
           <ProfileItem
-            icon="access-time"
-            label="Member Since"
-            value={formatDate(profile?.created_at)}
+            icon="pets"
+            label="Pets"
+            value={profile.profile?.pets?.join(", ")}
           />
           <ProfileItem
-            icon="update"
-            label="Last Updated"
-            value={formatDate(profile?.updated_at)}
+            icon="directions-run"
+            label="Sports Activities"
+            value={profile.profile?.sports_activity}
           />
           <ProfileItem
-            icon="schedule"
-            label="Last Active"
-            value={
-              profile?.last_active
-                ? formatDate(profile?.last_active)
-                : "Not available"
-            }
+            icon="smoking-rooms"
+            label="Smoking"
+            value={profile.profile?.smoking_status ? "Yes" : "No"}
+          />
+          <ProfileItem
+            icon="local-bar"
+            label="Drinking"
+            value={profile.profile?.drinking_status}
           />
         </ProfileSection>
 
-        {error && (
-          <View style={styles.errorContainer}>
-            <MaterialIcons name="error" size={24} color={COLORS.error} />
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        )}
+        <ProfileSection title="Professional & Education">
+          <ProfileItem
+            icon="work"
+            label="Specialization"
+            value={profile.profile?.specialization}
+          />
+          <ProfileItem
+            icon="assignment"
+            label="Position Level"
+            value={profile.profile?.position_level}
+          />
+          <ProfileItem
+            icon="school"
+            label="Education Level"
+            value={profile.profile?.educational_level}
+          />
+        </ProfileSection>
+
+        <ProfileSection title="Location & Background">
+          <ProfileItem
+            icon="place"
+            label="Country"
+            value={profile.profile?.country_of_residence}
+          />
+          <ProfileItem
+            icon="flag"
+            label="Nationality"
+            value={profile.profile?.nationality}
+          />
+          <ProfileItem
+            icon="home"
+            label="Housing Status"
+            value={profile.profile?.housing_status}
+          />
+          <ProfileItem
+            icon="account-balance-wallet"
+            label="Financial Status"
+            value={profile.profile?.financial_status}
+          />
+        </ProfileSection>
       </View>
     </ScrollView>
   );
 }
-
-const formatDate = (dateString) => {
-  if (!dateString) return "Not available";
-  return new Date(dateString).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-};
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F8F9FA",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F8F9FA",
-  },
-  header: {
-    paddingTop: 60,
-    paddingBottom: 30,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
-  },
-  profileHeader: {
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  logoutButton: {
-    position: "absolute",
-    top: 0,
-    right: 20,
-    padding: 8,
-  },
-  avatarContainer: {
-    position: "relative",
-    marginBottom: 16,
-  },
-  avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    borderWidth: 4,
-    borderColor: "#fff",
-  },
-  avatarPlaceholder: {
-    backgroundColor: "rgba(255,255,255,0.2)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  editAvatarButton: {
-    position: "absolute",
-    right: 0,
-    bottom: 0,
-    backgroundColor: "#B65165",
-    padding: 8,
-    borderRadius: 20,
-    borderWidth: 3,
-    borderColor: "#fff",
-  },
-  userName: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 8,
-  },
-
-  bioContainer: {
-    backgroundColor: "rgba(255,255,255,0.2)",
-    padding: 12,
-    borderRadius: 12,
-    maxWidth: "90%",
-  },
-  bioText: {
-    color: "#fff",
-    textAlign: "center",
-    fontSize: 14,
-  },
-  content: {
-    padding: 20,
-  },
-  editButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#B65165",
-    paddingVertical: 12,
-    borderRadius: 25,
-    marginBottom: 20,
-  },
-  editButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-    marginLeft: 8,
-  },
-  section: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 16,
-  },
-  profileItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E5EA",
-  },
-  profileItemContent: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  itemLabel: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 4,
-  },
-  itemValue: {
-    fontSize: 16,
-    color: "#333",
-    fontWeight: "500",
-  },
-  errorContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FF3B3010",
-    padding: 12,
-    borderRadius: 8,
-  },
-  errorText: {
-    color: "#FF3B30",
-    marginLeft: 8,
-    flex: 1,
-  },
-});

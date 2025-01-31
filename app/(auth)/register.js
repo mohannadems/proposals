@@ -9,6 +9,7 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from "react-native";
+import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -18,7 +19,9 @@ import { StepIndicator } from "../../components/auth/StepIndicator";
 import { useRegisterForm } from "../../hooks/useRegisterForm";
 import { registerStyles } from "../../styles/register.styles";
 import { REGISTER_MESSAGES } from "../../constants/register";
+import { TermsModal } from "../../components/common/TermsModal";
 import { StyleSheet } from "react-native";
+
 const WelcomeMessage = () => (
   <View style={registerStyles.welcomeContainer}>
     <Text style={registerStyles.welcomeEmoji}>💝</Text>
@@ -30,9 +33,48 @@ const WelcomeMessage = () => (
 );
 
 export default function RegisterScreen() {
+  const [termsVisible, setTermsVisible] = useState(false);
+  const [registrationData, setRegistrationData] = useState(null);
   const dispatch = useDispatch();
   const { loading } = useSelector((state) => state.auth);
   const form = useRegisterForm();
+
+  const handleValidationError = (error) => {
+    setTermsVisible(false);
+
+    if (error.errors) {
+      const validationErrors = {};
+      Object.entries(error.errors).forEach(([field, messages]) => {
+        validationErrors[field] = messages[0];
+      });
+      form.setValidationErrors(validationErrors);
+
+      // Use goToStep instead of setStep
+      if (error.errors.email || error.errors.phone_number) {
+        form.goToStep(1);
+      }
+    } else {
+      form.setValidationErrors({
+        general: error.message || REGISTER_MESSAGES.REGISTRATION_FAILED,
+      });
+    }
+  };
+
+  const handleAcceptTerms = async () => {
+    try {
+      const result = await dispatch(register(registrationData)).unwrap();
+      if (result) {
+        router.push("/(auth)/verify-otp");
+      }
+    } catch (error) {
+      handleValidationError(error);
+    }
+  };
+
+  const handleDeclineTerms = () => {
+    setTermsVisible(false);
+    setRegistrationData(null);
+  };
 
   const handleNextStep = () => {
     form.nextStep();
@@ -46,18 +88,8 @@ export default function RegisterScreen() {
     if (!form.validateStep(2)) {
       return;
     }
-
-    try {
-      const result = await dispatch(register(form.formData)).unwrap();
-      if (result) {
-        router.push("/(auth)/verify-otp");
-      }
-    } catch (error) {
-      form.setValidationErrors((prev) => ({
-        ...prev,
-        general: error.message || REGISTER_MESSAGES.REGISTRATION_FAILED,
-      }));
-    }
+    setRegistrationData(form.formData);
+    setTermsVisible(true);
   };
 
   return (
@@ -97,6 +129,12 @@ export default function RegisterScreen() {
             </Text>
           </TouchableOpacity>
         </ScrollView>
+
+        <TermsModal
+          visible={termsVisible}
+          onAccept={handleAcceptTerms}
+          onDecline={handleDeclineTerms}
+        />
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
   );

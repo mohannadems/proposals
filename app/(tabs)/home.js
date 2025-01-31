@@ -1,19 +1,28 @@
-// app/(tabs)/home.js
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Modal,
 } from "react-native";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { COLORS } from "../../constants/colors";
+import { fetchProfile, updateProfile } from "../../store/slices/profile.slice";
+import ProfileCompletionForm from "../../components/profile/ProfileCompletionForm";
 
 export default function HomeScreen() {
+  const dispatch = useDispatch();
   const { user, isProfileComplete } = useSelector((state) => state.auth);
+  const { data: profile } = useSelector((state) => state.profile);
+  const [modalVisible, setModalVisible] = useState(false);
+
+  useEffect(() => {
+    dispatch(fetchProfile());
+  }, [dispatch]);
 
   const getStartedSteps = [
     {
@@ -21,35 +30,15 @@ export default function HomeScreen() {
       title: "Complete Your Profile",
       description: "Tell us about yourself so we can find your perfect match.",
       icon: "person",
-      action: () => router.push("/(profile)/create"),
+      action: () => setModalVisible(true),
       completed: isProfileComplete,
     },
-    {
-      id: 2,
-      title: "Set Partner Preferences",
-      description: "Define the qualities you are looking for in a partner.",
-      icon: "favorite",
-      action: () => router.push("/(profile)/preferences"),
-      completed: false,
-    },
-    {
-      id: 3,
-      title: "Verify Your Account",
-      description: "Add optional verification documents to increase trust.",
-      icon: "verified",
-      action: () => router.push("/(profile)/verification"),
-      completed: false,
-    },
-    {
-      id: 4,
-      title: "Start Matching",
-      description:
-        "Browse potential matches and connect with compatible profiles.",
-      icon: "people",
-      action: () => router.push("/(tabs)/matches"),
-      completed: false,
-    },
+    // ... other steps
   ];
+  const handleProfileUpdate = (updatedData) => {
+    dispatch(updateProfile(updatedData));
+    setModalVisible(false);
+  };
 
   return (
     <ScrollView style={styles.container}>
@@ -116,6 +105,20 @@ export default function HomeScreen() {
           </TouchableOpacity>
         </View>
       </View>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalView}>
+          <ProfileCompletionForm
+            initialData={profile}
+            onSubmit={handleProfileUpdate}
+            onClose={() => setModalVisible(false)}
+          />
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -245,5 +248,20 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     fontSize: 16,
     fontWeight: "600",
+  },
+  modalView: {
+    flex: 1,
+    backgroundColor: COLORS.white,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
   },
 });

@@ -3,8 +3,21 @@ import { Provider } from "react-redux";
 import { store } from "../store/store";
 import { Stack } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-
+import { useFonts } from "expo-font";
+import { ActivityIndicator, View } from "react-native";
+import { globalStyles } from "../styles/GlobalStyles";
 export default function RootLayout() {
+  const [fontsLoaded] = useFonts({
+    "YourFont-Regular": require("../assets/fonts/EBGaramond-Italic-VariableFont_wght.ttf"),
+    // Add more font variants as needed
+  });
+  if (!fontsLoaded) {
+    return (
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
   return (
     <Provider store={store}>
       <SafeAreaProvider>

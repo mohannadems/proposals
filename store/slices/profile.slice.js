@@ -7,7 +7,7 @@ export const fetchProfile = createAsyncThunk(
     try {
       const response = await profileService.getProfile();
       if (response.success) {
-        return response;
+        return response.data;
       }
       return rejectWithValue("Failed to fetch profile data");
     } catch (error) {
@@ -18,26 +18,13 @@ export const fetchProfile = createAsyncThunk(
   }
 );
 
-export const updateProfile = createAsyncThunk(
-  "profile/update",
-  async (profileData, { rejectWithValue }) => {
-    try {
-      const response = await profileService.updateProfile(profileData);
-      return response;
-    } catch (error) {
-      return rejectWithValue(
-        error.response?.data?.message || "Failed to update profile"
-      );
-    }
-  }
-);
-
 const initialState = {
   loading: false,
   error: null,
   data: {
     id: null,
-    name: "",
+    first_name: "",
+    last_name: "",
     email: "",
     email_verified_at: "",
     phone_number: "",
@@ -46,7 +33,6 @@ const initialState = {
     created_at: "",
     updated_at: "",
     last_active: null,
-    role_id: null,
     status: "",
   },
 };
@@ -59,31 +45,19 @@ const profileSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+
       .addCase(fetchProfile.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
       .addCase(fetchProfile.fulfilled, (state, action) => {
         state.loading = false;
-        state.data = action.payload.data;
+        state.data = action.payload;
         state.error = null;
       })
       .addCase(fetchProfile.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || "Failed to fetch profile";
-      })
-      .addCase(updateProfile.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(updateProfile.fulfilled, (state, action) => {
-        state.loading = false;
-        state.data = action.payload.data;
-        state.error = null;
-      })
-      .addCase(updateProfile.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload || "Failed to update profile";
       });
   },
 });

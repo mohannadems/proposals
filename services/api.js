@@ -13,7 +13,7 @@ export const setAuthToken = (token) => {
     // Add the "Bearer" prefix and ensure proper spacing
     api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     // For debugging
-    console.log("Setting auth token:", `Bearer ${token}`);
+    console.log("Setting auth token:", ` Bearer ${token})`);
   } else {
     delete api.defaults.headers.common["Authorization"];
   }

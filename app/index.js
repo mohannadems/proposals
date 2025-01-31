@@ -1,11 +1,11 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { View, StyleSheet, Image, Animated } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useSelector } from "react-redux";
 
 export default function SplashScreen() {
-  const fadeAnim = new Animated.Value(0);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
   const { isAuthenticated } = useSelector((state) => state.auth);
 
   useEffect(() => {
@@ -20,7 +20,7 @@ export default function SplashScreen() {
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [fadeAnim, isAuthenticated]); // Added dependencies
 
   return (
     <LinearGradient
