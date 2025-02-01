@@ -38,6 +38,13 @@ export default function ProfileLayout() {
           title: "personProfile",
         }}
       />
+      <Stack.Screen
+        name="ProfileCompletionScreen"
+        options={{
+          headerShown: false,
+          title: "ProfileCompletionScreen",
+        }}
+      />
     </Stack>
   );
 }

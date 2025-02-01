@@ -17,23 +17,62 @@ export const fetchProfile = createAsyncThunk(
     }
   }
 );
+export const updateProfile = createAsyncThunk(
+  "profile/update",
+  async (formData, { rejectWithValue }) => {
+    try {
+      const response = await profileService.updateProfile(formData);
+      if (response.success) {
+        return response.data;
+      }
+      return rejectWithValue("Failed to update profile");
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to update profile"
+      );
+    }
+  }
+);
 
 const initialState = {
   loading: false,
   error: null,
   data: {
     id: null,
-    first_name: "",
-    last_name: "",
-    email: "",
-    email_verified_at: "",
-    phone_number: "",
-    profile_status: "",
+    bio_en: "",
+    bio_ar: "",
     gender: "",
-    created_at: "",
-    updated_at: "",
-    last_active: null,
-    status: "",
+    date_of_birth: "",
+    height: null,
+    weight: null,
+    nationality_id: null,
+    origin_id: null,
+    country_of_residence_id: null,
+    city_id: null,
+    educational_level_id: null,
+    specialization_id: null,
+    employment_status: false,
+    job_title_id: null,
+    smoking_status: null,
+    smoking_tools: [],
+    drinking_status_id: null,
+    sports_activity_id: null,
+    social_media_presence_id: null,
+    religion_id: null,
+    hair_color_id: null,
+    skin_color_id: null,
+    marital_status_id: null,
+    number_of_children: null,
+    housing_status_id: null,
+    hobbies: [],
+    pets: [],
+    health_issues_en: "",
+    health_issues_ar: "",
+    zodiac_sign_id: null,
+    car_ownership: false,
+    guardian_contact: "",
+    hijab_status: null,
+    financial_status_id: null,
   },
 };
 
@@ -42,6 +81,10 @@ const profileSlice = createSlice({
   initialState,
   reducers: {
     resetProfile: () => initialState,
+    updateField: (state, action) => {
+      const { field, value } = action.payload;
+      state.data[field] = value;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -58,6 +101,19 @@ const profileSlice = createSlice({
       .addCase(fetchProfile.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || "Failed to fetch profile";
+      })
+      .addCase(updateProfile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.loading = false;
+        state.data = { ...state.data, ...action.payload };
+        state.error = null;
+      })
+      .addCase(updateProfile.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Failed to update profile";
       });
   },
 });
