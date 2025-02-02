@@ -19,19 +19,15 @@ export const profileService = {
       throw error;
     }
   },
+
   updateProfile: async (profileData) => {
     try {
       const formData = new FormData();
-
-      Object.keys(profileData).forEach((key) => {
-        if (profileData[key] !== null && profileData[key] !== undefined) {
-          if (key === "date_of_birth") {
-            formData.append(key, profileData[key].toISOString().split("T")[0]);
-          } else if (typeof profileData[key] === "boolean") {
-            formData.append(key, profileData[key] ? "1" : "0");
-          } else {
-            formData.append(key, String(profileData[key]));
-          }
+      Object.entries(profileData).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          value.forEach((item) => formData.append(`${key}[]`, item));
+        } else {
+          formData.append(key, value);
         }
       });
 

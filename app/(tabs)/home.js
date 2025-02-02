@@ -99,7 +99,7 @@ const HomeScreen = () => {
         <TouchableOpacity
           onPress={() =>
             router.push({
-              pathname: "/(profile)/ProfileCompletionScreen",
+              pathname: "/(profile)/fillProfileData",
             })
           }
           style={styles.completeProfileButton}

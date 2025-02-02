@@ -39,10 +39,10 @@ export default function ProfileLayout() {
         }}
       />
       <Stack.Screen
-        name="ProfileCompletionScreen"
+        name="fillProfileData"
         options={{
           headerShown: false,
-          title: "ProfileCompletionScreen",
+          title: "fillProfileData",
         }}
       />
     </Stack>

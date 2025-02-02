@@ -17,15 +17,16 @@ export const fetchProfile = createAsyncThunk(
     }
   }
 );
+
 export const updateProfile = createAsyncThunk(
   "profile/update",
-  async (formData, { rejectWithValue }) => {
+  async (profileData, { rejectWithValue }) => {
     try {
-      const response = await profileService.updateProfile(formData);
+      const response = await profileService.updateProfile(profileData);
       if (response.success) {
         return response.data;
       }
-      return rejectWithValue("Failed to update profile");
+      return rejectWithValue("Failed to update profile data");
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "Failed to update profile"
@@ -42,37 +43,26 @@ const initialState = {
     bio_en: "",
     bio_ar: "",
     gender: "",
-    date_of_birth: "",
-    height: null,
-    weight: null,
-    nationality_id: null,
-    origin_id: null,
-    country_of_residence_id: null,
-    city_id: null,
-    educational_level_id: null,
-    specialization_id: null,
-    employment_status: false,
-    job_title_id: null,
-    smoking_status: null,
-    smoking_tools: [],
-    drinking_status_id: null,
-    sports_activity_id: null,
-    social_media_presence_id: null,
-    religion_id: null,
-    hair_color_id: null,
-    skin_color_id: null,
-    marital_status_id: null,
-    number_of_children: null,
-    housing_status_id: null,
-    hobbies: [],
-    pets: [],
-    health_issues_en: "",
-    health_issues_ar: "",
-    zodiac_sign_id: null,
-    car_ownership: false,
-    guardian_contact: "",
-    hijab_status: null,
-    financial_status_id: null,
+    hair_color: "",
+    height: "",
+    weight: "",
+    origin: "",
+    marital_status: "",
+    skin_color: "",
+    zodiac_sign: "",
+    specialization: "",
+    position_level: "",
+    educational_level: "",
+    country: "",
+    religion: "",
+    nationality: "",
+    housing_status: "",
+    financial_status: "",
+    hobby: [],
+    pet: [],
+    sports_activity: "",
+    smoking_tool: [],
+    drinking_status: "",
   },
 };
 
@@ -88,7 +78,6 @@ const profileSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-
       .addCase(fetchProfile.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -108,7 +97,7 @@ const profileSlice = createSlice({
       })
       .addCase(updateProfile.fulfilled, (state, action) => {
         state.loading = false;
-        state.data = { ...state.data, ...action.payload };
+        state.data = action.payload;
         state.error = null;
       })
       .addCase(updateProfile.rejected, (state, action) => {
@@ -118,5 +107,5 @@ const profileSlice = createSlice({
   },
 });
 
-export const { resetProfile } = profileSlice.actions;
+export const { resetProfile, updateField } = profileSlice.actions;
 export default profileSlice.reducer;
