@@ -22,18 +22,9 @@ export const profileService = {
 
   updateProfile: async (profileData) => {
     try {
-      const formData = new FormData();
-      Object.entries(profileData).forEach(([key, value]) => {
-        if (Array.isArray(value)) {
-          value.forEach((item) => formData.append(`${key}[]`, item));
-        } else {
-          formData.append(key, value);
-        }
-      });
-
-      const response = await api.post("/profile", formData, {
+      const response = await api.post("/profile", profileData, {
         headers: {
-          "Content-Type": "multipart/form-data",
+          "Content-Type": "application/json",
         },
       });
 

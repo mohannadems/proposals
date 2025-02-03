@@ -115,6 +115,39 @@ export const PROFILE_DATA = {
     { id: 1, name: "Islam" },
     { id: 2, name: "Christianity" },
   ],
+  cities: {
+    1: [
+      // Cities for Jordan (country_id: 1)
+      { id: 1, name: "Amman" },
+      { id: 2, name: "Zarqa" },
+      { id: 3, name: "Irbid" },
+    ],
+    2: [
+      // Cities for Egypt (country_id: 2)
+      { id: 4, name: "Cairo" },
+      { id: 5, name: "Alexandria" },
+      { id: 6, name: "Giza" },
+    ],
+    3: [
+      // Cities for Lebanon (country_id: 3)
+      { id: 7, name: "Beirut" },
+      { id: 8, name: "Tripoli" },
+      { id: 9, name: "Sidon" },
+    ],
+    4: [
+      // Cities for Syria (country_id: 4)
+      { id: 10, name: "Damascus" },
+      { id: 11, name: "Aleppo" },
+      { id: 12, name: "Homs" },
+    ],
+    5: [
+      // Cities for Palestine (country_id: 5)
+      { id: 13, name: "Jerusalem" },
+      { id: 14, name: "Gaza" },
+      { id: 15, name: "Ramallah" },
+      { id: 16, name: "Bethlehem" },
+    ],
+  },
   nationalities: [
     { id: 1, name: "Jordanian" },
     { id: 2, name: "Egyptian" },

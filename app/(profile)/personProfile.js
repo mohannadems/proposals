@@ -166,6 +166,33 @@ const PersonProfile = () => {
             )}
           </View>
         ))}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Location Information</Text>
+          <FormDropdown
+            control={control}
+            name="nationality_id"
+            label="Nationality"
+            items={PROFILE_DATA.nationalities}
+            required
+          />
+
+          <FormDropdown
+            control={control}
+            name="country_of_residence_id"
+            label="Country of Residence"
+            items={PROFILE_DATA.countries}
+            required
+          />
+
+          {/* City dropdown that depends on selected country */}
+          <FormDropdown
+            control={control}
+            name="city_id"
+            label="City"
+            items={PROFILE_DATA.cities[watch("country_of_residence_id")] || []}
+            required
+          />
+        </View>
       </View>
     </ScrollView>
   );

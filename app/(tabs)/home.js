@@ -21,7 +21,7 @@ const COLORS = {
   border: "#E5E5EA",
 };
 import { router } from "expo-router";
-
+import statickImage from "../../assets/images/11.jpg";
 const HEADER_MAX_HEIGHT = 250;
 const HEADER_MIN_HEIGHT = 90;
 const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
@@ -97,11 +97,7 @@ const HomeScreen = () => {
           <Text style={styles.nameText}>{user.name} ✨</Text>
         </View>
         <TouchableOpacity
-          onPress={() =>
-            router.push({
-              pathname: "/(profile)/fillProfileData",
-            })
-          }
+          onPress={() => router.push("/(profile)/FillProfileData")}
           style={styles.completeProfileButton}
         >
           <Text style={styles.completeProfileText}>Complete Profile</Text>
@@ -129,10 +125,7 @@ const HomeScreen = () => {
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         {[1, 2, 3].map((index) => (
           <TouchableOpacity key={index} style={styles.matchCard}>
-            <Image
-              source={{ uri: "https://via.placeholder.com/150" }}
-              style={styles.matchImage}
-            />
+            <Image source={statickImage} style={styles.matchImage} />
             <View style={styles.matchOverlay}>
               <View style={styles.matchBadge}>
                 <Text style={styles.matchPercentage}>95% Match</Text>
@@ -235,6 +228,7 @@ const styles = StyleSheet.create({
   headerBackground: {
     flex: 1,
     backgroundColor: COLORS.primary,
+    paddingTop: 60,
   },
   headerContent: {
     flex: 1,
