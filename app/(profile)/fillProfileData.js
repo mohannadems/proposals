@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import {
   View,
   ScrollView,
@@ -51,6 +51,7 @@ const FORM_STEPS = [
     icon: "briefcase",
   },
 ];
+// Part 2: Initial Form State & Error Modal
 const initialFormState = {
   bio_en: "",
   bio_ar: "",
@@ -80,6 +81,7 @@ const initialFormState = {
   financial_status_id: null,
   hijab_status: null,
 };
+
 const ErrorModal = ({ visible, errors, onClose }) => {
   return (
     <Modal
@@ -96,6 +98,7 @@ const ErrorModal = ({ visible, errors, onClose }) => {
             Please review the following:
           </Text>
           <ScrollView
+            showsVerticalScrollIndicator={false}
             style={styles.errorScrollView}
             contentContainerStyle={styles.errorScrollContent}
           >
@@ -114,7 +117,10 @@ const ErrorModal = ({ visible, errors, onClose }) => {
     </Modal>
   );
 };
+
+// Part 3: Component Setup & Handlers
 const FillProfileData = () => {
+  const scrollViewRef = useRef(null);
   const navigation = useNavigation();
 
   const [currentStep, setCurrentStep] = useState(1);
@@ -142,6 +148,7 @@ const FillProfileData = () => {
           useNativeDriver: true,
         }).start(() => {
           setCurrentStep((prev) => Math.min(prev + 1, FORM_STEPS.length));
+          scrollViewRef.current?.scrollTo({ y: 0, animated: true });
           Animated.timing(fadeAnim, {
             toValue: 1,
             duration: 200,
@@ -189,11 +196,8 @@ const FillProfileData = () => {
 
   const onSubmit = async (data) => {
     try {
-      console.log("Form Values Before Submit:", data);
-
       setIsSubmitting(true);
 
-      // Convert the date to the required format (YYYY-MM-DD)
       const formatDate = (date) => {
         if (!date) return null;
         const d = new Date(date);
@@ -203,15 +207,12 @@ const FillProfileData = () => {
         )}-${String(d.getDate()).padStart(2, "0")}`;
       };
 
-      // Prepare data with exact types required by the API
       const submissionData = {
-        // Required text fields
         bio_en: String(data.bio_en || ""),
         bio_ar: String(data.bio_ar || ""),
         date_of_birth: formatDate(data.date_of_birth),
         guardian_contact: String(data.guardian_contact || ""),
-
-        // Required integer fields
+        gender: String(data.gender || ""),
         height: Number(data.height) || null,
         weight: Number(data.weight) || null,
         nationality_id: Number(data.nationality_id) || null,
@@ -223,83 +224,76 @@ const FillProfileData = () => {
         religion_id: Number(data.religion_id) || null,
         marital_status_id: Number(data.marital_status_id) || null,
         financial_status_id: Number(data.financial_status_id) || null,
-
-        // Boolean fields
         employment_status: data.employment_status === true,
         car_ownership: Boolean(data.car_ownership) === true,
-
-        // Optional integer fields
         specialization_id: Number(data.specialization_id) || null,
-
-        // Convert smoking_status to boolean
-        smoking_status: data.smoking_status > 0, // true for smoker, false for non-smoker
-
         drinking_status_id: Number(data.drinking_status_id) || null,
         sports_activity_id: Number(data.sports_activity_id) || null,
         social_media_presence_id: Number(data.social_media_presence_id) || null,
         housing_status_id: Number(data.housing_status_id) || null,
         number_of_children: Number(data.number_of_children) || 0,
         zodiac_sign_id: Number(data.zodiac_sign_id) || null,
-
-        // Conditional array fields
-        // Conditional array fields
-        smoking_tools:
-          data.smoking_status > 1 && // Changed from > 0
-          Array.isArray(data.smoking_tools) &&
-          data.smoking_tools.length > 0
-            ? data.smoking_tools.map(Number)
-            : [], // Always send an empty array for non-smokers
         hobbies: Array.isArray(data.hobbies) ? data.hobbies.map(Number) : [],
         pets: Array.isArray(data.pets) ? data.pets.map(Number) : [],
-
-        // Optional text fields
         health_issues_en: String(data.health_issues_en || ""),
         health_issues_ar: String(data.health_issues_ar || ""),
       };
 
-      // Add hijab_status only for females
-      if (data.gender === "female") {
-        submissionData.hijab_status = Number(data.hijab_status);
+      // Handle smoking status
+      submissionData.smoking_status = Number(data.smoking_status) === 1 ? 0 : 1; // 1 for smokers, 0 for non-smokers
+
+      // Include smoking_tools only for smokers
+      if (Number(data.smoking_status) > 1) {
+        submissionData.smoking_tools = Array.isArray(data.smoking_tools)
+          ? data.smoking_tools.map(Number)
+          : [];
       }
 
-      // Remove any null values
+      // Handle hijab status
+      if (data.gender === "female") {
+        submissionData.hijab_status = Number(data.hijab_status) || 0;
+      }
+
       Object.keys(submissionData).forEach(
         (key) => submissionData[key] === null && delete submissionData[key]
       );
 
-      console.log("Submitting data:", submissionData); // For debugging
-
-      // Call the update profile service
       await profileService.updateProfile(submissionData);
 
+      // Modern success alert with emojis and styling
       Alert.alert(
-        "✨ Profile Updated",
-        "Your profile has been successfully updated!",
+        "🎉 Success!",
+        "Your profile has been updated successfully!",
         [
           {
             text: "Continue",
             onPress: () => navigation.goBack(),
+            style: "default",
           },
-        ]
+        ],
+        { cancelable: false }
       );
     } catch (error) {
       console.error("Profile update failed:", error);
-      console.log("Error response:", error.response?.data); // For debugging
 
-      // Handle validation errors from server
+      // Enhanced error handling with modern styling
       if (error.response?.status === 422) {
         const validationErrors = error.response.data.errors;
         const errorMessages = Object.entries(validationErrors)
-          .map(([field, messages]) => `${field}: ${messages[0]}`)
+          .map(([field, messages]) => `• ${field}: ${messages[0]}`)
           .join("\n");
 
-        Alert.alert("Validation Error", errorMessages, [
-          { text: "OK", style: "cancel" },
-        ]);
+        Alert.alert(
+          "🚨 Validation Error",
+          `Please fix the following issues:\n\n${errorMessages}`,
+          [{ text: "OK", style: "cancel" }]
+        );
       } else {
-        Alert.alert("Error", "Failed to update profile. Please try again.", [
-          { text: "OK", style: "cancel" },
-        ]);
+        Alert.alert(
+          "❌ Error",
+          "Failed to update profile. Please check your connection and try again.",
+          [{ text: "OK", style: "cancel" }]
+        );
       }
     } finally {
       setIsSubmitting(false);
@@ -348,7 +342,6 @@ const FillProfileData = () => {
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             style={styles.container}
           >
-            {/* Header with Back Button */}
             <View style={styles.header}>
               <TouchableOpacity
                 onPress={() => navigation.goBack()}
@@ -364,14 +357,12 @@ const FillProfileData = () => {
               </View>
             </View>
 
-            {/* Progress Indicator */}
             <ProgressSteps
               steps={FORM_STEPS}
               currentStep={currentStep}
               style={styles.stepIndicator}
             />
 
-            {/* Content with Fade Animation */}
             <Animated.View
               style={[
                 styles.content,
@@ -389,6 +380,7 @@ const FillProfileData = () => {
               ]}
             >
               <ScrollView
+                ref={scrollViewRef}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollViewContent}
               >
@@ -396,7 +388,6 @@ const FillProfileData = () => {
               </ScrollView>
             </Animated.View>
 
-            {/* Footer Navigation */}
             <View style={styles.footer}>
               {currentStep > 1 && (
                 <TouchableOpacity
@@ -407,7 +398,6 @@ const FillProfileData = () => {
                   <Text style={styles.buttonTextSecondary}>Previous</Text>
                 </TouchableOpacity>
               )}
-
               <TouchableOpacity
                 style={[styles.button, styles.buttonPrimary]}
                 onPress={
@@ -433,8 +423,6 @@ const FillProfileData = () => {
                 )}
               </TouchableOpacity>
             </View>
-
-            {/* Error Modal */}
             <ErrorModal
               visible={errorModalVisible}
               errors={currentErrors}

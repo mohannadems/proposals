@@ -18,7 +18,7 @@ import styles from "../../styles/ProfileScreenStyles";
 
 // Utility function to get color based on completion percentage
 const getProgressColor = (value) => {
-  if (value >= 100) return COLORS.success || "#4CAF50";
+  if (value >= 100) return COLORS.primary || "#4CAF50";
   if (value >= 70) return COLORS.info || "#2196F3";
   if (value >= 40) return COLORS.warning || "#FFC107";
   return COLORS.error || "#FF5722";
@@ -45,7 +45,7 @@ const ProfileSection = ({ title, children, fields, profile }) => {
         styles.section,
         completion >= 100 && {
           borderLeftWidth: 4,
-          borderLeftColor: COLORS.success,
+          borderLeftColor: COLORS.primary,
         },
       ]}
     >
@@ -73,7 +73,7 @@ const ProfileSection = ({ title, children, fields, profile }) => {
               <MaterialIcons
                 name="check-circle"
                 size={20}
-                color={COLORS.success}
+                color={COLORS.primary}
               />
             )}
           </View>
@@ -94,13 +94,13 @@ const ProfileItem = ({ icon, label, value, isRequired = false }) => {
     <View
       style={[
         styles.profileItem,
-        isComplete && { backgroundColor: COLORS.success + "10" },
+        isComplete && { backgroundColor: COLORS.primary + "10" },
       ]}
     >
       <MaterialIcons
         name={icon}
         size={24}
-        color={isComplete ? COLORS.success : COLORS.primary}
+        color={isComplete ? COLORS.primary : COLORS.primary}
       />
       <View style={styles.profileItemContent}>
         <Text style={styles.itemLabel}>
@@ -108,7 +108,7 @@ const ProfileItem = ({ icon, label, value, isRequired = false }) => {
           {isRequired && <Text style={{ color: COLORS.error }}> *</Text>}
         </Text>
         <Text
-          style={[styles.itemValue, isComplete && { color: COLORS.success }]}
+          style={[styles.itemValue, isComplete && { color: COLORS.primary }]}
         >
           {displayValue || "Not provided"}
         </Text>
@@ -117,7 +117,7 @@ const ProfileItem = ({ icon, label, value, isRequired = false }) => {
         <MaterialIcons
           name="check"
           size={16}
-          color={COLORS.success}
+          color={COLORS.primary}
           style={{ marginLeft: 8 }}
         />
       )}
@@ -270,7 +270,7 @@ export default function ProfileScreen() {
             style={[
               styles.avatar,
               progress === 100 && {
-                borderColor: COLORS.success,
+                borderColor: COLORS.primary,
                 borderWidth: 4,
               },
             ]}
@@ -557,7 +557,7 @@ export default function ProfileScreen() {
         {progress === 100 && (
           <View
             style={{
-              backgroundColor: COLORS.success + "15",
+              backgroundColor: COLORS.primary + "15",
               padding: 16,
               borderRadius: 12,
               marginTop: 8,
@@ -570,12 +570,12 @@ export default function ProfileScreen() {
             <MaterialIcons
               name="check-circle"
               size={24}
-              color={COLORS.success}
+              color={COLORS.primary}
               style={{ marginRight: 8 }}
             />
             <Text
               style={{
-                color: COLORS.success,
+                color: COLORS.primary,
                 fontSize: 16,
                 fontWeight: "500",
               }}
