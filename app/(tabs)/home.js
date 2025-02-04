@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,31 +9,41 @@ import {
   Animated,
   Dimensions,
 } from "react-native";
-
-const COLORS = {
-  primary: "#B65165",
-  secondary: "#5856D6",
-  background: "#F8F9FA",
-  white: "#FFFFFF",
-  text: "#1C1C1E",
-  error: "#FF3B30",
-  success: "#34C759",
-  border: "#E5E5EA",
-};
 import { router } from "expo-router";
-import statickImage from "../../assets/images/11.jpg";
-const HEADER_MAX_HEIGHT = 250;
-const HEADER_MIN_HEIGHT = 90;
+import { Feather } from "@expo/vector-icons";
+import { TYPOGRAPHY } from "../../constants/typography";
+import { COLORS } from "../../constants/colors";
+
+const HEADER_MAX_HEIGHT = 200;
+const HEADER_MIN_HEIGHT = 80;
 const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
 
 const HomeScreen = () => {
   const scrollY = new Animated.Value(0);
-  const [user] = useState({
-    name: "Alex",
+  const [user, setUser] = useState({
+    name: "Ahmed",
     age: 28,
     profileCompletion: 65,
-    missingFields: ["photos", "work", "bio"],
+    missingFields: ["photos", "education", "profession"],
   });
+  const [showProfileCompletion, setShowProfileCompletion] = useState(true);
+
+  useEffect(() => {
+    // Check if it's the user's first login or if they haven't completed their profile
+    // This is where you'd typically check your app's state or make an API call
+    const checkProfileCompletion = async () => {
+      // Simulating an API call or state check
+      const isFirstLogin = await localStorage.getItem("isFirstLogin");
+      if (isFirstLogin === null) {
+        setShowProfileCompletion(true);
+        localStorage.setItem("isFirstLogin", "false");
+      } else {
+        setShowProfileCompletion(user.profileCompletion < 100);
+      }
+    };
+
+    checkProfileCompletion();
+  }, []);
 
   const headerHeight = scrollY.interpolate({
     inputRange: [0, HEADER_SCROLL_DISTANCE],
@@ -59,23 +69,11 @@ const HomeScreen = () => {
         <Animated.View
           style={[styles.headerContent, { opacity: headerContentOpacity }]}
         >
-          <View style={styles.headerTextContainer}>
-            <Text style={styles.welcomeHeader}>Find Love Today</Text>
-            <Text style={styles.headerQuote}>
-              "Every great love story starts with a simple hello"
-            </Text>
-            <View style={styles.statsContainer}>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>1.2K</Text>
-                <Text style={styles.statLabel}>Active Users</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>85%</Text>
-                <Text style={styles.statLabel}>Match Rate</Text>
-              </View>
-            </View>
-          </View>
+          <Text style={styles.welcomeHeader}>Assalamu Alaikum</Text>
+          <Text style={styles.headerQuote}>
+            "And of His signs is that He created for you from yourselves mates
+            that you may find tranquility in them" - Quran 30:21
+          </Text>
         </Animated.View>
         <Animated.View
           style={[
@@ -83,7 +81,7 @@ const HomeScreen = () => {
             { opacity: headerTitleOpacity },
           ]}
         >
-          <Text style={styles.collapsedHeaderTitle}>Love Journey</Text>
+          <Text style={styles.collapsedHeaderTitle}>Islamic Matrimony</Text>
         </Animated.View>
       </View>
     </Animated.View>
@@ -93,53 +91,67 @@ const HomeScreen = () => {
     <View style={styles.profileCard}>
       <View style={styles.profileCardHeader}>
         <View>
-          <Text style={styles.welcomeText}>Welcome back,</Text>
-          <Text style={styles.nameText}>{user.name} ✨</Text>
+          <Text style={styles.welcomeText}>Welcome,</Text>
+          <Text style={styles.nameText}>{user.name}</Text>
         </View>
-        <TouchableOpacity
-          onPress={() => router.push("/(profile)/FillProfileData")}
-          style={styles.completeProfileButton}
-        >
-          <Text style={styles.completeProfileText}>Complete Profile</Text>
-          <Text style={styles.completeProfilePercentage}>
-            {user.profileCompletion}%
-          </Text>
-        </TouchableOpacity>
+        {showProfileCompletion && (
+          <TouchableOpacity
+            onPress={() => router.push("/(profile)/FillProfileData")}
+            style={styles.completeProfileButton}
+          >
+            <Text style={styles.completeProfileText}>Complete Profile</Text>
+            <Text style={styles.completeProfilePercentage}>
+              {user.profileCompletion}%
+            </Text>
+          </TouchableOpacity>
+        )}
       </View>
-      <View style={styles.progressBarContainer}>
-        <View
-          style={[styles.progressBar, { width: `${user.profileCompletion}%` }]}
-        />
-      </View>
+      {showProfileCompletion && (
+        <View style={styles.progressBarContainer}>
+          <View
+            style={[
+              styles.progressBar,
+              { width: `${user.profileCompletion}%` },
+            ]}
+          />
+        </View>
+      )}
+      {showProfileCompletion && (
+        <Text style={styles.missingFieldsText}>
+          Please complete: {user.missingFields.join(", ")}
+        </Text>
+      )}
     </View>
   );
 
-  const renderDailyMatches = () => (
-    <View style={styles.matchesSection}>
+  const renderFeaturedProfiles = () => (
+    <View style={styles.featuredSection}>
       <View style={styles.sectionHeaderRow}>
-        <Text style={styles.sectionTitle}>Perfect Matches</Text>
+        <Text style={styles.sectionTitle}>Featured Profiles</Text>
         <TouchableOpacity style={styles.viewAllButton}>
           <Text style={styles.viewAllText}>View All</Text>
         </TouchableOpacity>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         {[1, 2, 3].map((index) => (
-          <TouchableOpacity key={index} style={styles.matchCard}>
-            <Image source={statickImage} style={styles.matchImage} />
-            <View style={styles.matchOverlay}>
-              <View style={styles.matchBadge}>
-                <Text style={styles.matchPercentage}>95% Match</Text>
-              </View>
-            </View>
-            <View style={styles.matchInfo}>
-              <Text style={styles.matchName}>Sarah, 26</Text>
-              <Text style={styles.matchLocation}>2 miles away</Text>
-              <View style={styles.matchTags}>
+          <TouchableOpacity key={index} style={styles.featuredCard}>
+            <Image
+              source={{
+                uri: `https://randomuser.me/api/portraits/${
+                  index % 2 === 0 ? "women" : "men"
+                }/${index}.jpg`,
+              }}
+              style={styles.featuredImage}
+            />
+            <View style={styles.featuredInfo}>
+              <Text style={styles.featuredName}>Fatima, 26</Text>
+              <Text style={styles.featuredLocation}>Riyadh, Saudi Arabia</Text>
+              <View style={styles.featuredTags}>
                 <View style={styles.tag}>
-                  <Text style={styles.tagText}>Artist</Text>
+                  <Text style={styles.tagText}>Doctor</Text>
                 </View>
                 <View style={styles.tag}>
-                  <Text style={styles.tagText}>Travel</Text>
+                  <Text style={styles.tagText}>Hafiz</Text>
                 </View>
               </View>
             </View>
@@ -149,25 +161,73 @@ const HomeScreen = () => {
     </View>
   );
 
-  const renderNearbySection = () => (
-    <View style={styles.nearbySection}>
+  const renderEvents = () => (
+    <View style={styles.eventsSection}>
       <View style={styles.sectionHeaderRow}>
-        <Text style={styles.sectionTitle}>Nearby Singles</Text>
-        <TouchableOpacity style={styles.filterButton}>
-          <Text style={styles.filterText}>Filter</Text>
+        <Text style={styles.sectionTitle}>Upcoming Events</Text>
+        <TouchableOpacity style={styles.viewAllButton}>
+          <Text style={styles.viewAllText}>View All</Text>
         </TouchableOpacity>
       </View>
-      <View style={styles.nearbyGrid}>
-        {[1, 2, 3, 4].map((index) => (
-          <TouchableOpacity key={index} style={styles.nearbyCard}>
-            <Image
-              source={{ uri: "https://via.placeholder.com/150" }}
-              style={styles.nearbyImage}
-            />
-            <View style={styles.nearbyInfo}>
-              <Text style={styles.nearbyName}>Jessica, 24</Text>
-              <Text style={styles.nearbyDistance}>1.5 miles</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {[
+          {
+            title: "Islamic Marriage Seminar",
+            date: "May 15, 2025",
+            location: "Grand Mosque",
+          },
+          {
+            title: "Meet & Greet for Singles",
+            date: "May 20, 2025",
+            location: "Community Center",
+          },
+          {
+            title: "Pre-Marital Workshop",
+            date: "May 25, 2025",
+            location: "Islamic Institute",
+          },
+        ].map((event, index) => (
+          <TouchableOpacity key={index} style={styles.eventCard}>
+            <View style={styles.eventIconContainer}>
+              <Feather name="calendar" size={24} color={COLORS.primary} />
             </View>
+            <View style={styles.eventInfo}>
+              <Text style={styles.eventTitle}>{event.title}</Text>
+              <Text style={styles.eventDate}>{event.date}</Text>
+              <Text style={styles.eventLocation}>{event.location}</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </View>
+  );
+
+  const renderArticles = () => (
+    <View style={styles.articlesSection}>
+      <View style={styles.sectionHeaderRow}>
+        <Text style={styles.sectionTitle}>Islamic Guidance</Text>
+        <TouchableOpacity style={styles.viewAllButton}>
+          <Text style={styles.viewAllText}>View All</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={styles.articlesGrid}>
+        {[
+          { title: "The Importance of Marriage in Islam", icon: "heart" },
+          {
+            title: "Rights and Responsibilities in Marriage",
+            icon: "book-open",
+          },
+          { title: "Selecting a Spouse: Islamic Perspective", icon: "users" },
+          {
+            title: "Preparing for Marriage: A Muslim Guide",
+            icon: "clipboard",
+          },
+        ].map((article, index) => (
+          <TouchableOpacity key={index} style={styles.articleCard}>
+            <View style={styles.articleIconContainer}>
+              <Feather name={article.icon} size={24} color={COLORS.primary} />
+            </View>
+            <Text style={styles.articleTitle}>{article.title}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -188,24 +248,11 @@ const HomeScreen = () => {
       >
         <View style={{ marginTop: HEADER_MAX_HEIGHT }}>
           {renderProfileCard()}
-          {renderDailyMatches()}
-          {renderNearbySection()}
+          {renderFeaturedProfiles()}
+          {renderEvents()}
+          {renderArticles()}
         </View>
       </Animated.ScrollView>
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem}>
-          <Text style={styles.navText}>Explore</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
-          <Text style={[styles.navText, styles.navTextActive]}>Matches</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Text style={styles.navText}>Chat</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Text style={styles.navText}>Profile</Text>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 };
@@ -235,47 +282,22 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 20,
   },
-  headerTextContainer: {
-    alignItems: "center",
-  },
   welcomeHeader: {
+    ...TYPOGRAPHY.h1,
     fontSize: 32,
     fontWeight: "bold",
     color: COLORS.white,
     marginBottom: 8,
+    textAlign: "center",
   },
   headerQuote: {
     fontSize: 16,
     color: COLORS.white,
     opacity: 0.9,
     textAlign: "center",
-    marginBottom: 20,
-  },
-  statsContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
     marginTop: 10,
-  },
-  statItem: {
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: COLORS.white,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: COLORS.white,
-    opacity: 0.8,
-  },
-  statDivider: {
-    width: 1,
-    height: 30,
-    backgroundColor: COLORS.white,
-    opacity: 0.3,
+    fontStyle: "italic",
+    ...TYPOGRAPHY.bodyMedium,
   },
   collapsedHeaderContent: {
     position: "absolute",
@@ -294,6 +316,7 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 100,
   },
+
   profileCard: {
     backgroundColor: COLORS.white,
     margin: 16,
@@ -310,6 +333,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 15,
+  },
+  welcomeText: {
+    fontSize: 16,
+    color: COLORS.text,
+  },
+  nameText: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: COLORS.primary,
   },
   completeProfileButton: {
     backgroundColor: COLORS.primary + "15",
@@ -328,8 +360,24 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginTop: 2,
   },
-  // ... (continuing with more styles)
-  matchesSection: {
+  progressBarContainer: {
+    height: 6,
+    backgroundColor: COLORS.border,
+    borderRadius: 3,
+    marginTop: 10,
+  },
+  progressBar: {
+    height: "100%",
+    backgroundColor: COLORS.primary,
+    borderRadius: 3,
+  },
+  missingFieldsText: {
+    marginTop: 10,
+    fontSize: 14,
+    color: COLORS.text,
+    fontStyle: "italic",
+  },
+  featuredSection: {
     marginBottom: 24,
     paddingLeft: 16,
   },
@@ -339,6 +387,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingRight: 16,
     marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: COLORS.text,
   },
   viewAllButton: {
     paddingVertical: 6,
@@ -351,7 +404,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
   },
-  matchCard: {
+  featuredCard: {
     width: 200,
     marginRight: 16,
     borderRadius: 20,
@@ -363,40 +416,24 @@ const styles = StyleSheet.create({
     elevation: 5,
     overflow: "hidden",
   },
-  matchImage: {
+  featuredImage: {
     width: "100%",
-    height: 250,
+    height: 200,
   },
-  matchOverlay: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-  },
-  matchBadge: {
-    backgroundColor: "rgba(255,255,255,0.9)",
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 12,
-  },
-  matchPercentage: {
-    color: COLORS.primary,
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  matchInfo: {
+  featuredInfo: {
     padding: 16,
   },
-  matchName: {
+  featuredName: {
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 4,
   },
-  matchLocation: {
+  featuredLocation: {
     fontSize: 14,
     color: "#666",
     marginBottom: 8,
   },
-  matchTags: {
+  featuredTags: {
     flexDirection: "row",
     gap: 8,
   },
@@ -410,40 +447,83 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.text,
   },
-  nearbySection: {
-    padding: 16,
+  eventsSection: {
+    marginBottom: 24,
+    paddingLeft: 16,
   },
-  nearbyGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 16,
-  },
-  nearbyCard: {
-    width: "47%",
-    borderRadius: 16,
+  eventCard: {
+    width: 250,
+    marginRight: 16,
+    borderRadius: 20,
     backgroundColor: COLORS.white,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 12,
     elevation: 5,
-    overflow: "hidden",
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
   },
-  nearbyImage: {
-    width: "100%",
-    height: 180,
+  eventIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: COLORS.primary + "15",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 16,
   },
-  nearbyInfo: {
-    padding: 12,
+  eventInfo: {
+    flex: 1,
   },
-  nearbyName: {
+  eventTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 4,
+  },
+  eventDate: {
+    fontSize: 14,
+    color: COLORS.secondary,
+    marginBottom: 2,
+  },
+  eventLocation: {
+    fontSize: 14,
+    color: "#666",
+  },
+  articlesSection: {
+    padding: 16,
+  },
+  articlesGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  articleCard: {
+    width: "48%",
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  articleIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: COLORS.primary + "15",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  articleTitle: {
     fontSize: 16,
     fontWeight: "600",
-  },
-  nearbyDistance: {
-    fontSize: 12,
-    color: "#666",
-    marginTop: 2,
+    color: COLORS.text,
   },
   bottomNav: {
     position: "absolute",
@@ -467,8 +547,9 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   navText: {
-    fontSize: 14,
+    fontSize: 12,
     color: COLORS.text,
+    marginTop: 4,
   },
   navTextActive: {
     color: COLORS.primary,

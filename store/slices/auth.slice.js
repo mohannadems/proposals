@@ -1,7 +1,11 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import api from "../../services/api";
 import { authService } from "../../services/auth.service";
+import { ENDPOINTS } from "../../constants/endpoints";
 import { setAuthToken } from "../../services/api";
 
+// Initial State
 const initialState = {
   user: null,
   tokens: null,
@@ -11,6 +15,7 @@ const initialState = {
   tempEmail: null,
 };
 
+// Login Thunk
 export const login = createAsyncThunk(
   "auth/login",
   async (credentials, { rejectWithValue }) => {
@@ -25,6 +30,7 @@ export const login = createAsyncThunk(
   }
 );
 
+// Register Thunk
 export const register = createAsyncThunk(
   "auth/register",
   async (userData, { rejectWithValue }) => {
@@ -39,15 +45,36 @@ export const register = createAsyncThunk(
   }
 );
 
+// Logout Thunk
+export const logout = createAsyncThunk(
+  "auth/logout",
+  async (_, { rejectWithValue }) => {
+    try {
+      // Optional: Call backend logout endpoint
+      await api.post(ENDPOINTS.LOGOUT);
+
+      // Clear local storage
+      await AsyncStorage.removeItem("userToken");
+      await AsyncStorage.removeItem("userData");
+
+      // Reset auth token
+      setAuthToken(null);
+
+      return true;
+    } catch (error) {
+      console.error("Logout error:", error);
+      return rejectWithValue(error.response?.data || "Logout failed");
+    }
+  }
+);
+
+// Verify OTP Thunk
 export const verifyOTP = createAsyncThunk(
   "auth/verifyOTP",
   async (otpData, { rejectWithValue }) => {
     try {
-      const response = await api.post("/verify-otp", {
-        email: otpData.email,
-        otp: otpData.otp,
-      });
-      return response.data;
+      const response = await authService.verifyOTP(otpData);
+      return response;
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "OTP verification failed"
@@ -56,24 +83,18 @@ export const verifyOTP = createAsyncThunk(
   }
 );
 
+// Auth Slice
 const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    logout: (state) => {
-      state.user = null;
-      state.tokens = null;
-      state.isAuthenticated = false;
-      state.tempEmail = null;
-      setAuthToken(null);
-    },
     setTempEmail: (state, action) => {
       state.tempEmail = action.payload;
     },
   },
   extraReducers: (builder) => {
     builder
-      // Login
+      // Login Cases
       .addCase(login.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -82,15 +103,15 @@ const authSlice = createSlice({
         state.loading = false;
         state.tokens = action.payload.data;
         state.isAuthenticated = true;
-        // Fix the token path to match your response structure
         setAuthToken(action.payload.data.access_token);
       })
-
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || "Login failed";
+        state.isAuthenticated = false;
       })
-      // Register
+
+      // Register Cases
       .addCase(register.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -103,7 +124,8 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.payload?.message || "Registration failed";
       })
-      // Verify OTP
+
+      // Verify OTP Cases
       .addCase(verifyOTP.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -117,9 +139,30 @@ const authSlice = createSlice({
       .addCase(verifyOTP.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload?.message || "OTP verification failed";
+      })
+
+      // Logout Cases
+      .addCase(logout.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(logout.fulfilled, (state) => {
+        state.loading = false;
+        state.user = null;
+        state.tokens = null;
+        state.isAuthenticated = false;
+        state.tempEmail = null;
+      })
+      .addCase(logout.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Logout failed";
+        // Ensure authentication state is reset even on failure
+        state.isAuthenticated = false;
+        state.user = null;
+        state.tokens = null;
       });
   },
 });
 
-export const { logout, setTempEmail } = authSlice.actions;
+export const { setTempEmail } = authSlice.actions;
 export default authSlice.reducer;

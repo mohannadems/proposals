@@ -28,6 +28,7 @@ import { profileService } from "../../services/profile.service";
 import { stepValidations } from "../../utils/profile-validation";
 import { stepFields } from "../../utils/profile-validation";
 import Feather from "react-native-vector-icons/Feather";
+import ProfileImageSection from "../../components/profile/profile-steps/ProfileImageSection";
 
 const { width, height } = Dimensions.get("window");
 
@@ -49,6 +50,12 @@ const FORM_STEPS = [
     title: "Professional Journey",
     description: "Education and career path",
     icon: "briefcase",
+  },
+  {
+    id: 4,
+    title: "Profile Picture",
+    description: "Choose your profile image",
+    icon: "camera",
   },
 ];
 // Part 2: Initial Form State & Error Modal
@@ -80,6 +87,7 @@ const initialFormState = {
   guardian_contact: "",
   financial_status_id: null,
   hijab_status: null,
+  profile_image: [],
 };
 
 const ErrorModal = ({ visible, errors, onClose }) => {
@@ -105,7 +113,7 @@ const ErrorModal = ({ visible, errors, onClose }) => {
             {errors.map((error, index) => (
               <View key={index} style={styles.errorItem}>
                 <Feather name="x-circle" size={18} color="#FF6B6B" />
-                <Text style={styles.errorItemText}>{error}</Text>
+                <Text style={styles.backButton}>{error}</Text>
               </View>
             ))}
           </ScrollView>
@@ -237,7 +245,19 @@ const FillProfileData = () => {
         pets: Array.isArray(data.pets) ? data.pets.map(Number) : [],
         health_issues_en: String(data.health_issues_en || ""),
         health_issues_ar: String(data.health_issues_ar || ""),
+        origin_id: Number(data.origin) || null,
+        zodiac_sign_id: Number(data.zodiac_sign) || null,
+        job_title: String(data.job_title || ""),
+        position_level: Number(data.position_level) || null,
+        social_media_presence_id: Number(data.social_media_presence) || null,
+        photos: Array.isArray(data.photos)
+          ? data.photos.filter((item) => !isNaN(item)).map(Number)
+          : [],
       };
+      if (data.employment_status === true) {
+        submissionData.job_title = String(data.job_title || "");
+        submissionData.position_level = Number(data.position_level) || null;
+      }
 
       // Handle smoking status
       submissionData.smoking_status = Number(data.smoking_status) === 1 ? 0 : 1; // 1 for smokers, 0 for non-smokers
@@ -258,6 +278,13 @@ const FillProfileData = () => {
         (key) => submissionData[key] === null && delete submissionData[key]
       );
 
+      await profileService.updateProfile(submissionData);
+      if (data.profile_image && data.profile_image.base64) {
+        submissionData.profile_image = {
+          base64: data.profile_image.base64,
+          type: data.profile_image.type || "image/jpeg",
+        };
+      }
       await profileService.updateProfile(submissionData);
 
       // Modern success alert with emojis and styling
@@ -329,6 +356,8 @@ const FillProfileData = () => {
         return <LifestyleSection />;
       case 3:
         return <EducationWorkSection />;
+      case 4:
+        return <ProfileImageSection />;
       default:
         return null;
     }
@@ -436,7 +465,12 @@ const FillProfileData = () => {
 };
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: "100%", // Ensure it covers the whole screen
+    backgroundColor: "#F4F7FA",
   },
   gradientBackground: {
     flex: 1,
@@ -484,6 +518,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     shadowColor: "#000",
+    backgroundColor: "#fff",
     shadowOffset: {
       width: 0,
       height: 2,

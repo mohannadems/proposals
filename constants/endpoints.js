@@ -5,4 +5,5 @@ export const ENDPOINTS = {
   VERIFY_OTP: "/verify-otp",
   FETCH_PROFILE: "/me",
   FETCH_DETAILED_PROFILE: "/profile",
+  LOGOUT: "/logout",
 };

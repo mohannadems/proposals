@@ -12,6 +12,8 @@ export default StyleSheet.create({
     alignItems: "center",
     borderBottomLeftRadius: 25,
     borderBottomRightRadius: 25,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
   },
   logoutButton: {
     position: "absolute",
@@ -188,5 +190,15 @@ export default StyleSheet.create({
   userStatus: {
     fontSize: 14,
     color: "white",
+  },
+  photoContainer: {
+    position: "relative",
+  },
+  uploadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(255, 255, 255, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 60,
   },
 });

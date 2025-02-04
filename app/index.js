@@ -10,8 +10,14 @@ import { useSelector } from "react-redux";
 export default function SplashScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const { isAuthenticated } = useSelector((state) => state.auth);
+  const initialRoute = useRef(null);
 
   useEffect(() => {
+    // Determine the initial route only once
+    if (!initialRoute.current) {
+      initialRoute.current = isAuthenticated ? "/(tabs)/home" : "/welcome";
+    }
+
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 1000,
@@ -19,11 +25,11 @@ export default function SplashScreen() {
     }).start();
 
     const timer = setTimeout(() => {
-      router.replace(isAuthenticated ? "/(tabs)/home" : "/welcome");
+      router.replace(initialRoute.current);
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [fadeAnim, isAuthenticated]); // Added dependencies
+  }, [fadeAnim]); // Remove isAuthenticated from dependencies
 
   return (
     <LinearGradient

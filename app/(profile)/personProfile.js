@@ -13,7 +13,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { COLORS } from "../../constants/colors";
 import { useLocalSearchParams, router } from "expo-router";
-
+import FormDropdown from "../../components/common/FormDropdown";
+import { PROFILE_DATA } from "../../constants/profileData";
 const { width } = Dimensions.get("window");
 
 const PersonProfile = () => {
@@ -169,7 +170,6 @@ const PersonProfile = () => {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Location Information</Text>
           <FormDropdown
-            control={control}
             name="nationality_id"
             label="Nationality"
             items={PROFILE_DATA.nationalities}
@@ -177,7 +177,6 @@ const PersonProfile = () => {
           />
 
           <FormDropdown
-            control={control}
             name="country_of_residence_id"
             label="Country of Residence"
             items={PROFILE_DATA.countries}
@@ -186,10 +185,9 @@ const PersonProfile = () => {
 
           {/* City dropdown that depends on selected country */}
           <FormDropdown
-            control={control}
             name="city_id"
             label="City"
-            items={PROFILE_DATA.cities[watch("country_of_residence_id")] || []}
+            items={PROFILE_DATA.cities["country_of_residence_id"] || []}
             required
           />
         </View>

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -7,14 +7,20 @@ import {
   ActivityIndicator,
   Image,
   Animated,
+  RefreshControl,
+  Platform,
+  Alert,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigation } from "@react-navigation/native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../../constants/colors";
 import { fetchProfile } from "../../store/slices/profile.slice";
 import { logout } from "../../store/slices/auth.slice";
 import styles from "../../styles/ProfileScreenStyles";
+import { useRouter } from "expo-router";
+import PhotoUploader from "../../components/profile/PhotoUploader";
 
 // Utility function to get color based on completion percentage
 const getProgressColor = (value) => {
@@ -126,6 +132,8 @@ const ProfileItem = ({ icon, label, value, isRequired = false }) => {
 };
 
 export default function ProfileScreen() {
+  const router = useRouter();
+  const navigation = useNavigation();
   const dispatch = useDispatch();
   const {
     data: profile,
@@ -133,8 +141,48 @@ export default function ProfileScreen() {
     error,
   } = useSelector((state) => state.profile);
 
+  const [refreshing, setRefreshing] = useState(false);
   const progressAnimation = useMemo(() => new Animated.Value(0), []);
 
+  useEffect(() => {
+    dispatch(fetchProfile());
+  }, [dispatch]);
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    dispatch(fetchProfile())
+      .then(() => {
+        setRefreshing(false);
+      })
+      .catch(() => {
+        setRefreshing(false);
+      });
+  }, [dispatch]);
+  const handleLogout = useCallback(() => {
+    Alert.alert("Logout", "Are you sure you want to log out?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await dispatch(logout()).unwrap();
+
+            setTimeout(() => {
+              router.push("/(auth)/login");
+            }, 100);
+          } catch (error) {
+            Alert.alert(
+              "Logout Failed",
+              error?.message || "Unable to logout. Please try again."
+            );
+          }
+        },
+      },
+    ]);
+  }, [dispatch, router]);
   useEffect(() => {
     dispatch(fetchProfile());
   }, [dispatch]);
@@ -208,7 +256,7 @@ export default function ProfileScreen() {
     }
   }, [profile]);
 
-  if (loading) {
+  if (loading && !refreshing) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={COLORS.primary} />
@@ -218,20 +266,20 @@ export default function ProfileScreen() {
   }
 
   if (error) {
+    // Navigate to login after 100ms delay
+    setTimeout(() => {
+      router.push("/(auth)/login");
+    }, 200);
+
     return (
       <View style={styles.errorContainer}>
         <MaterialIcons name="error-outline" size={48} color={COLORS.error} />
         <Text style={styles.errorText}>An error occurred: {error}</Text>
         <TouchableOpacity
           onPress={() => dispatch(fetchProfile())}
-          style={{
-            marginTop: 16,
-            padding: 12,
-            backgroundColor: COLORS.primary,
-            borderRadius: 8,
-          }}
+          style={styles.retryButton}
         >
-          <Text style={{ color: COLORS.white }}>Retry</Text>
+          <Text style={styles.retryButtonText}>Retry</Text>
         </TouchableOpacity>
       </View>
     );
@@ -249,31 +297,38 @@ export default function ProfileScreen() {
   const progress = calculateProgress();
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{
+        flexGrow: 1,
+        // Ensure RefreshControl works correctly on both iOS and Android
+        paddingTop: Platform.OS === "ios" ? 0 : -50,
+      }}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={[COLORS.primary]}
+          tintColor={COLORS.primary}
+          title="Pull to refresh"
+          titleColor={COLORS.primary}
+          progressViewOffset={Platform.OS === "ios" ? 50 : 50}
+        />
+      }
+    >
       <LinearGradient
         colors={[COLORS.primary, COLORS.secondary]}
         style={styles.header}
       >
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={() => dispatch(logout())}
-        >
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <MaterialIcons name="logout" size={24} color={COLORS.white} />
         </TouchableOpacity>
         <View style={styles.profileHeader}>
-          <Image
-            source={
-              profile.profile?.avatar_url
-                ? { uri: profile.profile?.photos[0]?.photo_url }
-                : require("../../assets/images/wh.jpg")
-            }
-            style={[
-              styles.avatar,
-              progress === 100 && {
-                borderColor: COLORS.primary,
-                borderWidth: 4,
-              },
-            ]}
+          <PhotoUploader
+            currentPhotoUrl={profile.profile?.photos[0]?.photo_url}
+            onPhotoUpdate={(newPhotoUrl) => {
+              // Handle any additional UI updates if needed
+            }}
           />
           <Text style={styles.userName}>
             {profile.first_name} {profile.last_name}
@@ -483,7 +538,10 @@ export default function ProfileScreen() {
 
         <ProfileSection
           title="Appearance"
-          fields={sectionFields.appearance}
+          fields={sectionFields.appearance.filter(
+            (field) =>
+              profile.gender === "Female" || field !== "profile.hijab_status"
+          )}
           profile={profile}
         >
           <ProfileItem
@@ -498,12 +556,14 @@ export default function ProfileScreen() {
             value={profile.profile?.hair_color}
             isRequired={true}
           />
-          <ProfileItem
-            icon="face"
-            label="Hijab Status"
-            value={profile.profile?.hijab_status ? "Yes" : "No"}
-            isRequired={true}
-          />
+          {profile.gender === "Female" && (
+            <ProfileItem
+              icon="face"
+              label="Hijab Status"
+              value={profile.profile?.hijab_status ? "Yes" : "No"}
+              isRequired={true}
+            />
+          )}
         </ProfileSection>
 
         <ProfileSection

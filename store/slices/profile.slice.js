@@ -72,6 +72,7 @@ const initialState = {
     guardian_contact: "",
     hijab_status: 0,
     financial_status_id: null,
+    photos: [],
   },
 };
 const profileSlice = createSlice({

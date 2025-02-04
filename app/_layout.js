@@ -6,11 +6,25 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { useFonts } from "expo-font";
 import { ActivityIndicator, View } from "react-native";
 import { globalStyles } from "../styles/GlobalStyles";
+import * as SplashScreen from "expo-splash-screen";
+
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    "YourFont-Regular": require("../assets/fonts/EBGaramond-Italic-VariableFont_wght.ttf"),
-    // Add more font variants as needed
+    "EBGaramond-Italic": require("../assets/fonts/EBGaramond-Italic-VariableFont_wght.ttf"),
+    "EBGaramond-Regular": require("../assets/fonts/EBGaramond-VariableFont_wght.ttf"),
+    "Mulish-Italic": require("../assets/fonts/Mulish-Italic-VariableFont_wght.ttf"),
+    "Mulish-Regular": require("../assets/fonts/Mulish-VariableFont_wght.ttf"),
   });
+
+  useEffect(() => {
+    const prepare = async () => {
+      if (fontsLoaded) {
+        await SplashScreen.hideAsync();
+      }
+    };
+    prepare();
+  }, [fontsLoaded]);
+
   if (!fontsLoaded) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -18,6 +32,7 @@ export default function RootLayout() {
       </View>
     );
   }
+
   return (
     <Provider store={store}>
       <SafeAreaProvider>
@@ -57,33 +72,5 @@ export default function RootLayout() {
         </Stack>
       </SafeAreaProvider>
     </Provider>
-  );
-}
-
-function RootLayoutNav() {
-  return (
-    <Stack>
-      <Stack.Screen
-        name="(auth)"
-        options={{
-          headerShown: false,
-          gestureEnabled: false, // Disable swipe only for auth screens
-        }}
-      />
-      <Stack.Screen
-        name="(tabs)"
-        options={{
-          headerShown: false,
-          gestureEnabled: true, // Enable swipe for other screens
-        }}
-      />
-      <Stack.Screen
-        name="(profile)"
-        options={{
-          headerShown: true,
-          gestureEnabled: true, // Enable swipe for profile screens
-        }}
-      />
-    </Stack>
   );
 }

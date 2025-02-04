@@ -1,9 +1,17 @@
 import React from "react";
-import { View, Text, StyleSheet, Platform, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Platform,
+  ScrollView,
+  TextInput,
+} from "react-native";
 import { useFormContext, Controller } from "react-hook-form";
 import { TouchableOpacity } from "react-native";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import FeatherIcon from "react-native-vector-icons/Feather";
+import MaterialIcon from "react-native-vector-icons/MaterialIcons";
 
 import { COLORS } from "../../../constants/colors";
 import { PROFILE_DATA } from "../../../constants/profileData";
@@ -139,6 +147,39 @@ const EducationWorkSection = () => {
         )}
       />
 
+      {/* Job Details Card (Only when Employed) */}
+      {employment_status === true && (
+        <View style={styles.card}>
+          <CardHeader
+            title="Job Details"
+            iconName="briefcase-outline"
+            description="Your professional information"
+          />
+          <View style={styles.cardContent}>
+            <TextInput
+              style={styles.textInput}
+              placeholder="Job Title"
+              placeholderTextColor={COLORS.text + "80"}
+            />
+
+            <FormDropdown
+              control={control}
+              name="position_level"
+              label="Position Level"
+              items={PROFILE_DATA.position_levels}
+              placeholderTextColor={COLORS.text + "80"}
+              leftIcon={
+                <FeatherIcon
+                  name="arrow-up-right"
+                  size={20}
+                  color={COLORS.primary}
+                />
+              }
+            />
+          </View>
+        </View>
+      )}
+
       {/* Financial Information Card */}
       <View style={styles.card}>
         <CardHeader
@@ -197,6 +238,69 @@ const EducationWorkSection = () => {
         </View>
       </View>
 
+      {/* Social Media Presence Card */}
+      <View style={styles.card}>
+        <CardHeader
+          title="Online Presence"
+          iconName="web"
+          description="Your social media and digital footprint"
+        />
+        <View style={styles.cardContent}>
+          <FormDropdown
+            control={control}
+            name="social_media_presence"
+            label="Social Media Presence"
+            items={PROFILE_DATA.social_media_presences}
+            placeholderTextColor={COLORS.text + "80"}
+            leftIcon={
+              <FeatherIcon name="share-2" size={20} color={COLORS.primary} />
+            }
+          />
+        </View>
+      </View>
+
+      {/* Origin Card */}
+      <View style={styles.card}>
+        <CardHeader
+          title="Origin"
+          iconName="earth"
+          description="Your cultural background"
+        />
+        <View style={styles.cardContent}>
+          <FormDropdown
+            control={control}
+            name="origin"
+            label="Origin"
+            items={PROFILE_DATA.origins}
+            placeholderTextColor={COLORS.text + "80"}
+            leftIcon={
+              <FeatherIcon name="globe" size={20} color={COLORS.primary} />
+            }
+          />
+        </View>
+      </View>
+
+      {/* Zodiac Sign Card */}
+      <View style={styles.card}>
+        <CardHeader
+          title="Cosmic Identity"
+          iconName="zodiac-sagittarius"
+          description="Your astrological sign"
+        />
+        <View style={styles.cardContent}>
+          <FormDropdown
+            control={control}
+            name="zodiac_sign"
+            label="Zodiac Sign"
+            items={PROFILE_DATA.zodiac_signs}
+            placeholderTextColor={COLORS.text + "80"}
+            leftIcon={
+              <MaterialIcon name="stars" size={20} color={COLORS.primary} />
+            }
+          />
+        </View>
+      </View>
+
       {/* Car Ownership Toggle */}
       <Controller
         control={control}
@@ -224,7 +328,6 @@ const EducationWorkSection = () => {
     </ScrollView>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -350,6 +453,13 @@ const styles = StyleSheet.create({
   },
   toggleTextSelected: {
     color: COLORS.white,
+  },
+  textInput: {
+    backgroundColor: COLORS.grayLight,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 16,
+    color: COLORS.text,
   },
 });
 

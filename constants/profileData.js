@@ -167,4 +167,10 @@ export const PROFILE_DATA = {
     { id: 3, name: "Excellent" },
     { id: 4, name: "Poor" },
   ],
+  social_media_presences: [
+    { id: 1, name: "Highly Active" },
+    { id: 2, name: "Moderately Active" },
+    { id: 3, name: "Rarely Active" },
+    { id: 4, name: "Inactive" },
+  ],
 };
