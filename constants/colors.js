@@ -7,4 +7,5 @@ export const COLORS = {
   error: "#FF3B30",
   success: "#34C759",
   border: "#E5E5EA",
+  primaryGradient: ["#B65165", "#D97485"],
 };

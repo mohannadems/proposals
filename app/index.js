@@ -1,6 +1,3 @@
-if (__DEV__) {
-  require("../ReactotronConfig");
-}
 import { useEffect, useRef } from "react";
 import { View, StyleSheet, Image, Animated } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";

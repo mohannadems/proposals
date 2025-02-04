@@ -13,10 +13,10 @@ export default function TabsLayout() {
 
           if (route.name === "home") {
             iconName = "home";
-          } else if (route.name === "search") {
-            iconName = "search";
           } else if (route.name === "matches") {
             iconName = "heart";
+          } else if (route.name === "Search") {
+            iconName = "search";
           } else if (route.name === "profile") {
             iconName = "user";
           }
@@ -56,11 +56,17 @@ export default function TabsLayout() {
           headerShown: false,
         }}
       />
-
       <Tabs.Screen
         name="matches"
         options={{
           title: "Matches",
+          headerShown: false,
+        }}
+      />
+      <Tabs.Screen
+        name="Search"
+        options={{
+          title: "Search",
           headerShown: false,
         }}
       />
