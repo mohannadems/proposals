@@ -1,15 +1,20 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, Image, Alert } from "react-native";
+import { View, TouchableOpacity, Image, Alert } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import { useDispatch } from "react-redux";
-import { updateProfilePhoto } from "../../store/slices/profile.slice";
 import { StyleSheet } from "react-native";
 import { COLORS } from "../../constants/colors";
 import { Feather } from "@expo/vector-icons";
-const PhotoUploader = ({ currentPhotoUrl, onPhotoUpdate }) => {
+import * as ImageManipulator from "expo-image-manipulator";
+import { ActivityIndicator } from "react-native";
+import {
+  fetchProfile,
+  updateProfilePhoto,
+} from "../../store/slices/profile.slice";
+import { isSuccessfulResponse } from "../../utils/profile-validation";
+const PhotoUploader = ({ currentPhotoUrl, onPhotoUpdate, onError }) => {
   const dispatch = useDispatch();
   const [uploading, setUploading] = useState(false);
-  const [isPressed, setIsPressed] = useState(false);
 
   const pickImage = async () => {
     try {
@@ -31,48 +36,66 @@ const PhotoUploader = ({ currentPhotoUrl, onPhotoUpdate }) => {
         quality: 0.8,
       });
 
-      if (!result.canceled) {
+      if (!result.canceled && result.assets && result.assets.length > 0) {
         await handleUpload(result.assets[0].uri);
       }
     } catch (error) {
-      Alert.alert("Error", "Failed to pick image");
+      console.error("Image picking error:", error);
+      Alert.alert("Error", "Failed to pick image. Please try again.");
     }
   };
 
   const handleUpload = async (uri) => {
     setUploading(true);
     try {
-      // Create form data for the upload
       const formData = new FormData();
-
-      // Get the file extension
-      const filename = uri.split("/").pop();
-      const match = /\.(\w+)$/.exec(filename);
-      const type = match ? `image/${match[1]}` : "image/jpeg";
-
-      formData.append("photo", {
+      formData.append("profile_photo", {
         uri,
-        type,
-        name: filename || "photo.jpg",
+        type: "image/jpeg",
+        name: "profile_photo.jpg",
       });
 
-      // Dispatch the update action
       const response = await dispatch(updateProfilePhoto(formData)).unwrap();
 
-      if (response?.photos?.[0]?.photo_url) {
-        onPhotoUpdate(response.photos[0].photo_url);
-        Alert.alert("Success", "Profile photo updated successfully");
+      if (response && response.success) {
+        await updateProfileAndPhoto();
+
+        // Show a modern, customized alert for success
+        Alert.alert(
+          "Photo Updated",
+          response.message ||
+            "Your profile photo has been successfully updated.",
+          [
+            {
+              text: "Great!",
+              style: "default",
+              onPress: () => {
+                // You can add any additional actions here if needed
+              },
+            },
+          ],
+          { cancelable: false }
+        );
       } else {
-        throw new Error("Invalid response format");
+        throw new Error(response.message || "Failed to update profile photo");
       }
     } catch (error) {
-      console.error("Upload error:", error);
+      console.error("Upload error in component:", error);
       Alert.alert(
-        "Upload Failed",
-        error?.message || "Unable to upload photo. Please try again."
+        "Update Failed",
+        error.message || "Unable to update photo. Please try again.",
+        [{ text: "OK", style: "destructive" }]
       );
     } finally {
       setUploading(false);
+    }
+  };
+  const updateProfileAndPhoto = async () => {
+    try {
+      await dispatch(fetchProfile()).unwrap();
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      throw error;
     }
   };
   return (
@@ -80,6 +103,8 @@ const PhotoUploader = ({ currentPhotoUrl, onPhotoUpdate }) => {
       onPress={pickImage}
       disabled={uploading}
       style={styles.photoContainer}
+      accessibilityLabel="Update profile photo"
+      accessibilityHint="Double tap to choose a new profile photo"
     >
       <Image
         source={
@@ -102,6 +127,7 @@ const PhotoUploader = ({ currentPhotoUrl, onPhotoUpdate }) => {
     </TouchableOpacity>
   );
 };
+
 const styles = StyleSheet.create({
   photoContainer: {
     position: "relative",

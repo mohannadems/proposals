@@ -9,14 +9,22 @@ import {
   Alert,
 } from "react-native";
 import { useFormContext } from "react-hook-form";
+import { useDispatch, useSelector } from "react-redux";
 import * as ImagePicker from "expo-image-picker";
 import Feather from "react-native-vector-icons/Feather";
 import { COLORS } from "../../../constants/colors";
+import { updateProfilePhoto } from "../../../store/slices/profile.slice";
 
 const ProfileImageSection = () => {
+  const dispatch = useDispatch();
   const { setValue, watch } = useFormContext();
   const profileImage = watch("profile_image");
   const [imageError, setImageError] = useState("");
+
+  const { loading, error } = useSelector((state) => state.profile);
+  const currentAvatar = useSelector(
+    (state) => state.profile.data.profile?.avatar_url
+  );
 
   const requestPermission = async () => {
     if (Platform.OS !== "web") {
@@ -34,6 +42,33 @@ const ProfileImageSection = () => {
     return true;
   };
 
+  const handleImageUpload = async (selectedImage) => {
+    try {
+      const formData = new FormData();
+
+      formData.append("profile_photo", {
+        uri: selectedImage.uri,
+        type: "image/jpeg",
+        name: "profile_photo.jpg",
+      });
+
+      const response = await dispatch(updateProfilePhoto(formData)).unwrap();
+
+      if (response.error) {
+        throw new Error(response.error);
+      }
+
+      setImageError("");
+    } catch (error) {
+      console.error("Upload error:", error.message || error);
+      setImageError(
+        error.message ||
+          error.errors?.profile_photo?.[0] ||
+          "Failed to upload image. Please try again."
+      );
+    }
+  };
+
   const pickImage = async (type) => {
     try {
       const hasPermission = await requestPermission();
@@ -46,7 +81,6 @@ const ProfileImageSection = () => {
           allowsEditing: true,
           aspect: [1, 1],
           quality: 0.8,
-          base64: true,
         });
       } else {
         result = await ImagePicker.launchImageLibraryAsync({
@@ -54,7 +88,6 @@ const ProfileImageSection = () => {
           allowsEditing: true,
           aspect: [1, 1],
           quality: 0.8,
-          base64: true,
         });
       }
 
@@ -67,13 +100,12 @@ const ProfileImageSection = () => {
           return;
         }
 
-        setImageError("");
-
         setValue("profile_image", {
           uri: selectedImage.uri,
-          base64: selectedImage.base64,
           type: selectedImage.type,
         });
+
+        await handleImageUpload(selectedImage);
       }
     } catch (error) {
       console.error("Image picking error:", error);
@@ -96,10 +128,10 @@ const ProfileImageSection = () => {
       </View>
 
       <View style={styles.imagePickerContainer}>
-        {profileImage ? (
+        {profileImage || currentAvatar ? (
           <View style={styles.imagePreviewContainer}>
             <Image
-              source={{ uri: profileImage.uri }}
+              source={{ uri: profileImage?.uri || currentAvatar }}
               style={styles.profileImage}
             />
             <TouchableOpacity
@@ -118,19 +150,31 @@ const ProfileImageSection = () => {
           </View>
         )}
 
-        {imageError ? <Text style={styles.errorText}>{imageError}</Text> : null}
+        {imageError || error ? (
+          <Text style={styles.errorText}>{imageError || error}</Text>
+        ) : null}
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity
-            style={[styles.actionButton, styles.cameraButton]}
+            style={[
+              styles.actionButton,
+              styles.cameraButton,
+              loading && styles.disabledButton,
+            ]}
             onPress={() => pickImage("camera")}
+            disabled={loading}
           >
             <Feather name="camera" size={20} color={COLORS.white} />
             <Text style={styles.actionButtonText}>Take Photo</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.actionButton, styles.galleryButton]}
+            style={[
+              styles.actionButton,
+              styles.galleryButton,
+              loading && styles.disabledButton,
+            ]}
             onPress={() => pickImage("gallery")}
+            disabled={loading}
           >
             <Feather name="image" size={20} color={COLORS.white} />
             <Text style={styles.actionButtonText}>Choose from Gallery</Text>
@@ -228,6 +272,9 @@ const styles = StyleSheet.create({
     color: COLORS.error,
     marginBottom: 10,
     textAlign: "center",
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
 });
 

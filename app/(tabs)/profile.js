@@ -12,6 +12,7 @@ import {
   Alert,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
+
 import { useNavigation } from "@react-navigation/native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -21,6 +22,9 @@ import { logout } from "../../store/slices/auth.slice";
 import styles from "../../styles/ProfileScreenStyles";
 import { useRouter } from "expo-router";
 import PhotoUploader from "../../components/profile/PhotoUploader";
+import * as ImageManipulator from "expo-image-manipulator";
+import { updateProfilePhoto } from "../../store/slices/profile.slice";
+import * as ImagePicker from "expo-image-picker";
 
 // Utility function to get color based on completion percentage
 const getProgressColor = (value) => {
@@ -132,6 +136,9 @@ const ProfileItem = ({ icon, label, value, isRequired = false }) => {
 };
 
 export default function ProfileScreen() {
+  const [photoUploadError, setPhotoUploadError] = useState(null);
+
+  const [isUploading, setIsUploading] = useState(false);
   const router = useRouter();
   const navigation = useNavigation();
   const dispatch = useDispatch();
@@ -147,16 +154,40 @@ export default function ProfileScreen() {
   useEffect(() => {
     dispatch(fetchProfile());
   }, [dispatch]);
-  const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    dispatch(fetchProfile())
-      .then(() => {
+  const onRefresh = useCallback(
+    async (retries = 3) => {
+      setRefreshing(true);
+      try {
+        const updatedProfile = await dispatch(fetchProfile()).unwrap();
+
+        // Extract profile photo URL
+        const photoUrl =
+          updatedProfile?.profile?.photo_url ||
+          updatedProfile?.data?.profile?.photo_url;
+
+        if (photoUrl) {
+          console.log("Updated profile photo URL:", photoUrl);
+        }
+
         setRefreshing(false);
-      })
-      .catch(() => {
-        setRefreshing(false);
-      });
-  }, [dispatch]);
+      } catch (error) {
+        console.error("Profile refresh error:", error);
+        if (retries > 0) {
+          console.log(
+            `Retrying profile refresh. Attempts left: ${retries - 1}`
+          );
+          setTimeout(() => onRefresh(retries - 1), 1000);
+        } else {
+          setRefreshing(false);
+          Alert.alert(
+            "Error",
+            "Failed to refresh profile. Please try again later."
+          );
+        }
+      }
+    },
+    [dispatch]
+  );
   const handleLogout = useCallback(() => {
     Alert.alert("Logout", "Are you sure you want to log out?", [
       {
@@ -295,7 +326,31 @@ export default function ProfileScreen() {
   }
 
   const progress = calculateProgress();
+  const handlePhotoUpdate = async (formData) => {
+    setIsUploading(true);
+    setPhotoUploadError(null);
 
+    try {
+      const response = await dispatch(updateProfilePhoto(formData)).unwrap();
+      console.log("Photo update response:", JSON.stringify(response, null, 2));
+
+      if (
+        response &&
+        (response.success || response.message === "Image updated successfully.")
+      ) {
+        console.log("Photo update successful, refreshing profile");
+        onRefresh();
+      } else {
+        console.log("Photo update failed with response:", response);
+        throw new Error(response.message || "Failed to update profile photo");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      setPhotoUploadError("Failed to update profile photo. Please try again.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
   return (
     <ScrollView
       style={styles.container}
@@ -323,16 +378,21 @@ export default function ProfileScreen() {
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <MaterialIcons name="logout" size={24} color={COLORS.white} />
         </TouchableOpacity>
-        <View style={styles.profileHeader}>
+        <View style={styles.profileHeader} accessibilityLabel="Profile Header">
           <PhotoUploader
-            currentPhotoUrl={profile.profile?.photos[0]?.photo_url}
-            onPhotoUpdate={(newPhotoUrl) => {
-              // Handle any additional UI updates if needed
+            currentPhotoUrl={profile.profile?.photos?.[0]?.photo_url}
+            onPhotoUpdate={handlePhotoUpdate}
+            onError={(errorMessage) => {
+              setPhotoUploadError(errorMessage);
             }}
+            isUploading={isUploading}
+            uploadError={photoUploadError}
+            accessibilityLabel="Update profile photo"
+            accessibilityHint="Double tap to choose a new profile photo"
           />
           <Text style={styles.userName}>
             {profile.first_name} {profile.last_name}
-            {progress === 100 && " ✓"}
+            {profile.progress === 100 && " ✓"}
           </Text>
           <View style={styles.statusContainer}>
             <View
@@ -346,6 +406,9 @@ export default function ProfileScreen() {
           </View>
           {profile.profile?.bio && (
             <Text style={styles.userBio}>{profile.profile.bio}</Text>
+          )}
+          {photoUploadError && (
+            <Text style={styles.errorText}>{photoUploadError}</Text>
           )}
         </View>
         <View style={styles.progressContainer}>

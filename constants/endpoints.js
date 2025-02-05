@@ -6,4 +6,5 @@ export const ENDPOINTS = {
   FETCH_PROFILE: "/me",
   FETCH_DETAILED_PROFILE: "/profile",
   LOGOUT: "/logout",
+  UPDATE_PROFILE_IMAGE: "/user/profile/photo",
 };

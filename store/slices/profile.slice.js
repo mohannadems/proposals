@@ -34,6 +34,24 @@ export const updateProfile = createAsyncThunk(
     }
   }
 );
+export const updateProfilePhoto = createAsyncThunk(
+  "profile/updatePhoto",
+  async (formData, { rejectWithValue }) => {
+    try {
+      const response = await profileService.updateProfilePhoto(formData);
+      console.log(
+        "Full server response in action:",
+        JSON.stringify(response, null, 2)
+      );
+      return response.data || response; // Return the entire response or its data property
+    } catch (error) {
+      console.error("Photo upload error details:", error);
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to update profile photo"
+      );
+    }
+  }
+);
 
 const initialState = {
   loading: false,
@@ -72,8 +90,12 @@ const initialState = {
     guardian_contact: "",
     hijab_status: 0,
     financial_status_id: null,
-    photos: [],
+    profile: {
+      photos: [],
+      avatar_url: null,
+    },
   },
+  profilePhotoUpdated: false,
 };
 const profileSlice = createSlice({
   name: "profile",
@@ -112,6 +134,41 @@ const profileSlice = createSlice({
       .addCase(updateProfile.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || "Failed to update profile";
+      })
+      .addCase(updateProfilePhoto.fulfilled, (state, action) => {
+        console.log(
+          "Action payload in reducer:",
+          JSON.stringify(action.payload, null, 2)
+        );
+
+        state.loading = false;
+        state.profilePhotoUpdated = true;
+
+        // Find the main photo from the response or use the first photo
+        const mainPhoto =
+          action.payload?.data?.profile?.photos?.find(
+            (photo) => photo.is_main
+          ) || action.payload?.data?.profile?.photos?.[0];
+
+        if (mainPhoto) {
+          // Update the photo URL in the state
+          if (!state.data.profile) {
+            state.data.profile = {};
+          }
+          state.data.profile.photos = [mainPhoto];
+          state.data.profile.avatar_url = mainPhoto.photo_url;
+        }
+      })
+      .addCase(updateProfilePhoto.rejected, (state, action) => {
+        state.loading = false;
+        state.error =
+          action.error.message || "Unable to update photo. Please try again.";
+        state.profilePhotoUpdated = false;
+      })
+      .addCase(updateProfilePhoto.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.profilePhotoUpdated = false;
       });
   },
 });
