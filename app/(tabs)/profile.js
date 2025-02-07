@@ -12,6 +12,8 @@ import {
   Alert,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
+import ProfileCompletionAlert from "../../components/profile/ProfileCompletionAlert";
+import withProfileCompletion from "../../components/profile/withProfileCompletion";
 
 import { useNavigation } from "@react-navigation/native";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -135,7 +137,7 @@ const ProfileItem = ({ icon, label, value, isRequired = false }) => {
   );
 };
 
-export default function ProfileScreen() {
+const ProfileScreen = () => {
   const [photoUploadError, setPhotoUploadError] = useState(null);
 
   const [isUploading, setIsUploading] = useState(false);
@@ -352,362 +354,373 @@ export default function ProfileScreen() {
     }
   };
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={{
-        flexGrow: 1,
-        // Ensure RefreshControl works correctly on both iOS and Android
-        paddingTop: Platform.OS === "ios" ? 0 : -50,
-      }}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          colors={[COLORS.primary]}
-          tintColor={COLORS.primary}
-          title="Pull to refresh"
-          titleColor={COLORS.primary}
-          progressViewOffset={Platform.OS === "ios" ? 50 : 50}
-        />
-      }
-    >
-      <LinearGradient
-        colors={[COLORS.primary, COLORS.secondary]}
-        style={styles.header}
+    <>
+      <ProfileCompletionAlert />
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={{
+          flexGrow: 1,
+          // Ensure RefreshControl works correctly on both iOS and Android
+          paddingTop: Platform.OS === "ios" ? 0 : -50,
+        }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[COLORS.primary]}
+            tintColor={COLORS.primary}
+            title="Pull to refresh"
+            titleColor={COLORS.primary}
+            progressViewOffset={Platform.OS === "ios" ? 50 : 50}
+          />
+        }
       >
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <MaterialIcons name="logout" size={24} color={COLORS.white} />
-        </TouchableOpacity>
-        <View style={styles.profileHeader} accessibilityLabel="Profile Header">
-          <PhotoUploader
-            currentPhotoUrl={profile.profile?.photos?.[0]?.photo_url}
-            onPhotoUpdate={handlePhotoUpdate}
-            onError={(errorMessage) => {
-              setPhotoUploadError(errorMessage);
-            }}
-            isUploading={isUploading}
-            uploadError={photoUploadError}
-            accessibilityLabel="Update profile photo"
-            accessibilityHint="Double tap to choose a new profile photo"
-          />
-          <Text style={styles.userName}>
-            {profile.first_name} {profile.last_name}
-            {profile.progress === 100 && " ✓"}
-          </Text>
-          <View style={styles.statusContainer}>
-            <View
-              style={
-                profile.profile_status === "Active"
-                  ? styles.greenDot
-                  : styles.grayDot
-              }
+        <LinearGradient
+          colors={[COLORS.primary, COLORS.secondary]}
+          style={styles.header}
+        >
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <MaterialIcons name="logout" size={24} color={COLORS.white} />
+          </TouchableOpacity>
+          <View
+            style={styles.profileHeader}
+            accessibilityLabel="Profile Header"
+          >
+            <PhotoUploader
+              currentPhotoUrl={profile.profile?.photos?.[0]?.photo_url}
+              onPhotoUpdate={handlePhotoUpdate}
+              onError={(errorMessage) => {
+                setPhotoUploadError(errorMessage);
+              }}
+              isUploading={isUploading}
+              uploadError={photoUploadError}
+              accessibilityLabel="Update profile photo"
+              accessibilityHint="Double tap to choose a new profile photo"
             />
-            <Text style={styles.userStatus}>{profile.profile_status}</Text>
+            <Text style={styles.userName}>
+              {profile.first_name} {profile.last_name}
+              {profile.progress === 100 && " ✓"}
+            </Text>
+            <View style={styles.statusContainer}>
+              <View
+                style={
+                  profile.profile_status === "Active"
+                    ? styles.greenDot
+                    : styles.grayDot
+                }
+              />
+              <Text style={styles.userStatus}>{profile.profile_status}</Text>
+            </View>
+            {profile.profile?.bio && (
+              <Text style={styles.userBio}>{profile.profile.bio}</Text>
+            )}
+            {photoUploadError && (
+              <Text style={styles.errorText}>{photoUploadError}</Text>
+            )}
           </View>
-          {profile.profile?.bio && (
-            <Text style={styles.userBio}>{profile.profile.bio}</Text>
-          )}
-          {photoUploadError && (
-            <Text style={styles.errorText}>{photoUploadError}</Text>
-          )}
-        </View>
-        <View style={styles.progressContainer}>
-          <Text style={styles.progressText}>
-            Profile Completion: {progress}%{progress === 100 && " ✨"}
-          </Text>
-          <View style={styles.progressBar}>
-            <Animated.View
-              style={[
-                styles.progressFill,
-                {
-                  width: progressAnimation.interpolate({
-                    inputRange: [0, 100],
-                    outputRange: ["0%", "100%"],
-                  }),
-                  backgroundColor: getProgressColor(progress),
-                },
-              ]}
-            />
+          <View style={styles.progressContainer}>
+            <Text style={styles.progressText}>
+              Profile Completion: {progress}%{progress === 100 && " ✨"}
+            </Text>
+            <View style={styles.progressBar}>
+              <Animated.View
+                style={[
+                  styles.progressFill,
+                  {
+                    width: progressAnimation.interpolate({
+                      inputRange: [0, 100],
+                      outputRange: ["0%", "100%"],
+                    }),
+                    backgroundColor: getProgressColor(progress),
+                  },
+                ]}
+              />
+            </View>
           </View>
-        </View>
-      </LinearGradient>
+        </LinearGradient>
 
-      <View style={styles.content}>
-        <ProfileSection
-          title="Basic Information"
-          fields={sectionFields.basic}
-          profile={profile}
-        >
-          <ProfileItem
-            icon="person"
-            label="First Name"
-            value={profile.first_name}
-            isRequired={true}
-          />
-          <ProfileItem
-            icon="person-outline"
-            label="Last Name"
-            value={profile.last_name}
-            isRequired={true}
-          />
-          <ProfileItem
-            icon="email"
-            label="Email"
-            value={profile.email}
-            isRequired={true}
-          />
-          <ProfileItem
-            icon="phone"
-            label="Phone Number"
-            value={profile.phone_number}
-            isRequired={true}
-          />
-          <ProfileItem
-            icon="wc"
-            label="Gender"
-            value={profile.gender}
-            isRequired={true}
-          />
-        </ProfileSection>
-
-        <ProfileSection
-          title="Demographics"
-          fields={sectionFields.demographics}
-          profile={profile}
-        >
-          <ProfileItem
-            icon="flag"
-            label="Nationality"
-            value={profile.profile?.nationality}
-            isRequired={true}
-          />
-          <ProfileItem
-            icon="public"
-            label="Origin"
-            value={profile.profile?.origin}
-          />
-          <ProfileItem
-            icon="church"
-            label="Religion"
-            value={profile.profile?.religion}
-            isRequired={true}
-          />
-          <ProfileItem
-            icon="location-city"
-            label="Country"
-            value={profile.profile?.country_of_residence}
-            isRequired={true}
-          />
-          <ProfileItem
-            icon="location-on"
-            label="City"
-            value={profile.profile?.city}
-            isRequired={true}
-          />
-          <ProfileItem
-            icon="cake"
-            label="Date of Birth"
-            value={profile.profile?.date_of_birth}
-            isRequired={true}
-          />
-          <ProfileItem
-            icon="stars"
-            label="Zodiac Sign"
-            value={profile.profile?.zodiac_sign}
-          />
-        </ProfileSection>
-
-        <ProfileSection
-          title="Professional Information"
-          fields={sectionFields.professional}
-          profile={profile}
-        >
-          <ProfileItem
-            icon="school"
-            label="Education"
-            value={profile.profile?.educational_level}
-            isRequired={true}
-          />
-          <ProfileItem
-            icon="work"
-            label="Specialization"
-            value={profile.profile?.specialization}
-          />
-          <ProfileItem
-            icon="business-center"
-            label="Employment Status"
-            value={
-              profile.profile?.employment_status ? "Employed" : "Not Employed"
-            }
-            isRequired={true}
-          />
-          <ProfileItem
-            icon="badge"
-            label="Job Title"
-            value={profile.profile?.job_title}
-          />
-          <ProfileItem
-            icon="trending-up"
-            label="Position Level"
-            value={profile.profile?.position_level}
-          />
-        </ProfileSection>
-
-        <ProfileSection
-          title="Personal Details"
-          fields={sectionFields.personal}
-          profile={profile}
-        >
-          <ProfileItem
-            icon="account-balance-wallet"
-            label="Financial Status"
-            value={profile.profile?.financial_status}
-            isRequired={true}
-          />
-          <ProfileItem
-            icon="home"
-            label="Housing Status"
-            value={profile.profile?.housing_status}
-          />
-          <ProfileItem
-            icon="directions-car"
-            label="Car Ownership"
-            value={profile.profile?.car_ownership ? "Yes" : "No"}
-          />
-          <ProfileItem
-            icon="straighten"
-            label="Height"
-            value={profile.profile?.height}
-            isRequired={true}
-          />
-          <ProfileItem
-            icon="fitness-center"
-            label="Weight"
-            value={profile.profile?.weight}
-            isRequired={true}
-          />
-          <ProfileItem
-            icon="favorite"
-            label="Marital Status"
-            value={profile.profile?.marital_status}
-            isRequired={true}
-          />
-          <ProfileItem
-            icon="child-care"
-            label="Children"
-            value={profile.profile?.children?.toString()}
-          />
-        </ProfileSection>
-
-        <ProfileSection
-          title="Appearance"
-          fields={sectionFields.appearance.filter(
-            (field) =>
-              profile.gender === "Female" || field !== "profile.hijab_status"
-          )}
-          profile={profile}
-        >
-          <ProfileItem
-            icon="palette"
-            label="Skin Color"
-            value={profile.profile?.skin_color}
-            isRequired={true}
-          />
-          <ProfileItem
-            icon="brush"
-            label="Hair Color"
-            value={profile.profile?.hair_color}
-            isRequired={true}
-          />
-          {profile.gender === "Female" && (
+        <View style={styles.content}>
+          <ProfileSection
+            title="Basic Information"
+            fields={sectionFields.basic}
+            profile={profile}
+          >
             <ProfileItem
-              icon="face"
-              label="Hijab Status"
-              value={profile.profile?.hijab_status ? "Yes" : "No"}
+              icon="person"
+              label="First Name"
+              value={profile.first_name}
               isRequired={true}
             />
-          )}
-        </ProfileSection>
-
-        <ProfileSection
-          title="Lifestyle"
-          fields={sectionFields.lifestyle}
-          profile={profile}
-        >
-          <ProfileItem
-            icon="smoking-rooms"
-            label="Smoking Status"
-            value={profile.profile?.smoking_status ? "Yes" : "No"}
-            isRequired={true}
-          />
-          <ProfileItem
-            icon="local-bar"
-            label="Drinking Status"
-            value={profile.profile?.drinking_status}
-            isRequired={true}
-          />
-          <ProfileItem
-            icon="directions-run"
-            label="Sports Activity"
-            value={profile.profile?.sports_activity}
-          />
-          <ProfileItem
-            icon="public"
-            label="Social Media"
-            value={profile.profile?.social_media_presence}
-          />
-          <ProfileItem
-            icon="local-activity"
-            label="Hobbies"
-            value={profile.profile?.hobbies}
-          />
-          <ProfileItem icon="pets" label="Pets" value={profile.profile?.pets} />
-        </ProfileSection>
-
-        <ProfileSection
-          title="Contact"
-          fields={sectionFields.contact}
-          profile={profile}
-        >
-          <ProfileItem
-            icon="contact-phone"
-            label="Guardian Contact"
-            value={profile.profile?.guardian_contact}
-            isRequired={true}
-          />
-        </ProfileSection>
-
-        {progress === 100 && (
-          <View
-            style={{
-              backgroundColor: COLORS.primary + "15",
-              padding: 16,
-              borderRadius: 12,
-              marginTop: 8,
-              marginBottom: 20,
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <MaterialIcons
-              name="check-circle"
-              size={24}
-              color={COLORS.primary}
-              style={{ marginRight: 8 }}
+            <ProfileItem
+              icon="person-outline"
+              label="Last Name"
+              value={profile.last_name}
+              isRequired={true}
             />
-            <Text
+            <ProfileItem
+              icon="email"
+              label="Email"
+              value={profile.email}
+              isRequired={true}
+            />
+            <ProfileItem
+              icon="phone"
+              label="Phone Number"
+              value={profile.phone_number}
+              isRequired={true}
+            />
+            <ProfileItem
+              icon="wc"
+              label="Gender"
+              value={profile.gender}
+              isRequired={true}
+            />
+          </ProfileSection>
+
+          <ProfileSection
+            title="Demographics"
+            fields={sectionFields.demographics}
+            profile={profile}
+          >
+            <ProfileItem
+              icon="flag"
+              label="Nationality"
+              value={profile.profile?.nationality}
+              isRequired={true}
+            />
+            <ProfileItem
+              icon="public"
+              label="Origin"
+              value={profile.profile?.origin}
+            />
+            <ProfileItem
+              icon="church"
+              label="Religion"
+              value={profile.profile?.religion}
+              isRequired={true}
+            />
+            <ProfileItem
+              icon="location-city"
+              label="Country"
+              value={profile.profile?.country_of_residence}
+              isRequired={true}
+            />
+            <ProfileItem
+              icon="location-on"
+              label="City"
+              value={profile.profile?.city}
+              isRequired={true}
+            />
+            <ProfileItem
+              icon="cake"
+              label="Date of Birth"
+              value={profile.profile?.date_of_birth}
+              isRequired={true}
+            />
+            <ProfileItem
+              icon="stars"
+              label="Zodiac Sign"
+              value={profile.profile?.zodiac_sign}
+            />
+          </ProfileSection>
+
+          <ProfileSection
+            title="Professional Information"
+            fields={sectionFields.professional}
+            profile={profile}
+          >
+            <ProfileItem
+              icon="school"
+              label="Education"
+              value={profile.profile?.educational_level}
+              isRequired={true}
+            />
+            <ProfileItem
+              icon="work"
+              label="Specialization"
+              value={profile.profile?.specialization}
+            />
+            <ProfileItem
+              icon="business-center"
+              label="Employment Status"
+              value={
+                profile.profile?.employment_status ? "Employed" : "Not Employed"
+              }
+              isRequired={true}
+            />
+            <ProfileItem
+              icon="badge"
+              label="Job Title"
+              value={profile.profile?.job_title}
+            />
+            <ProfileItem
+              icon="trending-up"
+              label="Position Level"
+              value={profile.profile?.position_level}
+            />
+          </ProfileSection>
+
+          <ProfileSection
+            title="Personal Details"
+            fields={sectionFields.personal}
+            profile={profile}
+          >
+            <ProfileItem
+              icon="account-balance-wallet"
+              label="Financial Status"
+              value={profile.profile?.financial_status}
+              isRequired={true}
+            />
+            <ProfileItem
+              icon="home"
+              label="Housing Status"
+              value={profile.profile?.housing_status}
+            />
+            <ProfileItem
+              icon="directions-car"
+              label="Car Ownership"
+              value={profile.profile?.car_ownership ? "Yes" : "No"}
+            />
+            <ProfileItem
+              icon="straighten"
+              label="Height"
+              value={profile.profile?.height}
+              isRequired={true}
+            />
+            <ProfileItem
+              icon="fitness-center"
+              label="Weight"
+              value={profile.profile?.weight}
+              isRequired={true}
+            />
+            <ProfileItem
+              icon="favorite"
+              label="Marital Status"
+              value={profile.profile?.marital_status}
+              isRequired={true}
+            />
+            <ProfileItem
+              icon="child-care"
+              label="Children"
+              value={profile.profile?.children?.toString()}
+            />
+          </ProfileSection>
+
+          <ProfileSection
+            title="Appearance"
+            fields={sectionFields.appearance.filter(
+              (field) =>
+                profile.gender === "Female" || field !== "profile.hijab_status"
+            )}
+            profile={profile}
+          >
+            <ProfileItem
+              icon="palette"
+              label="Skin Color"
+              value={profile.profile?.skin_color}
+              isRequired={true}
+            />
+            <ProfileItem
+              icon="brush"
+              label="Hair Color"
+              value={profile.profile?.hair_color}
+              isRequired={true}
+            />
+            {profile.gender === "Female" && (
+              <ProfileItem
+                icon="face"
+                label="Hijab Status"
+                value={profile.profile?.hijab_status ? "Yes" : "No"}
+                isRequired={true}
+              />
+            )}
+          </ProfileSection>
+
+          <ProfileSection
+            title="Lifestyle"
+            fields={sectionFields.lifestyle}
+            profile={profile}
+          >
+            <ProfileItem
+              icon="smoking-rooms"
+              label="Smoking Status"
+              value={profile.profile?.smoking_status ? "Yes" : "No"}
+              isRequired={true}
+            />
+            <ProfileItem
+              icon="local-bar"
+              label="Drinking Status"
+              value={profile.profile?.drinking_status}
+              isRequired={true}
+            />
+            <ProfileItem
+              icon="directions-run"
+              label="Sports Activity"
+              value={profile.profile?.sports_activity}
+            />
+            <ProfileItem
+              icon="public"
+              label="Social Media"
+              value={profile.profile?.social_media_presence}
+            />
+            <ProfileItem
+              icon="local-activity"
+              label="Hobbies"
+              value={profile.profile?.hobbies}
+            />
+            <ProfileItem
+              icon="pets"
+              label="Pets"
+              value={profile.profile?.pets}
+            />
+          </ProfileSection>
+
+          <ProfileSection
+            title="Contact"
+            fields={sectionFields.contact}
+            profile={profile}
+          >
+            <ProfileItem
+              icon="contact-phone"
+              label="Guardian Contact"
+              value={profile.profile?.guardian_contact}
+              isRequired={true}
+            />
+          </ProfileSection>
+
+          {progress === 100 && (
+            <View
               style={{
-                color: COLORS.primary,
-                fontSize: 16,
-                fontWeight: "500",
+                backgroundColor: COLORS.primary + "15",
+                padding: 16,
+                borderRadius: 12,
+                marginTop: 8,
+                marginBottom: 20,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
-              Profile Complete! ✨
-            </Text>
-          </View>
-        )}
-      </View>
-    </ScrollView>
+              <MaterialIcons
+                name="check-circle"
+                size={24}
+                color={COLORS.primary}
+                style={{ marginRight: 8 }}
+              />
+              <Text
+                style={{
+                  color: COLORS.primary,
+                  fontSize: 16,
+                  fontWeight: "500",
+                }}
+              >
+                Profile Complete! ✨
+              </Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    </>
   );
-}
+};
+export default withProfileCompletion(ProfileScreen);

@@ -147,16 +147,17 @@ const authSlice = createSlice({
       .addCase(verifyOTP.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        // Store token data in the same format as login
-        if (action.payload.data) {
+        state.firstTimeLogin = action.payload.first_time_login;
+        if (action.payload.access_token) {
           state.tokens = {
-            access_token: action.payload.data.access_token,
-            token_type: action.payload.data.token_type || "Bearer",
+            access_token: action.payload.access_token,
+            token_type: action.payload.token_type || "Bearer",
           };
         }
         state.tempEmail = null;
         state.error = null;
       })
+
       .addCase(verifyOTP.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || "OTP verification failed";

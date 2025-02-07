@@ -17,6 +17,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { PROFILE_DATA } from "../../constants/profileData";
 import AgeRangeModal from "../../components/common/AgeRangeModal";
 import { FlatList } from "react-native";
+import withProfileCompletion from "../../components/profile/withProfileCompletion";
 const COLORS = {
   primary: "#B65165",
   primaryLight: "#D97485",
@@ -1238,4 +1239,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
-export default PartnerSearchScreen;
+export default withProfileCompletion(PartnerSearchScreen);

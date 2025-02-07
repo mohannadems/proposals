@@ -19,19 +19,25 @@ import { useLoginForm } from "../../hooks/useLoginForm";
 import { loginStyles } from "../../styles/auth.styles";
 import { AUTH_MESSAGES } from "../../constants/auth";
 import { StyleSheet } from "react-native";
-
+import { fetchProfile } from "../../store/slices/profile.slice";
 export default function LoginScreen() {
   const dispatch = useDispatch();
   const { loading } = useSelector((state) => state.auth);
   const form = useLoginForm();
 
   const handleLoginSuccess = async (credentials) => {
-    const result = await dispatch(login(credentials)).unwrap();
-    if (result) {
-      await biometric.saveBiometricCredentials(credentials);
-      router.replace("/(tabs)/home");
+    try {
+      const result = await dispatch(login(credentials)).unwrap();
+      if (result) {
+        await biometric.saveBiometricCredentials(credentials);
+        router.replace("/(tabs)/home");
+        await dispatch(fetchProfile());
+      }
+      return result;
+    } catch (error) {
+      // Handle login or profile fetch errors
+      console.error("Login or profile fetch failed", error);
     }
-    return result;
   };
 
   const biometric = useBiometric(handleLoginSuccess);

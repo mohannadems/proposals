@@ -13,6 +13,8 @@ import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import { COLORS } from "../../constants/colors";
+import withProfileCompletion from "../../components/profile/withProfileCompletion";
+import ProfileCompletionAlert from "../../components/profile/ProfileCompletionAlert";
 const matches = [
   {
     id: 1,
@@ -88,7 +90,7 @@ const MatchCard = ({ match, onPress }) => (
   </TouchableOpacity>
 );
 
-export default function MatchesScreen() {
+const MatchesScreen = () => {
   const scrollY = useRef(new Animated.Value(0)).current;
 
   const headerHeight = scrollY.interpolate({
@@ -111,6 +113,8 @@ export default function MatchesScreen() {
 
   return (
     <View style={styles.container}>
+      <ProfileCompletionAlert />
+
       <StatusBar style="light" />
       <Animated.View style={[styles.header, { height: headerHeight }]}>
         <LinearGradient
@@ -157,7 +161,7 @@ export default function MatchesScreen() {
       />
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -279,3 +283,4 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
 });
+export default withProfileCompletion(MatchesScreen);

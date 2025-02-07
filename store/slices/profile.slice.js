@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { profileService } from "../../services/profile.service";
-
+import { calculateProfileProgress } from "../../utils/profileProgress";
 export const fetchProfile = createAsyncThunk(
   "profile/fetch",
   async (_, { rejectWithValue }) => {
@@ -56,6 +56,8 @@ export const updateProfilePhoto = createAsyncThunk(
 const initialState = {
   loading: false,
   error: null,
+  progress: 0,
+  showProfileAlert: true,
   data: {
     bio_en: "",
     bio_ar: "",
@@ -103,13 +105,25 @@ const initialState = {
 const profileSlice = createSlice({
   name: "profile",
   initialState,
+  progress: 0,
+
   reducers: {
     resetProfile: () => initialState,
     updateField: (state, action) => {
       const { field, value } = action.payload;
       state.data[field] = value;
     },
+    setShowProfileAlert: (state, action) => {
+      state.showProfileAlert = action.payload;
+    },
   },
+  setProgress: (state, action) => {
+    state.progress = action.payload;
+  },
+  setShowProfileAlert: (state, action) => {
+    state.showProfileAlert = action.payload;
+  },
+
   extraReducers: (builder) => {
     builder
       .addCase(fetchProfile.pending, (state) => {
@@ -120,6 +134,8 @@ const profileSlice = createSlice({
         state.loading = false;
         state.data = action.payload;
         state.error = null;
+        const { progress } = calculateProfileProgress(action.payload);
+        state.progress = progress;
       })
       .addCase(fetchProfile.rejected, (state, action) => {
         state.loading = false;
@@ -133,6 +149,7 @@ const profileSlice = createSlice({
         state.loading = false;
         state.data = action.payload;
         state.error = null;
+        state.progress = calculateProfileProgress(action.payload);
       })
       .addCase(updateProfile.rejected, (state, action) => {
         state.loading = false;
@@ -176,5 +193,6 @@ const profileSlice = createSlice({
   },
 });
 
-export const { resetProfile, updateField } = profileSlice.actions;
+export const { resetProfile, updateField, setProgress, setShowProfileAlert } =
+  profileSlice.actions;
 export default profileSlice.reducer;

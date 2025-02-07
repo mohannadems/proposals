@@ -15,7 +15,34 @@ import { Feather } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { TYPOGRAPHY } from "../../constants/typography";
 import { COLORS } from "../../constants/colors";
-
+import Icon from "react-native-vector-icons/Feather";
+import Avatar from "../../assets/images/avatar.jpg";
+const articles = [
+  {
+    id: 1,
+    title: "Building Meaningful Connections",
+    excerpt:
+      "Learn how to create deeper relationships through authentic communication",
+    category: "Relationships",
+    readTime: 5,
+    image: Avatar,
+  },
+  {
+    id: 2,
+    title: "Dating Tips & Advice",
+    excerpt: "Expert advice on navigating modern dating scene with confidence",
+    category: "Dating",
+    readTime: 4,
+  },
+  {
+    id: 3,
+    title: "Self-Growth Journey",
+    excerpt:
+      "Discover ways to improve yourself while finding the right partner",
+    category: "Personal Growth",
+    readTime: 6,
+  },
+];
 const HEADER_MAX_HEIGHT = 200;
 const HEADER_MIN_HEIGHT = 80;
 const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
@@ -29,50 +56,6 @@ const HomeScreen = () => {
     missingFields: ["photos", "education", "profession"],
   });
   const [showProfileCompletion, setShowProfileCompletion] = useState(false);
-  const [isNewUser, setIsNewUser] = useState(false);
-
-  useEffect(() => {
-    const checkUserStatus = async () => {
-      try {
-        // Check if it's a new user who just registered
-        const newUserFlag = await AsyncStorage.getItem("isNewUser");
-        const profileCompletionStatus = await AsyncStorage.getItem(
-          "profileCompletionStatus"
-        );
-
-        if (newUserFlag === "true") {
-          // This is a new user who just registered
-          setIsNewUser(true);
-          setShowProfileCompletion(true);
-
-          // Optional: Show a welcome modal or alert
-          Alert.alert(
-            "Welcome to Islamic Matrimony!",
-            "Please complete your profile to get started and find your perfect match.",
-            [{ text: "OK", onPress: () => {} }]
-          );
-
-          // Remove the new user flag after processing
-          await AsyncStorage.removeItem("isNewUser");
-        } else if (profileCompletionStatus !== "complete") {
-          // User has an incomplete profile
-          setShowProfileCompletion(true);
-        } else {
-          // Profile is complete
-          setShowProfileCompletion(false);
-        }
-      } catch (error) {
-        console.error("Error checking user status:", error);
-      }
-    };
-
-    checkUserStatus();
-  }, []);
-
-  const handleCompleteProfile = () => {
-    // Navigate to profile completion screen
-    router.push("/(profile)/FillProfileData");
-  };
 
   const headerHeight = scrollY.interpolate({
     inputRange: [0, HEADER_SCROLL_DISTANCE],
@@ -227,71 +210,47 @@ const HomeScreen = () => {
     </Animated.View>
   );
 
-  const renderProfileCard = () => (
-    <View style={styles.profileCard}>
-      <View style={styles.profileCardHeader}>
-        <View>
-          <Text style={styles.welcomeText}>Welcome,</Text>
-          <Text style={styles.nameText}>{user.name}</Text>
-        </View>
-        {showProfileCompletion && (
-          <TouchableOpacity
-            onPress={() => router.push("/(profile)/FillProfileData")}
-            style={styles.completeProfileButton}
-          >
-            <Text style={styles.completeProfileText}>Complete Profile</Text>
-            <Text style={styles.completeProfilePercentage}>
-              {user.profileCompletion}%
-            </Text>
-          </TouchableOpacity>
-        )}
-      </View>
-      {showProfileCompletion && (
-        <View style={styles.progressBarContainer}>
-          <View
-            style={[
-              styles.progressBar,
-              { width: `${user.profileCompletion}%` },
-            ]}
-          />
-        </View>
-      )}
-      {showProfileCompletion && (
-        <Text style={styles.missingFieldsText}>
-          Please complete: {user.missingFields.join(", ")}
+  const renderFeaturedArticles = () => (
+    <View style={featuredArticleStyles.articlesSection}>
+      <View style={featuredArticleStyles.articlesSectionHeader}>
+        <Text style={featuredArticleStyles.articlesSectionTitle}>
+          Featured Articles
         </Text>
-      )}
-    </View>
-  );
-
-  const renderFeaturedProfiles = () => (
-    <View style={styles.featuredSection}>
-      <View style={styles.sectionHeaderRow}>
-        <Text style={styles.sectionTitle}>Featured Profiles</Text>
-        <TouchableOpacity style={styles.viewAllButton}>
-          <Text style={styles.viewAllText}>View All</Text>
+        <TouchableOpacity style={featuredArticleStyles.articlesViewAllBtn}>
+          <Text style={featuredArticleStyles.articlesViewAllText}>
+            View All
+          </Text>
         </TouchableOpacity>
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        {[1, 2, 3].map((index) => (
-          <TouchableOpacity key={index} style={styles.featuredCard}>
+        {articles.map((article) => (
+          <TouchableOpacity
+            key={article.id}
+            style={featuredArticleStyles.articleItem}
+          >
             <Image
-              source={{
-                uri: `https://randomuser.me/api/portraits/${
-                  index % 2 === 0 ? "women" : "men"
-                }/${index}.jpg`,
-              }}
-              style={styles.featuredImage}
+              src={article.image}
+              alt={article.title}
+              style={featuredArticleStyles.articleItemImage}
             />
-            <View style={styles.featuredInfo}>
-              <Text style={styles.featuredName}>Fatima, 26</Text>
-              <Text style={styles.featuredLocation}>Riyadh, Saudi Arabia</Text>
-              <View style={styles.featuredTags}>
-                <View style={styles.tag}>
-                  <Text style={styles.tagText}>Doctor</Text>
-                </View>
-                <View style={styles.tag}>
-                  <Text style={styles.tagText}>Hafiz</Text>
+
+            <View style={featuredArticleStyles.articleItemContent}>
+              <View style={featuredArticleStyles.articleCategory}>
+                <Text style={featuredArticleStyles.articleCategoryText}>
+                  {article.category}
+                </Text>
+              </View>
+              <Text style={featuredArticleStyles.articleItemTitle}>
+                {article.title}
+              </Text>
+              <Text style={featuredArticleStyles.articleItemExcerpt}>
+                {article.excerpt}
+              </Text>
+              <View style={featuredArticleStyles.articleItemFooter}>
+                <View style={featuredArticleStyles.readTimeWrapper}>
+                  <Text style={featuredArticleStyles.readTimeText}>
+                    {article.readTime} min read
+                  </Text>
                 </View>
               </View>
             </View>
@@ -387,8 +346,7 @@ const HomeScreen = () => {
         showsVerticalScrollIndicator={false}
       >
         <View style={{ marginTop: HEADER_MAX_HEIGHT }}>
-          {renderProfileCard()}
-          {renderFeaturedProfiles()}
+          {renderFeaturedArticles()}
           {renderEvents()}
           {renderArticles()}
         </View>
@@ -521,6 +479,7 @@ const styles = StyleSheet.create({
   featuredSection: {
     marginBottom: 24,
     paddingLeft: 16,
+    paddingTop: 24,
   },
   sectionHeaderRow: {
     flexDirection: "row",
@@ -600,11 +559,12 @@ const styles = StyleSheet.create({
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 12,
+    shadowRadius: 0,
     elevation: 5,
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
+    marginBottom: 5,
   },
   eventIconContainer: {
     width: 50,
@@ -696,29 +656,7 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontWeight: "600",
   },
-  modalOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 100,
-  },
-  modalContainer: {
-    width: "85%",
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
-    padding: 20,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-  },
+
   modalTitle: {
     fontSize: 24,
     fontWeight: "bold",
@@ -774,17 +712,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-  modalOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    justifyContent: "center",
-    alignItems: "center",
-    zIndex: 100,
-  },
+
   modalContainer: {
     width: width * 0.9,
     maxWidth: 500,
@@ -836,34 +764,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
   },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: COLORS.primary,
-    textAlign: "center",
-    marginBottom: 10,
-  },
-  modalSubtitle: {
-    fontSize: 16,
-    color: COLORS.text,
-    textAlign: "center",
-    marginBottom: 25,
-    lineHeight: 24,
-  },
-  missingFieldsContainer: {
-    width: "100%",
-    backgroundColor: COLORS.background,
-    borderRadius: 15,
-    padding: 15,
-    marginBottom: 20,
-  },
-  missingFieldsHeader: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: COLORS.secondary,
-    marginBottom: 10,
-    alignItems: "center",
-  },
+
   missingFieldItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -1084,6 +985,185 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 5,
   },
+  articlesSection: {
+    marginBottom: 28,
+    paddingLeft: 18,
+    paddingTop: 28,
+  },
+  articlesSectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingRight: 18,
+    marginBottom: 18,
+  },
+  articlesSectionTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: COLORS.text,
+  },
+  articlesViewAllBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    backgroundColor: COLORS.secondary + "18",
+  },
+  articlesViewAllText: {
+    color: COLORS.secondary,
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  articleItem: {
+    width: 280,
+    marginRight: 16,
+    borderRadius: 24,
+    backgroundColor: COLORS.white,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    elevation: 7,
+    overflow: "hidden",
+  },
+  articleItemImage: {
+    width: "100%",
+    height: 160,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+  },
+  articleItemContent: {
+    padding: 16,
+  },
+  articleCategory: {
+    backgroundColor: COLORS.primary + "15",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    alignSelf: "flex-start",
+    marginBottom: 12,
+  },
+  articleCategoryText: {
+    color: COLORS.primary,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  articleItemTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: COLORS.text,
+    marginBottom: 8,
+    lineHeight: 24,
+  },
+  articleItemExcerpt: {
+    fontSize: 14,
+    color: COLORS.text + "99",
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  articleItemFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  readTimeWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  readTimeText: {
+    fontSize: 13,
+    color: COLORS.secondary,
+  },
 });
-
+const featuredArticleStyles = StyleSheet.create({
+  articlesSection: {
+    marginBottom: 28,
+    paddingLeft: 18,
+    paddingTop: 28,
+  },
+  articlesSectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingRight: 18,
+    marginBottom: 18,
+  },
+  articlesSectionTitle: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: COLORS.text,
+  },
+  articlesViewAllBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    backgroundColor: COLORS.secondary + "18",
+  },
+  articlesViewAllText: {
+    color: COLORS.secondary,
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  articleItem: {
+    width: 280,
+    marginRight: 16,
+    borderRadius: 24,
+    backgroundColor: COLORS.white,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 14,
+    elevation: 7,
+    overflow: "hidden",
+  },
+  articleItemImage: {
+    width: "100%",
+    height: 160,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+  },
+  articleItemContent: {
+    padding: 16,
+  },
+  articleCategory: {
+    backgroundColor: COLORS.primary + "15",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    alignSelf: "flex-start",
+    marginBottom: 12,
+  },
+  articleCategoryText: {
+    color: COLORS.primary,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  articleItemTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: COLORS.text,
+    marginBottom: 8,
+    lineHeight: 24,
+  },
+  articleItemExcerpt: {
+    fontSize: 14,
+    color: COLORS.text + "99",
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  articleItemFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  readTimeWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  readTimeText: {
+    fontSize: 13,
+    color: COLORS.secondary,
+  },
+});
 export default HomeScreen;
