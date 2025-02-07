@@ -110,7 +110,7 @@ const PhotoUploader = ({ currentPhotoUrl, onPhotoUpdate, onError }) => {
         source={
           currentPhotoUrl
             ? { uri: currentPhotoUrl }
-            : require("../../assets/images/wh.jpg")
+            : require("../../assets/images/avatar.jpg")
         }
         style={styles.avatar}
       />

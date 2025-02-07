@@ -94,6 +94,9 @@ const initialState = {
       photos: [],
       avatar_url: null,
     },
+    marriage_budget_id: null,
+    religiosity_level_id: null,
+    sleep_habit_id: null,
   },
   profilePhotoUpdated: false,
 };

@@ -15,6 +15,16 @@ export const authService = {
 
   verifyOTP: async (otpData) => {
     const response = await api.post(ENDPOINTS.VERIFY_OTP, otpData);
+    return {
+      success: response.data.success,
+      message: response.data.message,
+      access_token: response.data.access_token, // Directly map the access_token
+      token_type: response.data.token_type || "Bearer", // Optional if your backend doesn't return token_type
+    };
+  },
+
+  resendOTP: async (email) => {
+    const response = await api.post(ENDPOINTS.RESEND_OTP_MASSAGE, { email });
     return response.data;
   },
 

@@ -9,7 +9,7 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
 } from "react-native";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -21,6 +21,7 @@ import { registerStyles } from "../../styles/register.styles";
 import { REGISTER_MESSAGES } from "../../constants/register";
 import { TermsModal } from "../../components/common/TermsModal";
 import { StyleSheet } from "react-native";
+import { Alert } from "react-native";
 
 const WelcomeMessage = () => (
   <View style={registerStyles.welcomeContainer}>
@@ -47,30 +48,75 @@ export default function RegisterScreen() {
       Object.entries(error.errors).forEach(([field, messages]) => {
         validationErrors[field] = messages[0];
       });
-      form.setValidationErrors(validationErrors);
 
-      // Use goToStep instead of setStep
+      form.setValidationErrorsWithAPI(validationErrors);
+
       if (error.errors.email || error.errors.phone_number) {
-        form.goToStep(1);
+        // Show alert first and navigate after user acknowledges
+        Alert.alert(
+          "Registration Error",
+          error.errors.email || error.errors.phone_number,
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                form.goToStep(1);
+              },
+            },
+          ]
+        );
       }
     } else {
-      form.setValidationErrors({
+      Alert.alert(
+        "Registration Error",
+        error.message || REGISTER_MESSAGES.REGISTRATION_FAILED,
+        [{ text: "OK" }]
+      );
+      form.setValidationErrorsWithAPI({
         general: error.message || REGISTER_MESSAGES.REGISTRATION_FAILED,
       });
     }
   };
-
   const handleAcceptTerms = async () => {
     try {
       const result = await dispatch(register(registrationData)).unwrap();
-      if (result) {
-        router.push("/(auth)/verify-otp");
+
+      if (result.success) {
+        setTermsVisible(false);
+        setRegistrationData(null);
+        router.push({
+          pathname: "/(auth)/verify-otp",
+          params: { email: registrationData.email },
+        });
+        return;
+      }
+
+      setTermsVisible(false);
+
+      if (result.errors?.email || result.errors?.phone_number) {
+        form.setValidationErrorsWithAPI(result.errors);
+        setRegistrationData(null);
+        form.goToStep(1);
       }
     } catch (error) {
-      handleValidationError(error);
+      setTermsVisible(false);
+
+      if (error.errors?.email || error.errors?.phone_number) {
+        form.setValidationErrorsWithAPI(error.errors);
+        setRegistrationData(null);
+        form.goToStep(1);
+      }
     }
   };
 
+  // Also update the component's cleanup
+  useEffect(() => {
+    return () => {
+      // Cleanup when component unmounts
+      setTermsVisible(false);
+      setRegistrationData(null);
+    };
+  }, []);
   const handleDeclineTerms = () => {
     setTermsVisible(false);
     setRegistrationData(null);

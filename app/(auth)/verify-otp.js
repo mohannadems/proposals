@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,68 +7,83 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { router } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
-import { verifyOTP } from "../../store/slices/auth.slice";
+import {
+  verifyOTP,
+  resendOTP,
+  setTempEmail,
+} from "../../store/slices/auth.slice";
 import OTPTextInput from "react-native-otp-textinput";
+import { useRoute } from "@react-navigation/native";
 
 export default function VerifyOTPScreen() {
   const dispatch = useDispatch();
-  const { loading, error, tempEmail } = useSelector((state) => state.auth);
+  const { tempEmail, loading, error } = useSelector((state) => state.auth);
+  const route = useRoute();
   const [otp, setOTP] = useState("");
   const [validationError, setValidationError] = useState("");
 
+  useEffect(() => {
+    const routeEmail = route.params?.email;
+    if (routeEmail) {
+      dispatch(setTempEmail(routeEmail));
+    }
+  }, [route.params?.email, dispatch]);
+
   const handleVerify = async () => {
-    // Clear previous errors
     setValidationError("");
 
-    // Validate OTP format
     if (!otp || otp.length !== 6) {
       setValidationError("Please enter a valid 6-digit code");
       return;
     }
 
+    if (!tempEmail) {
+      setValidationError(
+        "Email address is missing. Please try registering again."
+      );
+      return;
+    }
+
     try {
       const result = await dispatch(
-        verifyOTP({
-          email: tempEmail,
-          otp: otp,
-        })
+        verifyOTP({ email: tempEmail, otp })
       ).unwrap();
-      console.log(tempEmail, "valid");
+      console.log("Verification result:", result);
 
-      // Consider adding more explicit routing logic
-      if (result) {
+      if (result.success) {
         router.replace("/(tabs)/home");
+      } else {
+        setValidationError(result.message || "Verification failed");
       }
     } catch (error) {
-      // Explicitly handle and display errors
-      setValidationError(error || "Verification failed");
+      console.log("Verification error:", error);
+      setValidationError(error.message || "Verification failed");
     }
   };
+
   const handleResendOTP = async () => {
+    if (!tempEmail) {
+      setValidationError(
+        "Email address is missing. Please try registering again."
+      );
+      return;
+    }
+
     try {
-      await dispatch(resendOTP(tempEmail)).unwrap();
-      // Optional: Show a success toast or alert
-      Alert.alert("OTP Resent", "A new code has been sent to your email");
+      const result = await dispatch(resendOTP(tempEmail)).unwrap();
+      Alert.alert(
+        "OTP Resent",
+        result.message || "A new code has been sent to your email"
+      );
     } catch (error) {
-      // Handle resend error
       Alert.alert("Resend Failed", error.message || "Could not resend OTP");
     }
   };
-
-  // Update the resendButton TouchableOpacity
-  <TouchableOpacity
-    style={styles.resendButton}
-    onPress={handleResendOTP}
-    disabled={loading}
-  >
-    <Text style={styles.resendText}>Didn't receive the code?</Text>
-    <Text style={styles.resendLink}>Resend Code</Text>
-  </TouchableOpacity>;
-
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -115,7 +130,11 @@ export default function VerifyOTPScreen() {
         )}
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.resendButton}>
+      <TouchableOpacity
+        style={styles.resendButton}
+        onPress={handleResendOTP}
+        disabled={loading}
+      >
         <Text style={styles.resendText}>Didn't receive the code?</Text>
         <Text style={styles.resendLink}>Resend Code</Text>
       </TouchableOpacity>

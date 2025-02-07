@@ -8,42 +8,71 @@ import {
   StyleSheet,
   Animated,
   Dimensions,
+  Alert,
 } from "react-native";
 import { router } from "expo-router";
 import { Feather } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { TYPOGRAPHY } from "../../constants/typography";
 import { COLORS } from "../../constants/colors";
 
 const HEADER_MAX_HEIGHT = 200;
 const HEADER_MIN_HEIGHT = 80;
 const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
-
+const { width } = Dimensions.get("window");
 const HomeScreen = () => {
   const scrollY = new Animated.Value(0);
   const [user, setUser] = useState({
     name: "Ahmed",
     age: 28,
-    profileCompletion: 65,
+    profileCompletion: 28,
     missingFields: ["photos", "education", "profession"],
   });
-  const [showProfileCompletion, setShowProfileCompletion] = useState(true);
+  const [showProfileCompletion, setShowProfileCompletion] = useState(false);
+  const [isNewUser, setIsNewUser] = useState(false);
 
   useEffect(() => {
-    // Check if it's the user's first login or if they haven't completed their profile
-    // This is where you'd typically check your app's state or make an API call
-    const checkProfileCompletion = async () => {
-      // Simulating an API call or state check
-      const isFirstLogin = await localStorage.getItem("isFirstLogin");
-      if (isFirstLogin === null) {
-        setShowProfileCompletion(true);
-        localStorage.setItem("isFirstLogin", "false");
-      } else {
-        setShowProfileCompletion(user.profileCompletion < 100);
+    const checkUserStatus = async () => {
+      try {
+        // Check if it's a new user who just registered
+        const newUserFlag = await AsyncStorage.getItem("isNewUser");
+        const profileCompletionStatus = await AsyncStorage.getItem(
+          "profileCompletionStatus"
+        );
+
+        if (newUserFlag === "true") {
+          // This is a new user who just registered
+          setIsNewUser(true);
+          setShowProfileCompletion(true);
+
+          // Optional: Show a welcome modal or alert
+          Alert.alert(
+            "Welcome to Islamic Matrimony!",
+            "Please complete your profile to get started and find your perfect match.",
+            [{ text: "OK", onPress: () => {} }]
+          );
+
+          // Remove the new user flag after processing
+          await AsyncStorage.removeItem("isNewUser");
+        } else if (profileCompletionStatus !== "complete") {
+          // User has an incomplete profile
+          setShowProfileCompletion(true);
+        } else {
+          // Profile is complete
+          setShowProfileCompletion(false);
+        }
+      } catch (error) {
+        console.error("Error checking user status:", error);
       }
     };
 
-    checkProfileCompletion();
+    checkUserStatus();
   }, []);
+
+  const handleCompleteProfile = () => {
+    // Navigate to profile completion screen
+    router.push("/(profile)/FillProfileData");
+  };
 
   const headerHeight = scrollY.interpolate({
     inputRange: [0, HEADER_SCROLL_DISTANCE],
@@ -62,6 +91,117 @@ const HomeScreen = () => {
     outputRange: [1, 0],
     extrapolate: "clamp",
   });
+
+  // Add this method before the return statement
+  const renderProfileCompletionModal = () => {
+    if (!showProfileCompletion) return null;
+
+    return (
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          {/* Gradient Background Overlay */}
+          <View style={styles.gradientBackground}>
+            <View style={styles.gradientOverlay} />
+          </View>
+
+          {/* Modal Content */}
+          <View style={styles.modalContent}>
+            {/* Animated Profile Completion Illustration */}
+            <View style={styles.illustrationContainer}>
+              <Animated.View
+                style={[
+                  styles.profileCompletionCircle,
+                  { transform: [{ scale: new Animated.Value(1.2) }] },
+                ]}
+              >
+                <Feather name="user-plus" size={60} color={COLORS.white} />
+              </Animated.View>
+            </View>
+
+            {/* Title and Subtitle */}
+            <Text style={styles.modalTitle}>
+              {isNewUser ? "Start Your Journey" : "Profile Completion"}
+            </Text>
+            <Text style={styles.modalSubtitle}>
+              {isNewUser
+                ? "Create a compelling profile to connect with your potential match"
+                : "You're closer than ever to finding your perfect partner"}
+            </Text>
+
+            {/* Missing Fields Section */}
+            <View style={styles.missingFieldsContainer}>
+              <View style={styles.missingFieldsHeader}>
+                <Feather
+                  name="alert-triangle"
+                  size={20}
+                  color={COLORS.secondary}
+                  style={styles.missingFieldsHeaderIcon}
+                />
+                <Text style={styles.missingFieldsHeaderText}>
+                  Missing Profile Information
+                </Text>
+              </View>
+
+              {user.missingFields.map((field, index) => (
+                <View key={index} style={styles.missingFieldItem}>
+                  <View style={styles.missingFieldBadge}>
+                    <Feather
+                      name="check-circle"
+                      size={18}
+                      color={COLORS.primary}
+                      style={styles.missingFieldCheckIcon}
+                    />
+                    <Text style={styles.missingFieldText}>
+                      {field.charAt(0).toUpperCase() + field.slice(1)}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+
+            {/* Progress Section */}
+            <View style={styles.progressSection}>
+              <View style={styles.progressLabelContainer}>
+                <Text style={styles.progressLabel}>Profile Completion</Text>
+                <Text style={styles.progressPercentage}>
+                  {user.profileCompletion}%
+                </Text>
+              </View>
+              <View style={styles.progressBarContainer}>
+                <View
+                  style={[
+                    styles.progressBar,
+                    {
+                      width: `${user.profileCompletion}%`,
+                      backgroundColor:
+                        user.profileCompletion < 50
+                          ? COLORS.secondary
+                          : user.profileCompletion < 75
+                          ? COLORS.primary
+                          : COLORS.success,
+                    },
+                  ]}
+                />
+              </View>
+            </View>
+
+            {/* Complete Profile CTA */}
+            <TouchableOpacity
+              style={styles.completeProfileButton}
+              onPress={handleCompleteProfile}
+            >
+              <Text style={styles.completeProfileButtonText}>
+                Complete Profile
+              </Text>
+              <View style={styles.buttonIconContainer}>
+                <Feather name="arrow-right" size={20} color={COLORS.primary} />
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  };
 
   const renderHeader = () => (
     <Animated.View style={[styles.header, { height: headerHeight }]}>
@@ -253,10 +393,11 @@ const HomeScreen = () => {
           {renderArticles()}
         </View>
       </Animated.ScrollView>
+
+      {renderProfileCompletionModal()}
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -554,6 +695,394 @@ const styles = StyleSheet.create({
   navTextActive: {
     color: COLORS.primary,
     fontWeight: "600",
+  },
+  modalOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 100,
+  },
+  modalContainer: {
+    width: "85%",
+    backgroundColor: COLORS.white,
+    borderRadius: 20,
+    padding: 20,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: COLORS.primary,
+    marginBottom: 10,
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    color: COLORS.text,
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  missingFieldsContainer: {
+    width: "100%",
+    marginBottom: 20,
+  },
+  missingFieldsHeader: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  missingFieldItem: {
+    fontSize: 14,
+    color: COLORS.text,
+    marginLeft: 10,
+    marginBottom: 5,
+  },
+  progressBarContainer: {
+    width: "100%",
+    height: 10,
+    backgroundColor: COLORS.border,
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  progressBar: {
+    height: "100%",
+    backgroundColor: COLORS.primary,
+    borderRadius: 5,
+  },
+  progressText: {
+    fontSize: 14,
+    color: COLORS.text,
+    marginBottom: 20,
+  },
+  completeProfileButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 15,
+  },
+  completeProfileButtonText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  modalOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 100,
+  },
+  modalContainer: {
+    width: width * 0.9,
+    maxWidth: 500,
+    backgroundColor: COLORS.white,
+    borderRadius: 30,
+    overflow: "hidden",
+    elevation: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
+  },
+  backgroundDecoration: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 200,
+  },
+  backgroundCircle1: {
+    position: "absolute",
+    top: -50,
+    right: -50,
+    width: 200,
+    height: 200,
+    borderRadius: 100,
+    backgroundColor: COLORS.primary + "20",
+  },
+  backgroundCircle2: {
+    position: "absolute",
+    bottom: -50,
+    left: -50,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: COLORS.secondary + "20",
+  },
+  modalContent: {
+    padding: 25,
+    alignItems: "center",
+    zIndex: 10,
+  },
+  iconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: COLORS.primary + "15",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: COLORS.primary,
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    color: COLORS.text,
+    textAlign: "center",
+    marginBottom: 25,
+    lineHeight: 24,
+  },
+  missingFieldsContainer: {
+    width: "100%",
+    backgroundColor: COLORS.background,
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 20,
+  },
+  missingFieldsHeader: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: COLORS.secondary,
+    marginBottom: 10,
+    alignItems: "center",
+  },
+  missingFieldItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  checkIcon: {
+    marginRight: 10,
+  },
+  missingFieldText: {
+    fontSize: 15,
+    color: COLORS.text,
+  },
+  progressContainer: {
+    width: "100%",
+    marginBottom: 20,
+  },
+  progressBarBackground: {
+    height: 10,
+    backgroundColor: COLORS.border,
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  progressBar: {
+    height: "100%",
+    backgroundColor: COLORS.primary,
+    borderRadius: 5,
+  },
+  progressText: {
+    fontSize: 14,
+    color: COLORS.text,
+    textAlign: "center",
+  },
+  completeProfileButton: {
+    flexDirection: "row",
+    backgroundColor: COLORS.primary,
+    paddingVertical: 15,
+    paddingHorizontal: 25,
+    borderRadius: 25,
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+  },
+  completeProfileButtonText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: "bold",
+    marginRight: 10,
+  },
+  buttonIcon: {
+    marginLeft: 5,
+  },
+  modalOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center",
+    zIndex: 9,
+    alignItems: "center",
+  },
+  modalContainer: {
+    width: width * 0.9,
+    maxWidth: 500,
+    backgroundColor: COLORS.white,
+    borderRadius: 25,
+    overflow: "hidden",
+    elevation: 15,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 20,
+  },
+  gradientBackground: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 200,
+    backgroundColor: COLORS.primary,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+  },
+  gradientOverlay: {
+    flex: 1,
+    backgroundColor: COLORS.primary + "90",
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+  },
+  modalContent: {
+    paddingHorizontal: 25,
+    paddingTop: 40,
+    paddingBottom: 25,
+    alignItems: "center",
+  },
+  illustrationContainer: {
+    marginBottom: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  profileCompletionCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: COLORS.primary,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 4,
+    borderColor: COLORS.white,
+    elevation: 10,
+    marginBottom: 50,
+  },
+  modalTitle: {
+    fontSize: 26,
+    fontWeight: "bold",
+    color: COLORS.primary,
+    textAlign: "center",
+    marginBottom: 10,
+  },
+  modalSubtitle: {
+    fontSize: 16,
+    color: COLORS.text,
+    textAlign: "center",
+    marginBottom: 25,
+    paddingHorizontal: 20,
+    lineHeight: 24,
+  },
+  missingFieldsContainer: {
+    width: "100%",
+    backgroundColor: COLORS.background,
+    borderRadius: 15,
+    padding: 15,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  missingFieldsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  missingFieldsHeaderIcon: {
+    marginRight: 10,
+  },
+  missingFieldsHeaderText: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: COLORS.secondary,
+  },
+  missingFieldItem: {
+    marginBottom: 8,
+  },
+  missingFieldBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.white,
+    borderRadius: 10,
+    padding: 8,
+    elevation: 2,
+  },
+  missingFieldCheckIcon: {
+    marginRight: 10,
+  },
+  missingFieldText: {
+    fontSize: 15,
+    color: COLORS.text,
+  },
+  progressSection: {
+    width: "100%",
+    marginBottom: 20,
+  },
+  progressLabelContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  progressLabel: {
+    fontSize: 14,
+    color: COLORS.text,
+  },
+  progressPercentage: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: COLORS.primary,
+  },
+  progressBarContainer: {
+    height: 10,
+    backgroundColor: COLORS.border,
+    borderRadius: 5,
+    overflow: "hidden",
+  },
+  progressBar: {
+    height: "100%",
+    borderRadius: 5,
+  },
+  completeProfileButton: {
+    flexDirection: "row",
+    backgroundColor: COLORS.white,
+    paddingVertical: 15,
+    paddingHorizontal: 25,
+    borderRadius: 25,
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+  },
+  completeProfileButtonText: {
+    color: COLORS.primary,
+    fontSize: 16,
+    fontWeight: "bold",
+    marginRight: 10,
+  },
+  buttonIconContainer: {
+    backgroundColor: COLORS.primary + "20",
+    borderRadius: 20,
+    padding: 5,
   },
 });
 

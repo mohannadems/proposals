@@ -1,6 +1,15 @@
 import * as Yup from "yup";
 
 export const profileValidationSchema = Yup.object().shape({
+  marriage_budget_id: Yup.number()
+    .nullable()
+    .required("Please select your marriage budget preference"),
+  religiosity_level_id: Yup.number()
+    .nullable()
+    .required("Please select your religiosity level"),
+  sleep_habit_id: Yup.number()
+    .nullable()
+    .required("Please select your sleep habits"),
   // Step 1 validations
   bio_en: Yup.string()
     .min(10, "Bio must be at least 10 characters")

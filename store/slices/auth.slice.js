@@ -33,9 +33,10 @@ export const login = createAsyncThunk(
 // Register Thunk
 export const register = createAsyncThunk(
   "auth/register",
-  async (userData, { rejectWithValue }) => {
+  async (userData, { dispatch, rejectWithValue }) => {
     try {
       const response = await authService.register(userData);
+      dispatch(setTempEmail(userData.email)); // Store the email
       return response;
     } catch (error) {
       return rejectWithValue(
@@ -44,7 +45,6 @@ export const register = createAsyncThunk(
     }
   }
 );
-
 // Logout Thunk
 export const logout = createAsyncThunk(
   "auth/logout",
@@ -68,13 +68,21 @@ export const logout = createAsyncThunk(
   }
 );
 
-// Verify OTP Thunk
 export const verifyOTP = createAsyncThunk(
   "auth/verifyOTP",
   async (otpData, { rejectWithValue }) => {
     try {
       const response = await authService.verifyOTP(otpData);
-      return response;
+      if (response.success) {
+        // Handle token storage consistent with login format
+        if (response.access_token) {
+          await AsyncStorage.setItem("userToken", response.access_token);
+          // Set the authorization header with correct token format
+          setAuthToken(`Bearer ${response.access_token}`);
+        }
+        return response;
+      }
+      return rejectWithValue(response.message || "OTP verification failed");
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.message || "OTP verification failed"
@@ -83,10 +91,31 @@ export const verifyOTP = createAsyncThunk(
   }
 );
 
+export const resendOTP = createAsyncThunk(
+  "auth/resendOTP",
+  async (email, { rejectWithValue }) => {
+    try {
+      const response = await authService.resendOTP(email);
+      return response;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to resend OTP"
+      );
+    }
+  }
+);
+
 // Auth Slice
 const authSlice = createSlice({
   name: "auth",
-  initialState,
+  initialState: {
+    user: null,
+    tokens: null,
+    loading: false,
+    error: null,
+    isAuthenticated: false,
+    tempEmail: null,
+  },
   reducers: {
     setTempEmail: (state, action) => {
       state.tempEmail = action.payload;
@@ -111,21 +140,6 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
       })
 
-      // Register Cases
-      .addCase(register.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(register.fulfilled, (state, action) => {
-        state.loading = false;
-        state.tempEmail = action.payload.email;
-      })
-      .addCase(register.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload?.message || "Registration failed";
-      })
-
-      // Verify OTP Cases
       .addCase(verifyOTP.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -133,12 +147,47 @@ const authSlice = createSlice({
       .addCase(verifyOTP.fulfilled, (state, action) => {
         state.loading = false;
         state.isAuthenticated = true;
-        state.tokens = action.payload.data;
-        setAuthToken(action.payload.data.access_token);
+        // Store token data in the same format as login
+        if (action.payload.data) {
+          state.tokens = {
+            access_token: action.payload.data.access_token,
+            token_type: action.payload.data.token_type || "Bearer",
+          };
+        }
+        state.tempEmail = null;
+        state.error = null;
       })
       .addCase(verifyOTP.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload?.message || "OTP verification failed";
+        state.error = action.payload || "OTP verification failed";
+        state.isAuthenticated = false;
+      })
+      // Register Cases
+      .addCase(register.fulfilled, (state, action) => {
+        state.loading = false;
+        state.tempEmail = action.payload.email;
+      })
+      .addCase(register.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+
+      .addCase(register.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload?.message || "Registration failed";
+      })
+
+      // Verify OTP Cases
+      .addCase(resendOTP.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(resendOTP.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(resendOTP.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Failed to resend OTP";
       })
 
       // Logout Cases

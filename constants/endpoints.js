@@ -7,4 +7,5 @@ export const ENDPOINTS = {
   FETCH_DETAILED_PROFILE: "/profile",
   LOGOUT: "/logout",
   UPDATE_PROFILE_IMAGE: "/user/profile/photo",
+  RESEND_OTP_MASSAGE: "/resend-verification-link",
 };
