@@ -1,19 +1,32 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { View, StyleSheet, Image, Animated } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { checkAuthState } from "../store/slices/auth.slice";
 
 export default function SplashScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const { isAuthenticated } = useSelector((state) => state.auth);
-  const initialRoute = useRef(null);
+  const dispatch = useDispatch();
+  const { isAuthenticated, loading } = useSelector((state) => state.auth);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    // Determine the initial route only once
-    if (!initialRoute.current) {
-      initialRoute.current = isAuthenticated ? "/(tabs)/home" : "/welcome";
-    }
+    const initializeAuth = async () => {
+      try {
+        await dispatch(checkAuthState()).unwrap();
+        setAuthChecked(true);
+      } catch (error) {
+        console.error("Auth check failed:", error);
+        setAuthChecked(true); // Proceed even if check fails
+      }
+    };
+
+    initializeAuth();
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (!authChecked) return;
 
     Animated.timing(fadeAnim, {
       toValue: 1,
@@ -21,12 +34,13 @@ export default function SplashScreen() {
       useNativeDriver: true,
     }).start();
 
-    const timer = setTimeout(() => {
-      router.replace(initialRoute.current);
+    const navigationTimer = setTimeout(() => {
+      const initialRoute = isAuthenticated ? "/(tabs)/home" : "/welcome";
+      router.replace(initialRoute);
     }, 2000);
 
-    return () => clearTimeout(timer);
-  }, [fadeAnim]); // Remove isAuthenticated from dependencies
+    return () => clearTimeout(navigationTimer);
+  }, [fadeAnim, authChecked, isAuthenticated]);
 
   return (
     <LinearGradient

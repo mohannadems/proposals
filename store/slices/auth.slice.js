@@ -104,6 +104,27 @@ export const resendOTP = createAsyncThunk(
     }
   }
 );
+export const checkAuthState = createAsyncThunk(
+  "auth/checkAuthState",
+  async (_, { dispatch }) => {
+    try {
+      const token = await AsyncStorage.getItem("userToken");
+      const userData = await AsyncStorage.getItem("userData");
+
+      if (token) {
+        setAuthToken(`Bearer ${token}`);
+        return {
+          tokens: { access_token: token },
+          user: userData ? JSON.parse(userData) : null,
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error("Error checking auth state:", error);
+      return null;
+    }
+  }
+);
 
 // Auth Slice
 const authSlice = createSlice({
@@ -127,11 +148,20 @@ const authSlice = createSlice({
       .addCase(login.pending, (state) => {
         state.loading = true;
         state.error = null;
-      })
+      });
+    builder
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
         state.tokens = action.payload.data;
         state.isAuthenticated = true;
+        state.user = action.payload.data.user;
+
+        // Store auth data
+        AsyncStorage.setItem("userToken", action.payload.data.access_token);
+        AsyncStorage.setItem(
+          "userData",
+          JSON.stringify(action.payload.data.user)
+        );
         setAuthToken(action.payload.data.access_token);
       })
       .addCase(login.rejected, (state, action) => {
@@ -210,6 +240,20 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.user = null;
         state.tokens = null;
+      })
+      .addCase(checkAuthState.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(checkAuthState.fulfilled, (state, action) => {
+        if (action.payload) {
+          state.tokens = action.payload.tokens;
+          state.user = action.payload.user;
+          state.isAuthenticated = true;
+        }
+        state.loading = false;
+      })
+      .addCase(checkAuthState.rejected, (state) => {
+        state.loading = false;
       });
   },
 });

@@ -133,7 +133,7 @@ const ErrorModal = ({ visible, errors, onClose }) => {
 };
 
 // Part 3: Component Setup & Handlers
-const FillProfileData = () => {
+const fillProfileData = () => {
   const scrollViewRef = useRef(null);
   const navigation = useNavigation();
   const dispatch = useDispatch();
@@ -674,4 +674,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default FillProfileData;
+export default fillProfileData;

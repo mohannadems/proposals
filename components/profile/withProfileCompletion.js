@@ -68,7 +68,7 @@ const withProfileCompletion = (WrappedComponent) => {
               start your journey to finding love
             </Text>
             <TouchableOpacity
-              onPress={() => router.push("/(profile)/FillProfileData")}
+              onPress={() => router.push("/(profile)/fillProfileData")}
             >
               <LinearGradient
                 colors={[COLORS.primary, COLORS.secondary]}

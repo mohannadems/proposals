@@ -12,8 +12,6 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
-import random from "../../assets/images/11.jpg";
-
 const { width } = Dimensions.get("window");
 
 const COLORS = {
@@ -104,7 +102,7 @@ const LandingPage = () => {
 
         {/* Stats Section */}
         <View style={styles.statsContainer}>
-          <BlurView intensity={70} style={styles.statsCard}>
+          <View style={styles.statsCard}>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>2M+</Text>
               <Text style={styles.statLabel}>Active Users</Text>
@@ -119,7 +117,7 @@ const LandingPage = () => {
               <Text style={styles.statNumber}>95%</Text>
               <Text style={styles.statLabel}>Success Rate</Text>
             </View>
-          </BlurView>
+          </View>
         </View>
 
         {/* Features Section */}
@@ -130,7 +128,7 @@ const LandingPage = () => {
               <Animated.View
                 key={index}
                 style={[
-                  styles.featureCard,
+                  styles.featureCardContainer,
                   {
                     opacity: featureAnims[index],
                     transform: [
@@ -144,18 +142,20 @@ const LandingPage = () => {
                   },
                 ]}
               >
-                <LinearGradient
-                  colors={[COLORS.white, "#F8F9FA"]}
-                  style={styles.featureGradient}
-                >
-                  <View style={styles.featureIcon}>
-                    <feature.icon />
-                  </View>
-                  <Text style={styles.featureTitle}>{feature.title}</Text>
-                  <Text style={styles.featureDescription}>
-                    {feature.description}
-                  </Text>
-                </LinearGradient>
+                <View style={styles.featureCard}>
+                  <LinearGradient
+                    colors={[COLORS.white, "#F8F9FA"]}
+                    style={styles.featureGradient}
+                  >
+                    <View style={styles.featureIcon}>
+                      <feature.icon />
+                    </View>
+                    <Text style={styles.featureTitle}>{feature.title}</Text>
+                    <Text style={styles.featureDescription}>
+                      {feature.description}
+                    </Text>
+                  </LinearGradient>
+                </View>
               </Animated.View>
             ))}
           </View>
@@ -188,19 +188,15 @@ const LandingPage = () => {
                 ]}
               >
                 <View style={styles.testimonialContentView}>
-                  <View style={styles.testimonialImageContainer}>
+                  {/* Centered Image */}
+                  <View style={styles.testimonialImageWrapper}>
                     <Image
                       source={testimonial.image}
-                      style={styles.testimonialImage}
-                      defaultSource={random} // Fallback image
+                      style={styles.testimonialImageStyle}
                     />
-                    <Text style={styles.testimonialInitials}>
-                      {testimonial.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </Text>
                   </View>
+
+                  {/* Testimonial Content */}
                   <Text style={styles.testimonialText}>{testimonial.text}</Text>
                   <Text style={styles.testimonialName}>{testimonial.name}</Text>
                   <Text style={styles.testimonialLocation}>
@@ -219,7 +215,7 @@ const LandingPage = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: "#f0f0f0",
   },
   scrollView: {
     flex: 1,
@@ -269,7 +265,18 @@ const styles = StyleSheet.create({
     marginTop: -18,
     marginHorizontal: 20,
     marginBottom: 20,
-    zIndex: 1,
+    zIndex: 100,
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    borderColor: COLORS.primary,
+    shadowColor: COLORS.text,
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
+    elevation: 12,
   },
   statsCard: {
     flexDirection: "row",
@@ -277,7 +284,7 @@ const styles = StyleSheet.create({
     padding: 24,
     borderRadius: 20,
     overflow: "hidden",
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    background: "transparent",
   },
   statItem: {
     alignItems: "center",
@@ -324,11 +331,11 @@ const styles = StyleSheet.create({
     shadowColor: COLORS.text,
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 8,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
+    shadowOpacity: 0.15,
+    shadowRadius: 15,
+    elevation: 10,
   },
   featureGradient: {
     padding: 20,
@@ -402,31 +409,74 @@ const styles = StyleSheet.create({
     opacity: 0.6,
     textAlign: "center",
   },
-  featureIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.primary + "20",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  featureIconText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: COLORS.primary,
-  },
-  testimonialImageContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  featureCardContainer: {
+    width: (width - 56) / 2,
+    marginHorizontal: 8,
     marginBottom: 16,
-    alignSelf: "center",
-    overflow: "hidden",
   },
-  testimonialImage: {
+  featureCard: {
+    borderRadius: 20,
+    overflow: "hidden",
+    backgroundColor: COLORS.white,
+    shadowColor: COLORS.text,
+    shadowOffset: {
+      width: 0,
+      height: 10,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
+    elevation: 12,
+  },
+  featureGradient: {
+    padding: 20,
+    alignItems: "center",
+  },
+  testimonialContentView: {
+    alignItems: "center", // Center content horizontally
+    padding: 20,
+  },
+  testimonialImageWrapper: {
+    width: 60,
+    height: 60,
+    borderRadius: 35,
+    overflow: "hidden",
+    marginBottom: 10,
+  },
+  testimonialImageStyle: {
     width: "100%",
     height: "100%",
     resizeMode: "cover",
+  },
+  testimonialText: {
+    textAlign: "center",
+    fontSize: 16,
+    marginVertical: 8,
+  },
+  testimonialName: {
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  testimonialLocation: {
+    color: "gray",
+    textAlign: "center",
+  },
+  featureIconContainer: {
+    width: 50,
+    height: 50,
+    backgroundColor: COLORS.primary,
+    borderRadius: 25, // Circular shape
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3, // Shadow for Android
+  },
+  featureIconText: {
+    fontSize: 24,
+    color: "#ffffff", // Text color
+    fontWeight: "bold",
   },
 });
 
@@ -460,6 +510,7 @@ const features = [
   },
 ];
 
+// Mock data for testimonials
 const testimonials = [
   {
     image: require("../../assets/images/11.jpg"),
@@ -468,16 +519,17 @@ const testimonials = [
     location: "New York, NY",
   },
   {
-    image: require("../../assets/images/222.jpg"), // Add this image to your assets
+    image: require("../../assets/images/222.jpg"),
     text: "The video chat feature helped me feel safe and comfortable before meeting in person.",
     name: "Michael Chen",
     location: "San Francisco, CA",
   },
   {
-    image: require("../../assets/images/444.jpg"), // Add this image to your assets
+    image: require("../../assets/images/5555.jpg"),
     text: "The local events feature helped me meet amazing people in my area.",
     name: "Emma Williams",
     location: "London, UK",
   },
 ];
+
 export default LandingPage;

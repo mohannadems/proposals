@@ -44,7 +44,7 @@ const ProfileCompletionAlert = () => {
 
   const handleComplete = () => {
     dispatch(setShowProfileAlert(false));
-    router.push("/(profile)/FillProfileData");
+    router.push("/(profile)/fillProfileData");
   };
 
   const handleLater = () => {
