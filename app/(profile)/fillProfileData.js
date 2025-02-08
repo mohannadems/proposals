@@ -78,7 +78,6 @@ const initialFormState = {
   educational_level_id: null,
   specialization_id: null,
   employment_status: null,
-  origin_id: null,
   smoking_status: null,
   smoking_tools: [],
   drinking_status_id: null,
