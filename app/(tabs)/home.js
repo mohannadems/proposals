@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
+import random from "../../assets/images/11.jpg";
 
 const { width } = Dimensions.get("window");
 
@@ -187,7 +188,12 @@ const LandingPage = () => {
                 ]}
               >
                 <View style={styles.testimonialContentView}>
-                  <View style={styles.testimonialImage}>
+                  <View style={styles.testimonialImageContainer}>
+                    <Image
+                      source={testimonial.image}
+                      style={styles.testimonialImage}
+                      defaultSource={random} // Fallback image
+                    />
                     <Text style={styles.testimonialInitials}>
                       {testimonial.name
                         .split(" ")
@@ -284,7 +290,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 14,
-    color: COLORS.white,
+    color: COLORS.text,
     opacity: 0.6,
   },
   statDivider: {
@@ -396,6 +402,32 @@ const styles = StyleSheet.create({
     opacity: 0.6,
     textAlign: "center",
   },
+  featureIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.primary + "20",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  featureIconText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: COLORS.primary,
+  },
+  testimonialImageContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: 16,
+    alignSelf: "center",
+    overflow: "hidden",
+  },
+  testimonialImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+  },
 });
 
 // Mock data for features
@@ -428,26 +460,24 @@ const features = [
   },
 ];
 
-// Mock data for testimonials
 const testimonials = [
   {
-    image: "https://example.com/placeholder.jpg",
+    image: require("../../assets/images/11.jpg"),
     text: "I found my soulmate through this app! The smart matching really works.",
     name: "Sarah Johnson",
     location: "New York, NY",
   },
   {
-    image: "https://example.com/placeholder.jpg",
+    image: require("../../assets/images/222.jpg"), // Add this image to your assets
     text: "The video chat feature helped me feel safe and comfortable before meeting in person.",
     name: "Michael Chen",
     location: "San Francisco, CA",
   },
   {
-    image: "https://example.com/placeholder.jpg",
+    image: require("../../assets/images/444.jpg"), // Add this image to your assets
     text: "The local events feature helped me meet amazing people in my area.",
     name: "Emma Williams",
     location: "London, UK",
   },
 ];
-
 export default LandingPage;
