@@ -35,8 +35,12 @@ export default function LoginScreen() {
       }
       return result;
     } catch (error) {
-      // Handle login or profile fetch errors
-      console.error("Login or profile fetch failed", error);
+      // Set the error message in the form
+      form.setValidationErrors((prev) => ({
+        ...prev,
+        general: error.message || AUTH_MESSAGES.INVALID_CREDENTIALS,
+      }));
+      throw error; // Re-throw to be handled by handleLogin
     }
   };
 

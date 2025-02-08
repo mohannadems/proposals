@@ -30,6 +30,7 @@ export const useLoginForm = () => {
       setValidationErrors((prev) => ({
         ...prev,
         [field]: errors[field] || "",
+        general: "", // Clear general error when user types
       }));
     }
   };
