@@ -14,12 +14,13 @@ import {
   Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { setShowProfileAlert } from "../../store/slices/profile.slice";
 import { useForm, FormProvider } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as Yup from "yup";
 import PersonalInfoSection from "../../components/profile/profile-steps/PersonalInfoSection";
-import LifestyleSection from "../../components/profile/profile-steps/LifestyleSection";
-import EducationWorkSection from "../../components/profile/profile-steps/EducationWorkSection";
+import LifestyleSection from "../../components/profile/profile-steps/Profile-steps-filling-data/LifestyleSection";
+import EducationWorkSection from "../../components/profile/profile-steps/Profile-steps-filling-data/EducationWorkSection";
 import ProgressSteps from "../../components/common/ProgressSteps";
 import { COLORS } from "../../constants/colors";
 import { profileValidationSchema } from "../../utils/profile-validation";
@@ -28,8 +29,13 @@ import { profileService } from "../../services/profile.service";
 import { stepValidations } from "../../utils/profile-validation";
 import { stepFields } from "../../utils/profile-validation";
 import Feather from "react-native-vector-icons/Feather";
+import { updateProfile } from "../../store/slices/profile.slice";
+import { fetchProfile } from "../../store/slices/profile.slice";
+import withProfileCompletion from "../../components/profile/withProfileCompletion";
 import ProfileImageSection from "../../components/profile/profile-steps/ProfileImageSection";
-
+import { calculateProfileProgress } from "../../utils/profileProgress";
+import { useDispatch } from "react-redux";
+import { updateProfilePhoto } from "../../store/slices/profile.slice";
 const { width, height } = Dimensions.get("window");
 
 const FORM_STEPS = [
@@ -72,6 +78,7 @@ const initialFormState = {
   educational_level_id: null,
   specialization_id: null,
   employment_status: null,
+  origin_id: null,
   smoking_status: null,
   smoking_tools: [],
   drinking_status_id: null,
@@ -130,7 +137,7 @@ const ErrorModal = ({ visible, errors, onClose }) => {
 const FillProfileData = () => {
   const scrollViewRef = useRef(null);
   const navigation = useNavigation();
-
+  const dispatch = useDispatch();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorModalVisible, setErrorModalVisible] = useState(false);
@@ -250,20 +257,21 @@ const FillProfileData = () => {
         marriage_budget_id: Number(data.marriage_budget_id) || null,
         religiosity_level_id: Number(data.religiosity_level_id) || null,
         sleep_habit_id: Number(data.sleep_habit_id) || null,
-        job_title: String(data.job_title || ""),
-        position_level: Number(data.position_level) || null,
+        job_title_id: Number(data.job_title_id) || null,
+        position_level_id: Number(data.position_level) || null,
         social_media_presence_id: Number(data.social_media_presence) || null,
         photos: Array.isArray(data.photos)
           ? data.photos.filter((item) => !isNaN(item)).map(Number)
           : [],
       };
+
       if (data.employment_status === true) {
         submissionData.job_title = String(data.job_title || "");
-        submissionData.position_level = Number(data.position_level) || null;
+        submissionData.position_level_id = Number(data.position_level) || null;
       }
 
       // Handle smoking status
-      submissionData.smoking_status = Number(data.smoking_status) === 1 ? 0 : 1; // 1 for smokers, 0 for non-smokers
+      submissionData.smoking_status = Number(data.smoking_status) === 1 ? 0 : 1;
 
       // Include smoking_tools only for smokers
       if (Number(data.smoking_status) > 1) {
@@ -277,36 +285,48 @@ const FillProfileData = () => {
         submissionData.hijab_status = Number(data.hijab_status) || 0;
       }
 
+      // Remove null values
       Object.keys(submissionData).forEach(
         (key) => submissionData[key] === null && delete submissionData[key]
       );
 
-      await profileService.updateProfile(submissionData);
-      if (data.profile_image && data.profile_image.base64) {
-        submissionData.profile_image = {
-          base64: data.profile_image.base64,
-          type: data.profile_image.type || "image/jpeg",
-        };
-      }
-      await profileService.updateProfile(submissionData);
+      // First update profile
+      const resultAction = await dispatch(updateProfile(submissionData));
 
-      // Modern success alert with emojis and styling
-      Alert.alert(
-        "🎉 Success!",
-        "Your profile has been updated successfully!",
-        [
-          {
-            text: "Continue",
-            onPress: () => navigation.goBack(),
-            style: "default",
-          },
-        ],
-        { cancelable: false }
-      );
+      if (updateProfile.fulfilled.match(resultAction)) {
+        // Handle profile image if exists
+        if (data.profile_image && data.profile_image.base64) {
+          const imageData = {
+            base64: data.profile_image.base64,
+            type: data.profile_image.type || "image/jpeg",
+          };
+          await dispatch(updateProfilePhoto(imageData));
+        }
+
+        // Fetch fresh profile data
+        await dispatch(fetchProfile());
+
+        Alert.alert(
+          "🎉 Success!",
+          "Your profile has been updated successfully!",
+          [
+            {
+              text: "Continue",
+              onPress: () => {
+                dispatch(setShowProfileAlert(false));
+                navigation.goBack();
+              },
+              style: "default",
+            },
+          ],
+          { cancelable: false }
+        );
+      } else {
+        throw new Error(resultAction.payload || "Failed to update profile");
+      }
     } catch (error) {
       console.error("Profile update failed:", error);
 
-      // Enhanced error handling with modern styling
       if (error.response?.status === 422) {
         const validationErrors = error.response.data.errors;
         const errorMessages = Object.entries(validationErrors)

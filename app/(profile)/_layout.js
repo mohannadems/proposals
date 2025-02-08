@@ -19,12 +19,7 @@ export default function ProfileLayout() {
           headerLeft: null,
         }}
       />
-      <Stack.Screen
-        name="preview"
-        options={{
-          title: "Profile Preview",
-        }}
-      />
+
       <Stack.Screen
         name="edit"
         options={{

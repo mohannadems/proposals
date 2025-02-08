@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -22,6 +22,14 @@ const ProfileCompletionAlert = () => {
 
   // Calculate progress and missing fields
   const { progress, missingFields } = calculateProfileProgress(data);
+
+  // State to force re-render when progress changes
+  const [refresh, setRefresh] = useState(false);
+
+  useEffect(() => {
+    // Trigger re-render by toggling refresh state when progress changes
+    setRefresh((prev) => !prev);
+  }, [progress]);
 
   // Determine progress message based on completion
   const getProgressMessage = (progress) => {

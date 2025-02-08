@@ -218,4 +218,26 @@ export const PROFILE_DATA = {
     { id: 3, name: "Rarely Active 📴" },
     { id: 4, name: "Inactive 🚫" },
   ],
+  jobTitles: [
+    { id: 1, name: "Software Developer 💻" },
+    { id: 2, name: "Data Scientist 📊" },
+    { id: 3, name: "Cloud Engineer ☁️" },
+    { id: 4, name: "AI/ML Specialist 🤖" },
+  ],
+  maritalStatuses: [
+    { id: 1, name: "Single 🧍" },
+    { id: 2, name: "Married 💍" },
+    { id: 3, name: "Divorced 🔓" },
+    { id: 4, name: "Widowed 🕊️" },
+    { id: 5, name: "Separated ↔️" },
+    { id: 6, name: "In a Relationship ❤️" },
+    { id: 7, name: "Engaged 💑" },
+  ],
+  childrenNumbers: [
+    { id: 1, name: "No Children 🚫" },
+    { id: 2, name: "1 Child 👶" },
+    { id: 3, name: "2 Children 🧒👧" },
+    { id: 4, name: "3 Children 👧🧒👦" },
+    { id: 5, name: "4 or More Children 👨‍👩‍👧‍👦" },
+  ],
 };

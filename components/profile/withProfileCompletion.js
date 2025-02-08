@@ -1,7 +1,5 @@
-import React from "react";
-import { useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import { setShowProfileAlert } from "../../store/slices/profile.slice";
+import React, { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
 import { useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { COLORS } from "../../constants/colors";
@@ -18,8 +16,12 @@ const withProfileCompletion = (WrappedComponent) => {
     // Calculate progress using the utility function
     const { progress } = calculateProfileProgress(data);
 
+    // Use state to force re-render when progress changes
+    const [refresh, setRefresh] = useState(false);
+
     useEffect(() => {
-      // Force a re-render or trigger some state change when progress changes
+      // Trigger re-render by toggling refresh state when progress changes
+      setRefresh((prev) => !prev);
     }, [progress]);
 
     // Always render ProfileCompletionAlert when progress is less than 100

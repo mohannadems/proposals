@@ -17,6 +17,8 @@ import { TYPOGRAPHY } from "../../constants/typography";
 import { COLORS } from "../../constants/colors";
 import Icon from "react-native-vector-icons/Feather";
 import Avatar from "../../assets/images/avatar.jpg";
+import { useRouter } from "expo-router"; // Import useRouter hook
+
 const articles = [
   {
     id: 1,
@@ -77,6 +79,8 @@ const HomeScreen = () => {
 
   // Add this method before the return statement
   const renderProfileCompletionModal = () => {
+    const router = useRouter(); // Initialize router
+
     if (!showProfileCompletion) return null;
 
     return (
@@ -216,7 +220,10 @@ const HomeScreen = () => {
         <Text style={featuredArticleStyles.articlesSectionTitle}>
           Featured Articles
         </Text>
-        <TouchableOpacity style={featuredArticleStyles.articlesViewAllBtn}>
+        <TouchableOpacity
+          style={featuredArticleStyles.articlesViewAllBtn}
+          onPress={() => router.push("/(profile)/FillProfileData")} // Navigate directly within the onPress
+        >
           <Text style={featuredArticleStyles.articlesViewAllText}>
             View All
           </Text>
