@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     fontSize: 14,
-    color: COLORS.text,
+    color: COLORS.white,
     opacity: 0.6,
   },
   statDivider: {
