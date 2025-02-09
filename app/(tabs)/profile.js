@@ -723,4 +723,4 @@ const ProfileScreen = () => {
     </>
   );
 };
-export default withProfileCompletion(ProfileScreen);
+export default ProfileScreen;

@@ -27,10 +27,10 @@ export default function ProfileLayout() {
         }}
       />
       <Stack.Screen
-        name="personProfile"
+        name="matchProfile"
         options={{
           headerShown: false,
-          title: "personProfile",
+          title: "matchProfile",
         }}
       />
       <Stack.Screen

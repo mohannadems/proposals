@@ -1,23 +1,32 @@
-import React, { useRef, useState } from "react";
+"use client";
+
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  Animated,
-  PanResponder,
+  ScrollView,
   Image,
-  Dimensions,
   TouchableOpacity,
+  Animated,
+  Dimensions,
+  StatusBar,
+  Platform,
+  PanResponder,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { Feather } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
+import { SharedElement } from "react-navigation-shared-element";
+import MaskedView from "@react-native-masked-view/masked-view";
 import { COLORS } from "../../constants/colors";
-
+import { useRoute } from "@react-navigation/native";
 const { width, height } = Dimensions.get("window");
-const CARD_WIDTH = width * 0.9;
+const CARD_WIDTH = width - 48;
 const CARD_HEIGHT = height * 0.7;
-const SWIPE_THRESHOLD = width * 0.3;
+import { Link } from "expo-router";
+import withProfileCompletion from "../../components/profile/withProfileCompletion";
 
 const users = [
   {
@@ -26,8 +35,13 @@ const users = [
     age: 26,
     location: "New York, NY",
     bio: "Adventure seeker & coffee enthusiast ✨",
-    images: ["/placeholder.svg?height=600&width=400"],
+    images: [require("../../assets/images/11.jpg")],
     interests: ["Travel", "Photography", "Yoga"],
+    matchPercentage: 95,
+    premium: true,
+    lastActive: "Just now",
+    verified: true,
+    distance: "2 miles away",
   },
   {
     id: 2,
@@ -35,204 +49,358 @@ const users = [
     age: 28,
     location: "San Francisco, CA",
     bio: "Tech lover & foodie 🍜",
-    images: ["/placeholder.svg?height=600&width=400"],
+    images: [require("../../assets/images/222.jpg")],
     interests: ["Cooking", "Gaming", "Hiking"],
+    matchPercentage: 88,
+    premium: false,
+    lastActive: "2h ago",
+    verified: true,
+    distance: "5 miles away",
   },
-  // Add more users as needed
+  // Add more users...
 ];
 
-const MatchScreen = () => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const position = useRef(new Animated.ValueXY()).current;
-  const rotation = position.x.interpolate({
-    inputRange: [-width / 2, 0, width / 2],
-    outputRange: ["-10deg", "0deg", "10deg"],
-    extrapolate: "clamp",
-  });
+const SpotlightCard = ({ user, onPress }) => {
+  const scale = useRef(new Animated.Value(1)).current;
 
-  const likeOpacity = position.x.interpolate({
-    inputRange: [0, width / 4],
-    outputRange: [0, 1],
-    extrapolate: "clamp",
-  });
-
-  const nopeOpacity = position.x.interpolate({
-    inputRange: [-width / 4, 0],
-    outputRange: [1, 0],
-    extrapolate: "clamp",
-  });
-
-  const nextCardScale = position.x.interpolate({
-    inputRange: [-width / 2, 0, width / 2],
-    outputRange: [1, 0.8, 1],
-    extrapolate: "clamp",
-  });
-
-  const panResponder = PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onPanResponderMove: (_, gesture) => {
-      position.setValue({ x: gesture.dx, y: gesture.dy });
-    },
-    onPanResponderRelease: (_, gesture) => {
-      if (gesture.dx > SWIPE_THRESHOLD) {
-        swipeRight();
-      } else if (gesture.dx < -SWIPE_THRESHOLD) {
-        swipeLeft();
-      } else {
-        resetPosition();
-      }
-    },
-  });
-
-  const swipeRight = () => {
-    Animated.timing(position, {
-      toValue: { x: width + 100, y: gesture.dy },
-      duration: 200,
+  const handlePressIn = () => {
+    Animated.spring(scale, {
+      toValue: 0.5,
       useNativeDriver: true,
-    }).start(() => handleSwipe("right"));
+    }).start();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
-  const swipeLeft = () => {
-    Animated.timing(position, {
-      toValue: { x: -width - 100, y: gesture.dy },
-      duration: 200,
-      useNativeDriver: true,
-    }).start(() => handleSwipe("left"));
-  };
-
-  const resetPosition = () => {
-    Animated.spring(position, {
-      toValue: { x: 0, y: 0 },
-      friction: 4,
+  const handlePressOut = () => {
+    Animated.spring(scale, {
+      toValue: 1,
       useNativeDriver: true,
     }).start();
   };
 
-  const handleSwipe = (direction) => {
-    setCurrentIndex((prevIndex) => prevIndex + 1);
-    position.setValue({ x: 0, y: 0 });
-  };
-
-  const renderCard = (user, index) => {
-    if (index < currentIndex) return null;
-
-    if (index === currentIndex) {
-      const animatedCardStyle = {
-        transform: [
-          { translateX: position.x },
-          { translateY: position.y },
-          { rotate: rotation },
-        ],
-      };
-
-      return (
-        <Animated.View
-          key={user.id}
-          style={[styles.card, animatedCardStyle]}
-          {...panResponder.panHandlers}
+  return (
+    <TouchableOpacity
+      activeOpacity={1}
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+    >
+      <Animated.View style={[styles.spotlightCard, { transform: [{ scale }] }]}>
+        <SharedElement id={`user.${user.id}.image`}>
+          <Image source={user.images[0]} style={styles.spotlightImage} />
+        </SharedElement>
+        <LinearGradient
+          colors={["transparent", "rgba(0,0,0,0.8)"]}
+          style={styles.spotlightGradient}
         >
-          <CardContent user={user} />
-        </Animated.View>
-      );
-    }
-
-    if (index === currentIndex + 1) {
-      return (
-        <Animated.View
-          key={user.id}
-          style={[
-            styles.card,
-            {
-              transform: [{ scale: nextCardScale }],
-              zIndex: -1,
-            },
-          ]}
-        >
-          <CardContent user={user} />
-        </Animated.View>
-      );
-    }
-
-    return null;
-  };
-
-  const CardContent = ({ user }) => (
-    <>
-      <Image source={{ uri: user.images[0] }} style={styles.cardImage} />
-      <LinearGradient
-        colors={["transparent", "rgba(0,0,0,0.8)"]}
-        style={styles.gradient}
-      >
-        <BlurView intensity={80} style={styles.infoContainer}>
-          <View style={styles.userInfo}>
-            <Text style={styles.name}>
-              {user.name}, {user.age}
-            </Text>
-            <Text style={styles.location}>{user.location}</Text>
-          </View>
-          <View style={styles.bioContainer}>
-            <Text style={styles.bio}>{user.bio}</Text>
-            <View style={styles.interests}>
-              {user.interests.map((interest, index) => (
-                <View key={index} style={styles.interestTag}>
-                  <Text style={styles.interestText}>{interest}</Text>
-                </View>
-              ))}
+          <BlurView intensity={80} style={styles.spotlightInfo}>
+            <View style={styles.spotlightHeader}>
+              <View style={styles.nameVerifiedContainer}>
+                <Text style={styles.spotlightName}>
+                  {user.name}, {user.age}
+                </Text>
+                {user.verified && (
+                  <View style={styles.verifiedBadge}>
+                    <Feather name="check" size={12} color={COLORS.white} />
+                  </View>
+                )}
+              </View>
+              <Text style={styles.spotlightLocation}>{user.location}</Text>
             </View>
+            <View style={styles.matchPercentageContainer}>
+              <MaskedView
+                maskElement={
+                  <View style={styles.progressMask}>
+                    <Animated.View
+                      style={[
+                        styles.progressBar,
+                        { width: `${user.matchPercentage}%` },
+                      ]}
+                    />
+                  </View>
+                }
+              >
+                <LinearGradient
+                  colors={COLORS.primaryGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.progressGradient}
+                />
+              </MaskedView>
+              <Text style={styles.matchPercentage}>
+                {user.matchPercentage}% Match
+              </Text>
+            </View>
+          </BlurView>
+        </LinearGradient>
+        {user.premium && (
+          <View style={styles.premiumBadge}>
+            <Feather name="star" size={12} color={COLORS.primary} />
           </View>
-        </BlurView>
-      </LinearGradient>
-
-      <Animated.View style={[styles.choiceContainer, { opacity: likeOpacity }]}>
-        <View style={[styles.choiceBox, styles.likeBox]}>
-          <Text style={styles.choiceText}>LIKE</Text>
+        )}
+        <View style={styles.activeStatus}>
+          <View style={styles.activeDot} />
+          <Text style={styles.activeText}>{user.lastActive}</Text>
         </View>
       </Animated.View>
-
-      <Animated.View style={[styles.choiceContainer, { opacity: nopeOpacity }]}>
-        <View style={[styles.choiceBox, styles.nopeBox]}>
-          <Text style={styles.choiceText}>NOPE</Text>
-        </View>
-      </Animated.View>
-    </>
+    </TouchableOpacity>
   );
+};
+
+const QuickMatch = ({ user, onPress }) => {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    Animated.spring(scale, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scale, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  return (
+    <TouchableOpacity
+      activeOpacity={1}
+      onPress={onPress}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+    >
+      <Animated.View
+        style={[styles.quickMatchCard, { transform: [{ scale }] }]}
+      >
+        <Image source={user.images[0]} style={styles.quickMatchImage} />
+        <BlurView intensity={80} style={styles.quickMatchInfo}>
+          <View style={styles.quickMatchHeader}>
+            <Text style={styles.quickMatchName}>{user.name}</Text>
+            <Text style={styles.quickMatchAge}>{user.age}</Text>
+          </View>
+          <Text style={styles.quickMatchDistance}>{user.distance}</Text>
+        </BlurView>
+        {user.premium && (
+          <LinearGradient
+            colors={COLORS.primaryGradient}
+            style={styles.premiumRing}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          />
+        )}
+      </Animated.View>
+    </TouchableOpacity>
+  );
+};
+
+const FilterChip = ({ label, icon, active, onPress }) => (
+  <TouchableOpacity
+    style={[styles.filterChip, active && styles.filterChipActive]}
+    onPress={() => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      onPress();
+    }}
+  >
+    <LinearGradient
+      colors={active ? COLORS.primaryGradient : ["transparent", "transparent"]}
+      style={StyleSheet.absoluteFill}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+    />
+    <Feather
+      name={icon}
+      size={16}
+      color={active ? COLORS.white : COLORS.text}
+    />
+    <Text
+      style={[styles.filterChipText, active && styles.filterChipTextActive]}
+    >
+      {label}
+    </Text>
+  </TouchableOpacity>
+);
+
+const MatchesScreen = () => {
+  const [activeFilter, setActiveFilter] = useState("nearby");
+  const [scrollY] = useState(new Animated.Value(0));
+  const [showFilters, setShowFilters] = useState(false);
+
+  const headerHeight = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [
+      Platform.OS === "ios" ? 130 : 100,
+      Platform.OS === "ios" ? 120 : 60,
+    ],
+    extrapolate: "clamp",
+  });
+
+  const headerOpacity = scrollY.interpolate({
+    inputRange: [0, 100],
+    outputRange: [1, 0.98],
+    extrapolate: "clamp",
+  });
+
+  const filtersHeight = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.spring(filtersHeight, {
+      toValue: showFilters ? 280 : 0,
+      useNativeDriver: false,
+    }).start();
+  }, [showFilters, filtersHeight]); // Added filtersHeight to dependencies
+
+  const handleMatchPress = useCallback((user) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    console.log("Match pressed:", user.id);
+  }, []);
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Discover</Text>
-        <View style={styles.progressBar}>
-          {users.slice(0, 5).map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.progressDot,
-                index < currentIndex ? styles.progressDotCompleted : null,
-              ]}
-            />
-          ))}
+      <StatusBar barStyle="light-content" />
+      <Animated.View
+        style={[
+          styles.header,
+          { height: headerHeight, opacity: headerOpacity },
+        ]}
+      >
+        <BlurView intensity={80} style={StyleSheet.absoluteFill}>
+          <LinearGradient
+            colors={COLORS.primaryGradient}
+            style={styles.headerGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.headerContent}>
+              <Text style={styles.headerTitle}>Discover</Text>
+              <TouchableOpacity
+                style={styles.filterButton}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  setShowFilters(!showFilters);
+                }}
+              >
+                <Feather
+                  name={showFilters ? "x" : "sliders"}
+                  size={24}
+                  color={COLORS.white}
+                />
+              </TouchableOpacity>
+            </View>
+          </LinearGradient>
+        </BlurView>
+      </Animated.View>
+
+      <Animated.View style={[styles.filtersPanel, { height: filtersHeight }]}>
+        <BlurView intensity={80} style={StyleSheet.absoluteFill}>
+          <ScrollView style={styles.filtersList}>
+            <Text style={styles.filtersTitle}>Filters</Text>
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>Distance</Text>
+              {/* Add distance slider here */}
+            </View>
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>Age Range</Text>
+              {/* Add age range slider here */}
+            </View>
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>Interests</Text>
+              <View style={styles.interestGrid}>
+                {/* Add interest selection here */}
+              </View>
+            </View>
+          </ScrollView>
+        </BlurView>
+      </Animated.View>
+
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        onScroll={(event) => {
+          const offsetY = event.nativeEvent.contentOffset.y;
+          scrollY.setValue(offsetY);
+        }}
+        scrollEventThrottle={16}
+      >
+        <View style={styles.content}>
+          <View style={styles.filterContainer}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filterScroll}
+            >
+              <FilterChip
+                label="Nearby"
+                icon="map-pin"
+                active={activeFilter === "nearby"}
+                onPress={() => setActiveFilter("nearby")}
+              />
+              <FilterChip
+                label="Online"
+                icon="wifi"
+                active={activeFilter === "online"}
+                onPress={() => setActiveFilter("online")}
+              />
+              <FilterChip
+                label="New"
+                icon="star"
+                active={activeFilter === "new"}
+                onPress={() => setActiveFilter("new")}
+              />
+              <FilterChip
+                label="Popular"
+                icon="trending-up"
+                active={activeFilter === "popular"}
+                onPress={() => setActiveFilter("popular")}
+              />
+            </ScrollView>
+          </View>
+
+          <View style={styles.spotlightSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Spotlight</Text>
+              <TouchableOpacity>
+                <Link href="../(profile)/matchProfile">
+                  <Text style={styles.seeAllButton}>See All</Text>
+                </Link>
+              </TouchableOpacity>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.spotlightScroll}
+            >
+              {users.map((user) => (
+                <SpotlightCard
+                  key={user.id}
+                  user={user}
+                  onPress={() => handleMatchPress(user)}
+                />
+              ))}
+            </ScrollView>
+          </View>
+
+          <View style={styles.quickMatchSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Quick Matches</Text>
+              <TouchableOpacity>
+                <Text style={styles.seeAllButton}>See All</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.quickMatchGrid}>
+              {users.map((user) => (
+                <QuickMatch
+                  key={user.id}
+                  user={user}
+                  onPress={() => handleMatchPress(user)}
+                />
+              ))}
+            </View>
+          </View>
         </View>
-      </View>
-
-      <View style={styles.cardContainer}>
-        {users.map((user, index) => renderCard(user, index))}
-      </View>
-
-      <View style={styles.actions}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.secondaryButton]}
-          onPress={swipeLeft}
-        >
-          <Feather name="x" size={30} color={COLORS.error} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.actionButton, styles.primaryButton]}
-          onPress={swipeRight}
-        >
-          <Feather name="heart" size={30} color={COLORS.primary} />
-        </TouchableOpacity>
-      </View>
+      </ScrollView>
     </View>
   );
 };
@@ -243,49 +411,326 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   header: {
-    paddingTop: 60,
+    width: "100%",
+    position: "absolute",
+    top: 0,
+    overflow: "hidden",
+    zIndex: 100,
+  },
+  headerGradient: {
+    flex: 1,
+    paddingTop: Platform.OS === "ios" ? 50 : StatusBar.currentHeight + 10,
+  },
+  headerContent: {
+    paddingTop: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 15,
   },
   headerTitle: {
-    fontSize: 32,
+    fontSize: 34,
     fontWeight: "700",
-    color: COLORS.text,
-    marginBottom: 16,
+    color: COLORS.white,
   },
-  progressBar: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  progressDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: COLORS.border,
-  },
-  progressDotCompleted: {
-    backgroundColor: COLORS.primary,
-  },
-  cardContainer: {
-    flex: 1,
+  filterButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
     alignItems: "center",
     justifyContent: "center",
   },
-  card: {
-    width: CARD_WIDTH,
-    height: CARD_HEIGHT,
-    borderRadius: 20,
+  filtersPanel: {
     position: "absolute",
+    top: Platform.OS === "ios" ? 120 : 100,
+    left: 0,
+    right: 0,
+    zIndex: 99,
+    overflow: "hidden",
+    zIndex: 100,
+    backgroundColor: COLORS.primary,
+  },
+  filtersList: {
+    padding: 20,
+  },
+  filtersTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: COLORS.white,
+    marginBottom: 20,
+  },
+  filterSection: {
+    marginBottom: 20,
+  },
+  filterSectionTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: COLORS.white,
+    marginBottom: 10,
+  },
+  scrollView: {
+    flex: 1,
+    marginTop: Platform.OS === "ios" ? 120 : 100,
+  },
+  content: {
+    padding: 20,
+  },
+  filterContainer: {
+    marginBottom: 20,
+  },
+  filterScroll: {
+    paddingRight: 20,
+    gap: 12,
+  },
+  filterChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: COLORS.white,
+    gap: 8,
+    shadowColor: COLORS.text,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    overflow: "hidden",
+  },
+  filterChipActive: {
+    backgroundColor: "transparent",
+  },
+  filterChipText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.text,
+  },
+  filterChipTextActive: {
+    color: COLORS.white,
+  },
+  spotlightSection: {
+    marginBottom: 30,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: COLORS.text,
+  },
+  seeAllButton: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.primary,
+  },
+  spotlightScroll: {
+    paddingRight: 20,
+    gap: 16,
+  },
+  spotlightCard: {
+    width: CARD_WIDTH * 0.8,
+    height: CARD_HEIGHT * 0.6,
+    borderRadius: 20,
+    overflow: "hidden",
     backgroundColor: COLORS.white,
     shadowColor: COLORS.text,
     shadowOffset: {
       width: 0,
-      height: 4,
+      height: 8,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  spotlightImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+  },
+  spotlightGradient: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: "60%",
+  },
+  spotlightInfo: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 20,
+  },
+  spotlightHeader: {
+    marginBottom: 12,
+  },
+  nameVerifiedContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  spotlightName: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: COLORS.white,
+  },
+  spotlightLocation: {
+    fontSize: 14,
+    color: COLORS.white,
+    opacity: 0.8,
+  },
+  verifiedBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: COLORS.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  matchPercentageContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  progressMask: {
+    height: 4,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    borderRadius: 2,
     overflow: "hidden",
+  },
+  progressBar: {
+    height: "100%",
+    backgroundColor: "white",
+  },
+  progressGradient: {
+    height: 4,
+    width: "100%",
+  },
+  matchPercentage: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.white,
+  },
+  premiumBadge: {
+    position: "absolute",
+    top: 16,
+    right: 16,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: COLORS.white,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  activeStatus: {
+    position: "absolute",
+    top: 16,
+    left: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  activeDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: COLORS.success,
+  },
+  activeText: {
+    fontSize: 12,
+    color: COLORS.white,
+  },
+  quickMatchSection: {
+    marginBottom: 20,
+  },
+  quickMatchGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 16,
+  },
+  quickMatchCard: {
+    width: (width - 56) / 2,
+    height: ((width - 56) / 2) * 1.3,
+    borderRadius: 16,
+    overflow: "hidden",
+    backgroundColor: COLORS.white,
+    shadowColor: COLORS.text,
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  quickMatchImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover",
+  },
+  quickMatchInfo: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 12,
+  },
+  quickMatchHeader: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 4,
+  },
+  quickMatchName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: COLORS.white,
+  },
+  quickMatchAge: {
+    fontSize: 14,
+    color: COLORS.white,
+    opacity: 0.8,
+  },
+  quickMatchDistance: {
+    fontSize: 12,
+    color: COLORS.white,
+    opacity: 0.8,
+  },
+  premiumRing: {
+    position: "absolute",
+    top: -2,
+    left: -2,
+    right: -2,
+    bottom: -2,
+    borderRadius: 18,
+    zIndex: -1,
+  },
+  card: {
+    width: CARD_WIDTH,
+    height: CARD_WIDTH * 1.5,
+    borderRadius: 16,
+    overflow: "hidden",
+    backgroundColor: COLORS.white,
+    shadowColor: COLORS.text,
+    shadowOffset: {
+      width: 0,
+      height: 8,
+    },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 8,
   },
   cardImage: {
     width: "100%",
@@ -309,21 +754,9 @@ const styles = StyleSheet.create({
     padding: 20,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
-    backgroundColor: COLORS.primary,
   },
   userInfo: {
     marginBottom: 12,
-  },
-  name: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: COLORS.white,
-    marginBottom: 4,
-  },
-  location: {
-    fontSize: 16,
-    color: COLORS.white,
-    opacity: 0.8,
   },
   bioContainer: {
     gap: 12,
@@ -337,16 +770,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
-  },
-  interestTag: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 20,
-  },
-  interestText: {
-    fontSize: 14,
-    color: COLORS.white,
   },
   choiceContainer: {
     position: "absolute",
@@ -396,11 +819,11 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   primaryButton: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.primary,
   },
   secondaryButton: {
-    backgroundColor: COLORS.white,
+    backgroundColor: COLORS.secondary,
   },
 });
 
-export default MatchScreen;
+export default withProfileCompletion(MatchesScreen);

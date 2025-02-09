@@ -12,6 +12,7 @@ import {
   Animated,
   Dimensions,
   Modal,
+  KeyboardAvoidingViewComponent,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { setShowProfileAlert } from "../../store/slices/profile.slice";

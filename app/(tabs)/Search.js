@@ -319,7 +319,7 @@ const SelectModal = ({
     </Modal>
   );
 };
-const PartnerSearchScreen = () => {
+const search = () => {
   const [showAgeRangeModal, setShowAgeRangeModal] = useState(false);
 
   const handleAgeRangePress = () => {
@@ -1239,4 +1239,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
-export default withProfileCompletion(PartnerSearchScreen);
+export default withProfileCompletion(search);
