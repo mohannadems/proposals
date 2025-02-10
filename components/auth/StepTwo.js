@@ -1,8 +1,8 @@
 import React from "react";
 import { View, TouchableOpacity, Text, ActivityIndicator } from "react-native";
 import { MaterialIcons, FontAwesome } from "@expo/vector-icons";
-import AuthInput from "../forms/AuthInput";
-import GenderSelect from "../forms/GenderSelect";
+import AuthInput from "../forms/login-forms/AuthInput";
+import GenderSelect from "../profile/profile-steps/Profile-steps-filling-data/GenderSelect";
 import { registerStyles } from "../../styles/register.styles";
 import { REGISTER_MESSAGES } from "../../constants/register";
 

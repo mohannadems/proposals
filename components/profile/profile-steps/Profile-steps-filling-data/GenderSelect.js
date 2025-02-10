@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { COLORS } from "../../constants/colors";
+import { COLORS } from "../../../../constants/colors";
 
 const GenderSelect = ({ value, onChange, error, touched }) => {
   const genders = [

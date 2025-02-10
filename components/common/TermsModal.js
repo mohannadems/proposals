@@ -1,5 +1,5 @@
 // TermsModal.js
-import React from "react";
+import React, { useState } from "react";
 import {
   Modal,
   View,
@@ -9,9 +9,45 @@ import {
   StyleSheet,
   Dimensions,
   SafeAreaView,
+  ActivityIndicator,
+  Animated,
 } from "react-native";
 
 export const TermsModal = ({ visible, onAccept, onDecline }) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const fadeAnim = useState(new Animated.Value(0))[0];
+
+  const handleAccept = () => {
+    setIsLoading(true);
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+
+    setTimeout(() => {
+      setIsLoading(false);
+      fadeAnim.setValue(0);
+      onAccept();
+    }, 3000);
+  };
+
+  const LoadingOverlay = () => (
+    <Animated.View
+      style={[
+        styles.loadingOverlay,
+        {
+          opacity: fadeAnim,
+        },
+      ]}
+    >
+      <View style={styles.loadingContent}>
+        <ActivityIndicator size="large" color="#B65165" />
+        <Text style={styles.loadingText}>Processing...</Text>
+      </View>
+    </Animated.View>
+  );
+
   return (
     <Modal
       animationType="slide"
@@ -60,6 +96,7 @@ export const TermsModal = ({ visible, onAccept, onDecline }) => {
               <TouchableOpacity
                 style={[styles.button, styles.declineButton]}
                 onPress={onDecline}
+                disabled={isLoading}
               >
                 <Text style={[styles.buttonText, styles.declineText]}>
                   Decline
@@ -67,11 +104,13 @@ export const TermsModal = ({ visible, onAccept, onDecline }) => {
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.button, styles.acceptButton]}
-                onPress={onAccept}
+                onPress={handleAccept}
+                disabled={isLoading}
               >
                 <Text style={styles.buttonText}>Accept</Text>
               </TouchableOpacity>
             </View>
+            {isLoading && <LoadingOverlay />}
           </View>
         </View>
       </SafeAreaView>
@@ -260,5 +299,20 @@ const styles = StyleSheet.create({
   },
   declineText: {
     color: "#B65165",
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingContent: {
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: "#B65165",
+    fontWeight: "600",
   },
 });

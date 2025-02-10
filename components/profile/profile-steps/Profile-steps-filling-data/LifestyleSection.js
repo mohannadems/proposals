@@ -21,7 +21,7 @@ import {
 import { cardConfigs } from "./constants";
 import { COLORS } from "../../../../constants/colors";
 import { PROFILE_DATA } from "../../../../constants/profileData";
-import SelectableGrid from "../SelectableGrid";
+import SelectableGrid from "./SelectableGrid";
 
 const LifestyleSection = () => {
   const { control, watch } = useFormContext();

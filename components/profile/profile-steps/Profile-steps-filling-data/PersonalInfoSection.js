@@ -1,14 +1,19 @@
 // components/PersonalInfoSection.js
 import React from "react";
-import { View, Text, StyleSheet, Platform } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Platform,
+  KeyboardAvoidingView,
+} from "react-native";
 import { useFormContext } from "react-hook-form";
 import FormInput from "./FormInput";
 import FormDatePicker from "./FormDatePicker";
 import GenderSelector from "./GenderSelector";
-import { COLORS } from "../../../constants/colors";
+import { COLORS } from "../../../../constants/colors";
 import { TouchableOpacity } from "react-native";
 import Icon from "react-native-vector-icons/FontAwesome";
-
 const PersonalInfoSection = () => {
   const {
     control,
@@ -47,7 +52,6 @@ const PersonalInfoSection = () => {
         showCharacterCount
         required
       />
-
       <FormInput
         placeholderTextColor={COLORS.primary} // Your desired placeholder color
         control={control}
@@ -217,6 +221,21 @@ const styles = StyleSheet.create({
         elevation: 3,
       },
     }),
+  },
+  mainContainer: {
+    flex: 1,
+    backgroundColor: "#ffffff",
+  },
+  contentWrapper: {
+    flex: 1,
+    padding: 16,
+  },
+  formContainer: {
+    flex: 1,
+    gap: 20,
+  },
+  input: {
+    marginBottom: 16,
   },
 });
 

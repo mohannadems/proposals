@@ -12,8 +12,8 @@ import { useFormContext } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import * as ImagePicker from "expo-image-picker";
 import Feather from "react-native-vector-icons/Feather";
-import { COLORS } from "../../../constants/colors";
-import { updateProfilePhoto } from "../../../store/slices/profile.slice";
+import { COLORS } from "../../../../constants/colors";
+import { updateProfilePhoto } from "../../../../store/slices/profile.slice";
 import Reanimated, {
   FadeIn,
   FadeInDown,

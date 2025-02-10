@@ -1,7 +1,7 @@
 import React from "react";
 import { View, TouchableOpacity, Text } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
-import AuthInput from "../forms/AuthInput";
+import AuthInput from "../forms/login-forms/AuthInput";
 import { registerStyles } from "../../styles/register.styles";
 import { REGISTER_MESSAGES } from "../../constants/register";
 

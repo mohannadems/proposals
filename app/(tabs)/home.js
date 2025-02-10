@@ -14,7 +14,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import ProfileCompletionAlert from "../../components/profile/ProfileCompletionAlert";
 const { width } = Dimensions.get("window");
-
+import { fetchProfile } from "../../store/slices/profile.slice";
+import { useDispatch } from "react-redux";
 const COLORS = {
   primary: "#B65165",
   secondary: "#5856D6",
@@ -28,10 +29,14 @@ const COLORS = {
 };
 
 const LandingPage = () => {
+  const dispatch = useDispatch();
   const scrollY = new Animated.Value(0);
   const fadeAnim = new Animated.Value(0);
   const featureAnims = features.map(() => new Animated.Value(0));
   const testimonialAnims = testimonials.map(() => new Animated.Value(0));
+  useEffect(() => {
+    dispatch(fetchProfile());
+  }, [dispatch]);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -71,7 +76,6 @@ const LandingPage = () => {
 
   return (
     <>
-      <ProfileCompletionAlert />
       <View style={styles.container}>
         <Animated.ScrollView
           style={styles.scrollView}

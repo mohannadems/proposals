@@ -2,7 +2,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Controller } from "react-hook-form";
-import { COLORS } from "../../../constants/colors";
+import { COLORS } from "../../../../constants/colors";
 import { Ionicons } from "@expo/vector-icons";
 
 const GenderSelector = ({ control, name, label }) => {

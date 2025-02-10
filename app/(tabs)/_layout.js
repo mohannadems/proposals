@@ -77,6 +77,13 @@ export default function TabsLayout() {
           headerShown: false,
         }}
       />
+      <Tabs.Screen
+        name="testslogin"
+        options={{
+          title: "testslogin",
+          headerShown: false,
+        }}
+      />
     </Tabs>
   );
 }

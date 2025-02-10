@@ -3,7 +3,7 @@ import React from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
 import { COLORS } from "../../constants/colors";
 import { Controller } from "react-hook-form";
-import FormInput from "../profile/profile-steps/FormInput";
+import FormInput from "../profile/profile-steps/Profile-steps-filling-data/FormInput";
 import { TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 

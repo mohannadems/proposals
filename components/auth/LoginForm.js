@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import AuthInput from "../forms/AuthInput";
+import AuthInput from "../forms/login-forms/AuthInput";
 import { LoginButton } from "./LoginButton";
 import { BiometricButton } from "./BiometricButton";
 import { loginStyles } from "../../styles/auth.styles";
