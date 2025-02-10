@@ -19,7 +19,7 @@ import { StepIndicator } from "../../components/auth/StepIndicator";
 import { useRegisterForm } from "../../hooks/useRegisterForm";
 import { registerStyles } from "../../styles/register.styles";
 import { REGISTER_MESSAGES } from "../../constants/register";
-import { TermsModal } from "../../components/common/TermsModal";
+import { TermsModal } from "../../components/auth/TermsModal";
 import { StyleSheet } from "react-native";
 import { Alert } from "react-native";
 

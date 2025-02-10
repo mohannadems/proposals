@@ -38,7 +38,6 @@ import { calculateProfileProgress } from "../../utils/profileProgress";
 import { useDispatch } from "react-redux";
 import { updateProfilePhoto } from "../../store/slices/profile.slice";
 const { width, height } = Dimensions.get("window");
-const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 const FORM_STEPS = [
   {
@@ -354,27 +353,24 @@ const fillProfileData = () => {
   const renderCurrentStep = () => {
     const currentStepData = FORM_STEPS[currentStep - 1];
     return (
-      <ScrollView contentContainerStyle={styles.stepScrollContent}>
-        <View style={styles.stepContainer}>
-          <View style={styles.stepHeader}>
-            <Feather
-              name={currentStepData.icon}
-              size={30}
-              color={COLORS.primary}
-            />
-            <View style={styles.stepHeaderText}>
-              <Text style={styles.stepTitle}>{currentStepData.title}</Text>
-              <Text style={styles.stepDescription}>
-                {currentStepData.description}
-              </Text>
-            </View>
+      <View style={styles.stepContainer}>
+        <View style={styles.stepHeader}>
+          <Feather
+            name={currentStepData.icon}
+            size={30}
+            color={COLORS.primary}
+          />
+          <View style={styles.stepHeaderText}>
+            <Text style={styles.stepTitle}>{currentStepData.title}</Text>
+            <Text style={styles.stepDescription}>
+              {currentStepData.description}
+            </Text>
           </View>
-          {renderCurrentStepContent()}
         </View>
-      </ScrollView>
+        {renderCurrentStepContent()}
+      </View>
     );
   };
-
   const renderCurrentStepContent = () => {
     switch (currentStep) {
       case 1:
@@ -392,88 +388,101 @@ const fillProfileData = () => {
 
   return (
     <FormProvider {...methods}>
-      <SafeAreaView style={styles.safeArea}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={styles.keyboardAvoidingView}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-        >
-          <ScrollView
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
+      <SafeAreaView style={styles.container}>
+        <View style={styles.gradientBackground}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={styles.container}
           >
-            <View style={styles.container}>
-              <View style={styles.header}>
-                <TouchableOpacity
-                  onPress={() => navigation.goBack()}
-                  style={styles.backButton}
-                >
-                  <Feather name="arrow-left" size={24} color={COLORS.text} />
-                </TouchableOpacity>
-                <View style={styles.headerTextContainer}>
-                  <Text style={styles.title}>Complete Your Profile</Text>
-                  <Text style={styles.subtitle}>
-                    Create a profile that truly represents you
-                  </Text>
-                </View>
-              </View>
-
-              <ProgressSteps
-                steps={FORM_STEPS}
-                currentStep={currentStep}
-                style={styles.stepIndicator}
-              />
-
-              <View style={styles.contentContainer}>{renderCurrentStep()}</View>
-
-              <View style={styles.footer}>
-                {currentStep > 1 && (
-                  <TouchableOpacity
-                    style={[styles.button, styles.buttonSecondary]}
-                    onPress={handlePrevious}
-                  >
-                    <Feather
-                      name="chevron-left"
-                      size={20}
-                      color={COLORS.text}
-                    />
-                    <Text style={styles.buttonTextSecondary}>Previous</Text>
-                  </TouchableOpacity>
-                )}
-                <TouchableOpacity
-                  style={[styles.button, styles.buttonPrimary]}
-                  onPress={
-                    currentStep === FORM_STEPS.length
-                      ? methods.handleSubmit(onSubmit)
-                      : handleNext
-                  }
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? (
-                    <ActivityIndicator color={COLORS.white} />
-                  ) : (
-                    <>
-                      <Text style={styles.buttonTextPrimary}>
-                        {currentStep === FORM_STEPS.length ? "Submit" : "Next"}
-                      </Text>
-                      <Feather
-                        name="chevron-right"
-                        size={20}
-                        color={COLORS.white}
-                      />
-                    </>
-                  )}
-                </TouchableOpacity>
+            <View style={styles.header}>
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={styles.backButton}
+              >
+                <Feather name="arrow-left" size={24} color={COLORS.text} />
+              </TouchableOpacity>
+              <View style={styles.headerTextContainer}>
+                <Text style={styles.title}>Complete Your Profile</Text>
+                <Text style={styles.subtitle}>
+                  Create a profile that truly represents you
+                </Text>
               </View>
             </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
+
+            <ProgressSteps
+              steps={FORM_STEPS}
+              currentStep={currentStep}
+              style={styles.stepIndicator}
+            />
+
+            <Animated.View
+              style={[
+                styles.content,
+                {
+                  opacity: fadeAnim,
+                  transform: [
+                    {
+                      scale: fadeAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0.95, 1],
+                      }),
+                    },
+                  ],
+                },
+              ]}
+            >
+              <ScrollView
+                ref={scrollViewRef}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollViewContent}
+              >
+                {renderCurrentStep()}
+              </ScrollView>
+            </Animated.View>
+
+            <View style={styles.footer}>
+              {currentStep > 1 && (
+                <TouchableOpacity
+                  style={[styles.button, styles.buttonSecondary]}
+                  onPress={handlePrevious}
+                >
+                  <Feather name="chevron-left" size={20} color={COLORS.text} />
+                  <Text style={styles.buttonTextSecondary}>Previous</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity
+                style={[styles.button, styles.buttonPrimary]}
+                onPress={
+                  currentStep === FORM_STEPS.length
+                    ? methods.handleSubmit(onSubmit)
+                    : handleNext
+                }
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <ActivityIndicator color={COLORS.white} />
+                ) : (
+                  <>
+                    <Text style={styles.buttonTextPrimary}>
+                      {currentStep === FORM_STEPS.length ? "Submit" : "Next"}
+                    </Text>
+                    <Feather
+                      name="chevron-right"
+                      size={20}
+                      color={COLORS.white}
+                    />
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+            <ErrorModal
+              visible={errorModalVisible}
+              errors={currentErrors}
+              onClose={() => setErrorModalVisible(false)}
+            />
+          </KeyboardAvoidingView>
+        </View>
       </SafeAreaView>
-      <ErrorModal
-        visible={errorModalVisible}
-        errors={currentErrors}
-        onClose={() => setErrorModalVisible(false)}
-      />
     </FormProvider>
   );
 };
@@ -525,8 +534,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   scrollViewContent: {
-    flexGrow: 1,
-    paddingBottom: 100, // Adjust this value based on your footer height
+    paddingBottom: 16,
   },
   stepContainer: {
     backgroundColor: "white",
@@ -563,16 +571,20 @@ const styles = StyleSheet.create({
     color: "#7F8C8D",
   },
   footer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
     flexDirection: "row",
-    justifyContent: "space-between",
     padding: 16,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.white,
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: -2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    gap: 12,
   },
   button: {
     flex: 1,
@@ -660,41 +672,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     textAlign: "center",
-  },
-  safeArea: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  keyboardAvoidingView: {
-    flex: 1,
-  },
-  container: {
-    flex: 1,
-  },
-
-  contentContainer: {
-    flex: 1,
-  },
-  stepScrollContent: {
-    flexGrow: 1,
-  },
-  stepContainer: {
-    flex: 1,
-    padding: 16,
-  },
-  footer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    padding: 16,
-    backgroundColor: COLORS.background,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-  },
-  keyboardAvoidingView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 16,
   },
 });
 
