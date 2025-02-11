@@ -92,6 +92,7 @@ const LifestyleSection = () => {
               required
             />
             <AnimatedDropdown
+              required
               control={control}
               name="number_of_children"
               label="Children 👶"
@@ -105,82 +106,6 @@ const LifestyleSection = () => {
               }
             />
           </FormRow>
-          <AnimatedDropdown
-            control={control}
-            name="educational_level_id"
-            label="Education Level 🎓"
-            items={PROFILE_DATA.educational_levels}
-            icon={
-              <MaterialIcon name="school" size={20} color={COLORS.primary} />
-            }
-            required
-          />
-          <AnimatedDropdown
-            control={control}
-            name="specialization_id"
-            label="Specialization 📚"
-            items={PROFILE_DATA.specializations}
-            icon={
-              <MaterialIcon
-                name="library-books"
-                size={20}
-                color={COLORS.primary}
-              />
-            }
-          />
-        </AnimatedFormContainer>
-      </AnimatedCard>
-
-      {/* Employment & Financial */}
-      <AnimatedCard delay={300}>
-        <CardHeader {...cardConfigs.employment} />
-        <AnimatedFormContainer>
-          <AnimatedDropdown
-            control={control}
-            name="employment_status"
-            label="Employment Status 💼"
-            items={[
-              { id: true, name: "Employed" },
-              { id: false, name: "Not Employed" },
-            ]}
-            icon={<MaterialIcon name="work" size={20} color={COLORS.primary} />}
-          />
-          <AnimatedDropdown
-            control={control}
-            name="position_level"
-            label="Position Level 📈"
-            items={PROFILE_DATA.position_levels}
-            icon={
-              <MaterialIcon
-                name="trending-up"
-                size={20}
-                color={COLORS.primary}
-              />
-            }
-          />
-          <AnimatedDropdown
-            control={control}
-            name="financial_status_id"
-            label="Financial Status 💰"
-            items={PROFILE_DATA.financial_statuses}
-            icon={
-              <MaterialIcon
-                name="account-balance-wallet"
-                size={20}
-                color={COLORS.primary}
-              />
-            }
-            required
-          />
-          <AnimatedDropdown
-            control={control}
-            name="housing_status_id"
-            label="Housing Status 🏠"
-            items={PROFILE_DATA.housing_statuses}
-            icon={
-              <MaterialIcon name="house" size={20} color={COLORS.primary} />
-            }
-          />
         </AnimatedFormContainer>
       </AnimatedCard>
 
@@ -227,6 +152,7 @@ const LifestyleSection = () => {
               }
             />
             <AnimatedDropdown
+              required
               control={control}
               name="skin_color_id"
               label="Skin Color 🎨"
@@ -283,6 +209,7 @@ const LifestyleSection = () => {
                 color={COLORS.primary}
               />
             }
+            required
           />
           <AnimatedDropdown
             control={control}
@@ -362,7 +289,7 @@ const LifestyleSection = () => {
             control={control}
             name="hobbies"
             items={PROFILE_DATA.hobbies}
-            maxSelect={3}
+            multiple
             numColumns={3}
             renderItem={(item, isSelected) => (
               <HobbyItem item={item} isSelected={isSelected} />

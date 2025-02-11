@@ -18,6 +18,8 @@ import { PROFILE_DATA } from "../../constants/profileData";
 import AgeRangeModal from "../../components/common/AgeRangeModal";
 import { FlatList } from "react-native";
 import withProfileCompletion from "../../components/profile/withProfileCompletion";
+import MatchingLoadingScreen from "../../components/match-and-search/MatchingLoadingScreen";
+import { router } from "expo-router";
 const COLORS = {
   primary: "#B65165",
   primaryLight: "#D97485",
@@ -321,6 +323,16 @@ const SelectModal = ({
 };
 const search = () => {
   const [showAgeRangeModal, setShowAgeRangeModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const handleFindMatch = () => {
+    setIsLoading(true);
+
+    // Simulate loading and navigate afterward
+    setTimeout(() => {
+      setIsLoading(false);
+      router.push("./matches");
+    }, 5000);
+  };
 
   const handleAgeRangePress = () => {
     setShowAgeRangeModal(true);
@@ -565,6 +577,11 @@ const search = () => {
   return (
     <View style={styles.container}>
       {renderHeader()}
+      {isLoading && (
+        <View style={styles.overlay}>
+          <MatchingLoadingScreen />
+        </View>
+      )}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -801,14 +818,20 @@ const search = () => {
             </>
           )}
 
-          <TouchableOpacity style={styles.searchButton} activeOpacity={0.8}>
-            <LinearGradient
-              colors={COLORS.primaryGradient}
-              style={styles.searchButtonGradient}
+          <View style={styles.container}>
+            <TouchableOpacity
+              style={styles.searchButton}
+              activeOpacity={0.8}
+              onPress={handleFindMatch}
             >
-              <Text style={styles.searchButtonText}>Find Your Match ✨</Text>
-            </LinearGradient>
-          </TouchableOpacity>
+              <LinearGradient
+                colors={COLORS.primaryGradient}
+                style={styles.searchButtonGradient}
+              >
+                <Text style={styles.searchButtonText}>Find Your Match ✨</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
 
@@ -1237,6 +1260,13 @@ const styles = StyleSheet.create({
   selectedOptionText: {
     color: COLORS.white,
     fontWeight: "600",
+  },
+  container: {
+    flex: 1,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 1000,
   },
 });
 export default withProfileCompletion(search);

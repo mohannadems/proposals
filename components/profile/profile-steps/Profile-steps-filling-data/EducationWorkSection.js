@@ -147,39 +147,38 @@ const EducationWorkSection = () => {
       />
 
       {/* Job Details Card (Only when Employed) */}
-      {employment_status === true && (
-        <AnimatedCard delay={200}>
-          <CardHeader {...cardConfigs.jobDetails} />
-          <AnimatedFormContainer>
-            <FormDropdown
-              control={control}
-              name="job_title_id"
-              label="Job Title 💼"
-              items={PROFILE_DATA.jobTitles}
-              icon={
-                <FeatherIcon
-                  name="briefcase"
-                  size={20}
-                  color={COLORS.primary}
-                />
-              }
-            />
-            <FormDropdown
-              control={control}
-              name="position_level"
-              label="Position Level 📈"
-              items={PROFILE_DATA.position_levels}
-              icon={
-                <FeatherIcon
-                  name="arrow-up-right"
-                  size={20}
-                  color={COLORS.primary}
-                />
-              }
-            />
-          </AnimatedFormContainer>
-        </AnimatedCard>
-      )}
+      {/* Employment Fields */}
+      <AnimatedCard delay={200}>
+        <CardHeader {...cardConfigs.jobDetails} />
+        <AnimatedFormContainer>
+          <FormDropdown
+            control={control}
+            name="job_title_id"
+            label="Job Title 💼"
+            items={PROFILE_DATA.jobTitles}
+            icon={
+              <FeatherIcon name="briefcase" size={20} color={COLORS.primary} />
+            }
+            disabled={!employment_status}
+            defaultValue={null}
+          />
+          <FormDropdown
+            control={control}
+            name="position_level_id"
+            label="Position Level 📈"
+            items={PROFILE_DATA.position_levels}
+            icon={
+              <FeatherIcon
+                name="arrow-up-right"
+                size={20}
+                color={COLORS.primary}
+              />
+            }
+            disabled={!employment_status}
+            defaultValue={null}
+          />
+        </AnimatedFormContainer>
+      </AnimatedCard>
 
       {/* Financial Information Card */}
       <AnimatedCard delay={300}>
@@ -214,26 +213,12 @@ const EducationWorkSection = () => {
         <AnimatedFormContainer>
           <FormDropdown
             control={control}
-            name="social_media_presence"
+            name="social_media_presence_id"
             label="Social Media Presence 📱"
             items={PROFILE_DATA.social_media_presences}
             icon={
               <FeatherIcon name="share-2" size={20} color={COLORS.primary} />
             }
-          />
-        </AnimatedFormContainer>
-      </AnimatedCard>
-
-      {/* Origin Card */}
-      <AnimatedCard delay={600}>
-        <CardHeader {...cardConfigs.origin} />
-        <AnimatedFormContainer>
-          <FormDropdown
-            control={control}
-            name="origin"
-            label="Origin 🌏"
-            items={PROFILE_DATA.origins}
-            icon={<FeatherIcon name="globe" size={20} color={COLORS.primary} />}
           />
         </AnimatedFormContainer>
       </AnimatedCard>
@@ -244,7 +229,7 @@ const EducationWorkSection = () => {
         <AnimatedFormContainer>
           <FormDropdown
             control={control}
-            name="zodiac_sign"
+            name="zodiac_sign_id"
             label="Zodiac Sign ✨"
             items={PROFILE_DATA.zodiac_signs}
             icon={

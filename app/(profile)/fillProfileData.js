@@ -1,4 +1,6 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import {
   View,
   ScrollView,
@@ -12,7 +14,6 @@ import {
   Animated,
   Dimensions,
   Modal,
-  KeyboardAvoidingViewComponent,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { setShowProfileAlert } from "../../store/slices/profile.slice";
@@ -26,17 +27,14 @@ import ProgressSteps from "../../components/common/ProgressSteps";
 import { COLORS } from "../../constants/colors";
 import { profileValidationSchema } from "../../utils/profile-validation";
 import { useNavigation } from "@react-navigation/native";
-import { profileService } from "../../services/profile.service";
-import { stepValidations } from "../../utils/profile-validation";
+import styles from "../../styles/fillProfileData";
 import { stepFields } from "../../utils/profile-validation";
 import Feather from "react-native-vector-icons/Feather";
 import { updateProfile } from "../../store/slices/profile.slice";
 import { fetchProfile } from "../../store/slices/profile.slice";
-import withProfileCompletion from "../../components/profile/withProfileCompletion";
-import ProfileImageSection from "../../components/profile/profile-steps/Profile-steps-filling-data/ProfileImageSection";
-import { calculateProfileProgress } from "../../utils/profileProgress";
 import { useDispatch } from "react-redux";
 import { updateProfilePhoto } from "../../store/slices/profile.slice";
+import ProfileImageSection from "../../components/profile/profile-steps/Profile-steps-filling-data/ProfileImageSection";
 const { width, height } = Dimensions.get("window");
 
 const FORM_STEPS = [
@@ -132,6 +130,67 @@ const ErrorModal = ({ visible, errors, onClose }) => {
     </Modal>
   );
 };
+const STORAGE_KEYS = {
+  FORM_STEP: "profile_form_step",
+  FORM_DATA: "profile_form_data",
+  LAST_UPDATED: "profile_form_last_updated",
+};
+const parseDateString = (dateString) => {
+  if (!dateString) return null;
+  const date = new Date(dateString);
+  return isNaN(date.getTime()) ? null : date;
+};
+const saveFormProgress = async (step, formData) => {
+  try {
+    // Ensure date is properly formatted before saving
+    const dataToSave = {
+      step,
+      formData: {
+        ...formData,
+        date_of_birth: formData.date_of_birth
+          ? formData.date_of_birth.toISOString()
+          : null,
+      },
+      lastUpdated: new Date().toISOString(),
+    };
+
+    await AsyncStorage.setItem(
+      STORAGE_KEYS.FORM_DATA,
+      JSON.stringify(dataToSave)
+    );
+    console.log("Form progress saved:", dataToSave);
+  } catch (error) {
+    console.error("Error saving form progress:", error);
+  }
+};
+const loadFormProgress = async () => {
+  try {
+    const savedData = await AsyncStorage.getItem(STORAGE_KEYS.FORM_DATA);
+    if (savedData) {
+      const parsed = JSON.parse(savedData);
+      // Convert date strings back to Date objects
+      return {
+        ...parsed,
+        formData: {
+          ...parsed.formData,
+          date_of_birth: parseDateString(parsed.formData.date_of_birth),
+        },
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error("Error loading form progress:", error);
+    return null;
+  }
+};
+const clearFormProgress = async () => {
+  try {
+    await AsyncStorage.removeItem(STORAGE_KEYS.FORM_DATA);
+    console.log("Form progress cleared");
+  } catch (error) {
+    console.error("Error clearing form progress:", error);
+  }
+};
 
 // Part 3: Component Setup & Handlers
 const fillProfileData = () => {
@@ -142,6 +201,8 @@ const fillProfileData = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [currentErrors, setCurrentErrors] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   const fadeAnim = useState(new Animated.Value(1))[0];
 
   const methods = useForm({
@@ -149,21 +210,78 @@ const fillProfileData = () => {
     resolver: yupResolver(profileValidationSchema),
     mode: "onChange",
   });
-
   const handleNext = useCallback(async () => {
     try {
-      const currentStepFields = stepFields[currentStep];
-      const isStepValid = await methods.trigger(currentStepFields);
+      // Debug logs for step tracking
+      console.log("Current step:", currentStep);
+      console.log("FORM_STEPS length:", FORM_STEPS.length);
+      console.log("Is last step?:", currentStep === FORM_STEPS.length);
+      console.log("Current step data:", FORM_STEPS[currentStep - 1]);
 
-      if (isStepValid) {
-        // Smooth transition animation
+      const currentStepFields = stepFields[currentStep];
+      const formValues = methods.getValues();
+
+      // Only validate current step fields
+      const validationResult = await methods.trigger(currentStepFields);
+      console.log("Step validation result:", validationResult);
+
+      const currentErrors = Object.entries(methods.formState.errors)
+        .filter(([key]) => currentStepFields.includes(key))
+        .map(([key, error]) => {
+          const fieldName = key.replace(/_/g, " ").toLowerCase();
+          return error.message || `Please fill in ${fieldName} correctly`;
+        });
+
+      if (validationResult && currentErrors.length === 0) {
+        // Check if we're on step 4 (Profile Picture)
+        if (currentStep === 4) {
+          console.log("On final step (Profile Picture), attempting submission");
+          // Validate all fields before submission
+          const isValid = await methods.trigger();
+          console.log("Final validation result:", isValid);
+
+          if (isValid) {
+            console.log("All validations passed, preparing form data");
+            const formData = methods.getValues();
+            console.log("Form data ready for submission:", formData);
+
+            try {
+              console.log("Calling onSubmit...");
+              await onSubmit(formData);
+              console.log("Submission completed successfully");
+              return;
+            } catch (submitError) {
+              console.error("Submission failed:", submitError);
+              throw submitError;
+            }
+          } else {
+            console.log("Final validation failed, showing errors");
+            const allErrors = Object.entries(methods.formState.errors).map(
+              ([key, error]) => error.message
+            );
+            setCurrentErrors(allErrors);
+            setErrorModalVisible(true);
+            return;
+          }
+        }
+
+        // If not on last step, proceed to next step
+        console.log("Moving to next step");
         Animated.timing(fadeAnim, {
           toValue: 0,
           duration: 200,
           useNativeDriver: true,
         }).start(() => {
-          setCurrentStep((prev) => Math.min(prev + 1, FORM_STEPS.length));
-          scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+          setCurrentStep((prev) => {
+            const newStep = Math.min(prev + 1, FORM_STEPS.length);
+            console.log("Moving to step:", newStep);
+            return newStep;
+          });
+
+          setTimeout(() => {
+            scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+          }, 100);
+
           Animated.timing(fadeAnim, {
             toValue: 1,
             duration: 200,
@@ -171,30 +289,123 @@ const fillProfileData = () => {
           }).start();
         });
       } else {
-        // Collect and display errors in a more user-friendly way
-        const currentErrors = Object.entries(methods.formState.errors)
-          .filter(([key]) => currentStepFields.includes(key))
-          .map(([key, error]) => error.message || "Invalid input");
+        console.log("Validation errors found:", currentErrors);
+        let errorsToShow = currentErrors;
 
-        // Ensure we have at least one error message
-        const errorsToShow =
-          currentErrors.length > 0
-            ? currentErrors
-            : ["Please fill in all required fields"];
+        if (errorsToShow.length === 0) {
+          errorsToShow = ["Please fill in all required fields correctly"];
+        }
+
+        // Step-specific validations
+        if (currentStep === 1) {
+          const dateOfBirth = formValues.date_of_birth;
+          if (dateOfBirth) {
+            const age = calculateAge(dateOfBirth);
+            if (age < 18) {
+              errorsToShow.push("You must be at least 18 years old");
+            }
+          }
+
+          if (
+            formValues.gender === "female" &&
+            formValues.hijab_status === null
+          ) {
+            errorsToShow.push("Hijab status is required for female users");
+          }
+        }
 
         setCurrentErrors(errorsToShow);
         setErrorModalVisible(true);
+        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
       }
     } catch (error) {
-      console.error("Validation error:", error);
-      Alert.alert("Error", "There was a problem validating your information.", [
-        { text: "OK" },
-      ]);
+      console.error("HandleNext error:", error);
+      Alert.alert(
+        "Error",
+        error.message || "There was a problem validating your information.",
+        [{ text: "OK", onPress: () => setIsSubmitting(false) }],
+        { cancelable: false }
+      );
     }
-  }, [currentStep, methods, fadeAnim]);
+  }, [currentStep, methods, fadeAnim, onSubmit]);
+  useEffect(() => {
+    const loadSavedProgress = async () => {
+      try {
+        setIsLoading(true);
+        const savedProgress = await loadFormProgress();
 
+        if (savedProgress) {
+          const { step, formData, lastUpdated } = savedProgress;
+
+          // Check if saved data is less than 24 hours old
+          const savedDate = new Date(lastUpdated);
+          const now = new Date();
+          const hoursDiff = (now - savedDate) / (1000 * 60 * 60);
+
+          if (hoursDiff < 24) {
+            // Ensure all form data is properly typed before setting
+            const processedFormData = {
+              ...initialFormState, // Start with default values
+              ...formData,
+              date_of_birth: parseDateString(formData.date_of_birth),
+            };
+
+            setCurrentStep(step);
+            methods.reset(processedFormData);
+          } else {
+            // Clear old data
+            await clearFormProgress();
+          }
+        }
+      } catch (error) {
+        console.error("Error loading saved progress:", error);
+        // If there's an error, reset to initial state
+        methods.reset(initialFormState);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadSavedProgress();
+  }, []);
+  useEffect(() => {
+    const saveProgress = async () => {
+      const formData = methods.getValues();
+      // Ensure date is valid before saving
+      if (formData.date_of_birth && !(formData.date_of_birth instanceof Date)) {
+        formData.date_of_birth = parseDateString(formData.date_of_birth);
+      }
+      await saveFormProgress(currentStep, formData);
+    };
+
+    saveProgress();
+  }, [currentStep, methods.watch()]);
+  // Also add this debug log at the component level
+  useEffect(() => {
+    console.log("Step changed to:", currentStep);
+    console.log("Is final step?:", currentStep === 4);
+  }, [currentStep]);
+
+  // Also add this console log where FORM_STEPS is defined
+  console.log("FORM_STEPS:", FORM_STEPS);
+
+  // Helper function to calculate age
+  const calculateAge = (birthDate) => {
+    const today = new Date();
+    const birth = new Date(birthDate);
+    let age = today.getFullYear() - birth.getFullYear();
+    const monthDiff = today.getMonth() - birth.getMonth();
+
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birth.getDate())
+    ) {
+      age--;
+    }
+
+    return age;
+  };
   const handlePrevious = useCallback(() => {
-    // Add a smooth transition animation for previous step
     Animated.timing(fadeAnim, {
       toValue: 0,
       duration: 200,
@@ -208,7 +419,6 @@ const fillProfileData = () => {
       }).start();
     });
   }, [fadeAnim]);
-
   const onSubmit = async (data) => {
     try {
       setIsSubmitting(true);
@@ -223,72 +433,92 @@ const fillProfileData = () => {
       };
 
       const submissionData = {
+        // Personal Information
         bio_en: String(data.bio_en || ""),
         bio_ar: String(data.bio_ar || ""),
         date_of_birth: formatDate(data.date_of_birth),
         guardian_contact: String(data.guardian_contact || ""),
         gender: String(data.gender || ""),
-        height: Number(data.height) || null,
-        weight: Number(data.weight) || null,
+
+        // Location Information
         nationality_id: Number(data.nationality_id) || null,
         country_of_residence_id: Number(data.country_of_residence_id) || null,
         city_id: Number(data.city_id) || null,
-        educational_level_id: Number(data.educational_level_id) || null,
+        origin_id: Number(data.origin_id) || null,
+
+        // Physical Attributes
+        height: Number(data.height) || null,
+        weight: Number(data.weight) || null,
         hair_color_id: Number(data.hair_color_id) || null,
         skin_color_id: Number(data.skin_color_id) || null,
-        religion_id: Number(data.religion_id) || null,
-        marital_status_id: Number(data.marital_status_id) || null,
-        financial_status_id: Number(data.financial_status_id) || null,
-        employment_status: data.employment_status === true,
-        car_ownership: Boolean(data.car_ownership) === true,
+
+        // Education and Work
+        educational_level_id: Number(data.educational_level_id) || null,
         specialization_id: Number(data.specialization_id) || null,
-        drinking_status_id: Number(data.drinking_status_id) || null,
+        employment_status: data.employment_status === true,
+        job_title_id:
+          data.employment_status === true
+            ? Number(data.job_title_id) || null
+            : null,
+        position_level_id:
+          data.employment_status === true
+            ? Number(data.position_level_id) || null
+            : null,
+
+        // Financial and Housing
+        financial_status_id: Number(data.financial_status_id) || null,
+        housing_status_id: Number(data.housing_status_id) || null,
+        car_ownership: Boolean(data.car_ownership) === true,
+        marriage_budget_id: Number(data.marriage_budget_id) || null,
+
+        // Marital and Family
+        marital_status_id: Number(data.marital_status_id) || null,
+        number_of_children: Number(data.number_of_children) || 0,
+
+        // Religious and Cultural
+        religion_id: Number(data.religion_id) || null,
+        religiosity_level_id: Number(data.religiosity_level_id) || null,
+
+        // Lifestyle
+        sleep_habit_id: Number(data.sleep_habit_id) || null,
         sports_activity_id: Number(data.sports_activity_id) || null,
         social_media_presence_id: Number(data.social_media_presence_id) || null,
-        housing_status_id: Number(data.housing_status_id) || null,
-        number_of_children: Number(data.number_of_children) || 0,
-        zodiac_sign_id: Number(data.zodiac_sign_id) || null,
+        drinking_status_id: Number(data.drinking_status_id) || null,
+
+        // Arrays
         hobbies: Array.isArray(data.hobbies) ? data.hobbies.map(Number) : [],
         pets: Array.isArray(data.pets) ? data.pets.map(Number) : [],
+
+        // Additional Information
         health_issues_en: String(data.health_issues_en || ""),
         health_issues_ar: String(data.health_issues_ar || ""),
-        origin_id: Number(data.origin) || null,
-        zodiac_sign_id: Number(data.zodiac_sign) || null,
-        marriage_budget_id: Number(data.marriage_budget_id) || null,
-        religiosity_level_id: Number(data.religiosity_level_id) || null,
-        sleep_habit_id: Number(data.sleep_habit_id) || null,
-        job_title_id: Number(data.job_title_id) || null,
-        position_level_id: Number(data.position_level) || null,
-        social_media_presence_id: Number(data.social_media_presence) || null,
-        photos: Array.isArray(data.photos)
-          ? data.photos.filter((item) => !isNaN(item)).map(Number)
-          : [],
+        zodiac_sign_id: Number(data.zodiac_sign_id) || null,
+
+        // Smoking status
+        smoking_status: Number(data.smoking_status) === 1 ? 0 : 1,
       };
 
-      if (data.employment_status === true) {
-        submissionData.job_title = String(data.job_title || "");
-        submissionData.position_level_id = Number(data.position_level) || null;
-      }
-
-      // Handle smoking status
-      submissionData.smoking_status = Number(data.smoking_status) === 1 ? 0 : 1;
-
-      // Include smoking_tools only for smokers
+      // Handle smoking tools
       if (Number(data.smoking_status) > 1) {
         submissionData.smoking_tools = Array.isArray(data.smoking_tools)
           ? data.smoking_tools.map(Number)
           : [];
       }
 
-      // Handle hijab status
+      // Handle female-specific fields
       if (data.gender === "female") {
         submissionData.hijab_status = Number(data.hijab_status) || 0;
       }
 
-      // Remove null values
-      Object.keys(submissionData).forEach(
-        (key) => submissionData[key] === null && delete submissionData[key]
-      );
+      // Keep null values in the submission
+      // Only remove undefined values
+      Object.keys(submissionData).forEach((key) => {
+        if (submissionData[key] === undefined) {
+          delete submissionData[key];
+        }
+      });
+
+      console.log("Submitting data:", submissionData);
 
       // First update profile
       const resultAction = await dispatch(updateProfile(submissionData));
@@ -302,7 +532,7 @@ const fillProfileData = () => {
           };
           await dispatch(updateProfilePhoto(imageData));
         }
-
+        await clearFormProgress();
         // Fetch fresh profile data
         await dispatch(fetchProfile());
 
@@ -349,7 +579,37 @@ const fillProfileData = () => {
       setIsSubmitting(false);
     }
   };
+  const handleFormSubmit = useCallback(async () => {
+    console.log("handleFormSubmit called");
+    try {
+      // Validate all fields
+      const isValid = await methods.trigger();
+      console.log("Form validation result:", isValid);
 
+      if (isValid) {
+        // Get form data
+        const formData = methods.getValues();
+        console.log("Form data before submission:", formData);
+
+        // Call onSubmit
+        await onSubmit(formData);
+      } else {
+        console.log("Form validation failed:", methods.formState.errors);
+        const allErrors = Object.entries(methods.formState.errors).map(
+          ([_, error]) => error.message
+        );
+        setCurrentErrors(allErrors);
+        setErrorModalVisible(true);
+      }
+    } catch (error) {
+      console.error("Form submission error:", error);
+      Alert.alert(
+        "Error",
+        "There was a problem submitting your form. Please try again.",
+        [{ text: "OK" }]
+      );
+    }
+  }, [methods, onSubmit]);
   const renderCurrentStep = () => {
     const currentStepData = FORM_STEPS[currentStep - 1];
     return (
@@ -450,11 +710,12 @@ const fillProfileData = () => {
                   <Text style={styles.buttonTextSecondary}>Previous</Text>
                 </TouchableOpacity>
               )}
+
               <TouchableOpacity
                 style={[styles.button, styles.buttonPrimary]}
                 onPress={
                   currentStep === FORM_STEPS.length
-                    ? methods.handleSubmit(onSubmit)
+                    ? handleFormSubmit
                     : handleNext
                 }
                 disabled={isSubmitting}
@@ -486,193 +747,5 @@ const fillProfileData = () => {
     </FormProvider>
   );
 };
-const styles = StyleSheet.create({
-  container: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    height: "100%", // Ensure it covers the whole screen
-    backgroundColor: "#F4F7FA",
-  },
-  gradientBackground: {
-    flex: 1,
-    backgroundColor: "#F4F7FA",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
-  },
-  backButton: {
-    marginRight: 16,
-    padding: 8,
-    backgroundColor: "rgba(0,0,0,0.05)",
-    borderRadius: 12,
-  },
-  headerTextContainer: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#2C3E50",
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "#7F8C8D",
-  },
-  stepIndicator: {
-    marginVertical: 16,
-    paddingHorizontal: 16,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  scrollViewContent: {
-    paddingBottom: 16,
-  },
-  stepContainer: {
-    backgroundColor: "white",
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: "#000",
-    backgroundColor: "#fff",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  stepHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F0F0F0",
-  },
-  stepHeaderText: {
-    marginLeft: 12,
-  },
-  stepTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#2C3E50",
-  },
-  stepDescription: {
-    fontSize: 14,
-    color: "#7F8C8D",
-  },
-  footer: {
-    flexDirection: "row",
-    padding: 16,
-    backgroundColor: COLORS.white,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: -2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    gap: 12,
-  },
-  button: {
-    flex: 1,
-    flexDirection: "row",
-    padding: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  buttonPrimary: {
-    backgroundColor: COLORS.primary,
-  },
-  buttonSecondary: {
-    backgroundColor: "rgba(0,0,0,0.05)",
-  },
-  buttonTextPrimary: {
-    color: COLORS.white,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  buttonTextSecondary: {
-    color: COLORS.text,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  // Error Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  blurContainer: {
-    width: width * 0.85,
-    borderRadius: 16,
-    overflow: "hidden",
-  },
-  errorModalContent: {
-    backgroundColor: "white",
-    borderRadius: 16,
-    padding: 20,
-    alignItems: "center",
-  },
-  errorModalTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#2C3E50",
-    marginTop: 12,
-    marginBottom: 8,
-  },
-  errorModalSubtitle: {
-    fontSize: 16,
-    color: "#7F8C8D",
-    marginBottom: 12,
-  },
-  errorScrollView: {
-    maxHeight: height * 0.3,
-    width: "100%",
-    marginBottom: 16,
-  },
-  errorScrollContent: {
-    paddingVertical: 8,
-  },
-  errorItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 8,
-    paddingHorizontal: 12,
-  },
-  errorItemText: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: "#2C3E50",
-    flex: 1,
-  },
-  errorModalButton: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-  },
-  errorModalButtonText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-});
 
 export default fillProfileData;

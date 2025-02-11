@@ -26,7 +26,7 @@ export const calculateProfileProgress = (userData) => {
     financial_status_id: profile.financial_status ? 1 : null,
     employment_status: profile.employment_status === 1,
     car_ownership: profile.car_ownership === 1,
-    job_title: profile.job_title || "",
+    job_title: profile.job_title || false,
     drinking_status_id: profile.drinking_status ? 1 : null,
     sports_activity_id: profile.sports_activity ? 1 : null,
     social_media_presence_id: profile.social_media_presence ? 1 : null,

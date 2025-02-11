@@ -10,7 +10,6 @@ import {
   Animated,
   StatusBar,
   Platform,
-  KeyboardAvoidingView,
   ScrollView,
   ActivityIndicator,
 } from "react-native";
@@ -280,10 +279,7 @@ const AuthScreen = () => {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
+    <>
       <StatusBar barStyle="light-content" />
 
       <LinearGradient
@@ -405,7 +401,7 @@ const AuthScreen = () => {
           </TouchableOpacity>
         </Animated.View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </>
   );
 };
 
