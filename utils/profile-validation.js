@@ -57,7 +57,21 @@ export const profileValidationSchema = Yup.object().shape({
   educational_level_id: createNumberValidation("education level"),
   specialization_id: Yup.number().nullable(),
   employment_status: Yup.boolean().nullable(),
-  job_title_id: Yup.number().nullable(),
+  job_title_id: Yup.number()
+    .nullable()
+    .when("employment_status", {
+      is: true,
+      then: (schema) => schema.required("Job title is required when employed"),
+      otherwise: (schema) => schema.nullable(),
+    }),
+  position_level_id: Yup.number()
+    .nullable()
+    .when("employment_status", {
+      is: true,
+      then: (schema) =>
+        schema.required("Position level is required when employed"),
+      otherwise: (schema) => schema.nullable(),
+    }),
 
   // Financial and Housing
   financial_status_id: createNumberValidation("financial status"),

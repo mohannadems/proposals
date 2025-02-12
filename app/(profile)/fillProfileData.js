@@ -1,5 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSelector } from "react-redux";
+import { debounce } from "lodash";
 
 import {
   View,
@@ -130,19 +132,18 @@ const ErrorModal = ({ visible, errors, onClose }) => {
     </Modal>
   );
 };
-const STORAGE_KEYS = {
-  FORM_STEP: "profile_form_step",
-  FORM_DATA: "profile_form_data",
-  LAST_UPDATED: "profile_form_last_updated",
-};
-const parseDateString = (dateString) => {
-  if (!dateString) return null;
-  const date = new Date(dateString);
-  return isNaN(date.getTime()) ? null : date;
-};
-const saveFormProgress = async (step, formData) => {
+const getStorageKeys = (userId) => ({
+  FORM_DATA: `profile_form_data_${userId}`,
+  LAST_UPDATED: `profile_form_last_updated_${userId}`,
+});
+const saveFormProgress = async (userId, step, formData) => {
+  if (!userId) {
+    console.log("No user ID available, skipping save");
+    return;
+  }
+
   try {
-    // Ensure date is properly formatted before saving
+    const storageKeys = getStorageKeys(userId);
     const dataToSave = {
       step,
       formData: {
@@ -155,25 +156,34 @@ const saveFormProgress = async (step, formData) => {
     };
 
     await AsyncStorage.setItem(
-      STORAGE_KEYS.FORM_DATA,
+      storageKeys.FORM_DATA,
       JSON.stringify(dataToSave)
     );
-    console.log("Form progress saved:", dataToSave);
+    console.log("Form progress saved for user:", userId);
   } catch (error) {
     console.error("Error saving form progress:", error);
   }
 };
-const loadFormProgress = async () => {
+
+const loadFormProgress = async (userId) => {
+  if (!userId) {
+    console.log("No user ID available, skipping load");
+    return null;
+  }
+
   try {
-    const savedData = await AsyncStorage.getItem(STORAGE_KEYS.FORM_DATA);
+    const storageKeys = getStorageKeys(userId);
+    const savedData = await AsyncStorage.getItem(storageKeys.FORM_DATA);
+
     if (savedData) {
       const parsed = JSON.parse(savedData);
-      // Convert date strings back to Date objects
       return {
         ...parsed,
         formData: {
           ...parsed.formData,
-          date_of_birth: parseDateString(parsed.formData.date_of_birth),
+          date_of_birth: parsed.formData.date_of_birth
+            ? new Date(parsed.formData.date_of_birth)
+            : null,
         },
       };
     }
@@ -183,17 +193,34 @@ const loadFormProgress = async () => {
     return null;
   }
 };
-const clearFormProgress = async () => {
+const clearFormProgress = async (userId) => {
+  if (!userId) return;
+
   try {
-    await AsyncStorage.removeItem(STORAGE_KEYS.FORM_DATA);
-    console.log("Form progress cleared");
+    const storageKeys = getStorageKeys(userId);
+    await AsyncStorage.removeItem(storageKeys.FORM_DATA);
+    console.log("Form progress cleared for user:", userId);
   } catch (error) {
     console.error("Error clearing form progress:", error);
   }
 };
-
+const clearAllFormProgress = async () => {
+  try {
+    const keys = await AsyncStorage.getAllKeys();
+    const formDataKeys = keys.filter((key) =>
+      key.startsWith("profile_form_data_")
+    );
+    await AsyncStorage.multiRemove(formDataKeys);
+    console.log("All form progress cleared");
+  } catch (error) {
+    console.error("Error clearing all form progress:", error);
+  }
+};
 // Part 3: Component Setup & Handlers
 const fillProfileData = () => {
+  const userId = useSelector((state) => state.profile.data?.id);
+  console.log(userId, "user id ");
+
   const scrollViewRef = useRef(null);
   const navigation = useNavigation();
   const dispatch = useDispatch();
@@ -332,7 +359,14 @@ const fillProfileData = () => {
     const loadSavedProgress = async () => {
       try {
         setIsLoading(true);
-        const savedProgress = await loadFormProgress();
+
+        if (!userId) {
+          console.log("No user ID available, resetting to initial state");
+          methods.reset(initialFormState);
+          return;
+        }
+
+        const savedProgress = await loadFormProgress(userId);
 
         if (savedProgress) {
           const { step, formData, lastUpdated } = savedProgress;
@@ -343,23 +377,20 @@ const fillProfileData = () => {
           const hoursDiff = (now - savedDate) / (1000 * 60 * 60);
 
           if (hoursDiff < 24) {
-            // Ensure all form data is properly typed before setting
-            const processedFormData = {
-              ...initialFormState, // Start with default values
-              ...formData,
-              date_of_birth: parseDateString(formData.date_of_birth),
-            };
-
+            console.log("Loading saved progress for user:", userId);
             setCurrentStep(step);
-            methods.reset(processedFormData);
+            methods.reset(formData);
           } else {
-            // Clear old data
-            await clearFormProgress();
+            console.log("Saved data expired, clearing progress");
+            await clearFormProgress(userId);
+            methods.reset(initialFormState);
           }
+        } else {
+          console.log("No saved progress found, using initial state");
+          methods.reset(initialFormState);
         }
       } catch (error) {
         console.error("Error loading saved progress:", error);
-        // If there's an error, reset to initial state
         methods.reset(initialFormState);
       } finally {
         setIsLoading(false);
@@ -367,19 +398,17 @@ const fillProfileData = () => {
     };
 
     loadSavedProgress();
-  }, []);
+  }, [userId]);
   useEffect(() => {
     const saveProgress = async () => {
-      const formData = methods.getValues();
-      // Ensure date is valid before saving
-      if (formData.date_of_birth && !(formData.date_of_birth instanceof Date)) {
-        formData.date_of_birth = parseDateString(formData.date_of_birth);
+      if (userId) {
+        const formData = methods.getValues();
+        await saveFormProgress(userId, currentStep, formData);
       }
-      await saveFormProgress(currentStep, formData);
     };
 
     saveProgress();
-  }, [currentStep, methods.watch()]);
+  }, [currentStep, methods.watch(), userId]);
   // Also add this debug log at the component level
   useEffect(() => {
     console.log("Step changed to:", currentStep);
@@ -419,6 +448,22 @@ const fillProfileData = () => {
       }).start();
     });
   }, [fadeAnim]);
+  const { control, watch, setValue, handleSubmit } = useForm({
+    resolver: yupResolver(profileValidationSchema),
+  });
+
+  // Watch employment status to conditionally render and manage job details
+  const employment_status = watch("employment_status");
+
+  // Effect to reset job details when employment status changes
+  useEffect(() => {
+    if (employment_status === false) {
+      // Reset job-related fields to null when not employed
+      setValue("job_title_id", null);
+      setValue("position_level_id", null);
+    }
+  }, [employment_status, setValue]);
+
   const onSubmit = async (data) => {
     try {
       setIsSubmitting(true);
@@ -532,7 +577,7 @@ const fillProfileData = () => {
           };
           await dispatch(updateProfilePhoto(imageData));
         }
-        await clearFormProgress();
+        await clearFormProgress(userId);
         // Fetch fresh profile data
         await dispatch(fetchProfile());
 

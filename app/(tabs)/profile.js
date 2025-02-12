@@ -14,7 +14,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import ProfileCompletionAlert from "../../components/profile/ProfileCompletionAlert";
 import withProfileCompletion from "../../components/profile/withProfileCompletion";
-
+import { calculateProfileProgress } from "../../utils/profileProgress";
 import { useNavigation } from "@react-navigation/native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -551,12 +551,12 @@ const ProfileScreen = () => {
             <ProfileItem
               icon="badge"
               label="Job Title"
-              value={profile.profile?.job_title}
+              value={profile.profile?.job_title || "Not Employee"}
             />
             <ProfileItem
               icon="trending-up"
               label="Position Level"
-              value={profile.profile?.position_level}
+              value={profile.profile?.position_level || "Not Employee"}
             />
           </ProfileSection>
 

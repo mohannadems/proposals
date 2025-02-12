@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
 import { COLORS } from "../constants/colors";
-
+import { Platform } from "react-native";
 export default StyleSheet.create({
   container: {
     flex: 1,
@@ -200,5 +200,53 @@ export default StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderRadius: 60,
+  },
+  progressWrapper: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  progressRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  progressLabel: {
+    fontSize: 16,
+    color: "#666",
+    fontWeight: "500",
+  },
+  progressValue: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  progressPercentage: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: COLORS.primary,
+  },
+  progressBarContainer: {
+    height: 6,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  progressBarFill: {
+    height: "100%",
+    borderRadius: 3,
   },
 });

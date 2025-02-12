@@ -34,6 +34,13 @@ export default function VerifyOTPScreen() {
     }
   }, [route.params?.email, dispatch]);
 
+  // Automatically verify when OTP is complete
+  useEffect(() => {
+    if (otp.length === 6 && !loading) {
+      handleVerify();
+    }
+  }, [otp, loading]);
+
   const handleVerify = async () => {
     setValidationError("");
 
@@ -84,6 +91,7 @@ export default function VerifyOTPScreen() {
       Alert.alert("Resend Failed", error.message || "Could not resend OTP");
     }
   };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}

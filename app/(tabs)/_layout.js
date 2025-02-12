@@ -84,6 +84,13 @@ export default function TabsLayout() {
           headerShown: false,
         }}
       />
+      <Tabs.Screen
+        name="profileTwoTest"
+        options={{
+          title: "profileTwoTest",
+          headerShown: false,
+        }}
+      />
     </Tabs>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -6,39 +6,85 @@ import {
   Modal,
   StyleSheet,
   ScrollView,
+  Animated,
+  Easing,
+  Platform,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "expo-router";
-import { MaterialIcons } from "@expo/vector-icons";
+import { MaterialIcons, Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { LinearGradient } from "expo-linear-gradient";
+import LottieView from "lottie-react-native";
 import { setShowProfileAlert } from "../../store/slices/profile.slice";
 import { COLORS } from "../../constants/colors";
-import { LinearGradient } from "expo-linear-gradient";
-import { calculateProfileProgress } from "../../utils/profileProgress";
+import {
+  calculateProfileProgress,
+  getProgressMessage,
+} from "../../utils/profileProgress";
 
 const ProfileCompletionAlert = () => {
   const dispatch = useDispatch();
   const router = useRouter();
   const { data, showProfileAlert } = useSelector((state) => state.profile);
+  const userId = useSelector((state) => state.profile.data?.id);
 
-  // Calculate progress and missing fields
-  const { progress, missingFields } = calculateProfileProgress(data);
+  const [savedProgress, setSavedProgress] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // State to force re-render when progress changes
-  const [refresh, setRefresh] = useState(false);
+  // Animated values
+  const scaleAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
+  // Animation setup
   useEffect(() => {
-    // Trigger re-render by toggling refresh state when progress changes
-    setRefresh((prev) => !prev);
-  }, [progress]);
+    if (showProfileAlert) {
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          friction: 4,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 500,
+          easing: Easing.ease,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [showProfileAlert]);
 
-  // Determine progress message based on completion
-  const getProgressMessage = (progress) => {
-    if (progress < 20) return "Let's get started on your profile!";
-    if (progress < 40) return "You're making progress!";
-    if (progress < 60) return "You're halfway there!";
-    if (progress < 80) return "Almost complete!";
-    return "Just a few more details to go!";
-  };
+  // Load saved progress from AsyncStorage
+  useEffect(() => {
+    const loadSavedProgress = async () => {
+      try {
+        setIsLoading(true);
+        if (!userId) return;
+
+        const storageKey = `profile_form_data_${userId}`;
+        const savedData = await AsyncStorage.getItem(storageKey);
+
+        if (savedData) {
+          const parsed = JSON.parse(savedData);
+          setSavedProgress(parsed);
+        }
+      } catch (error) {
+        console.error("Error loading saved progress:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadSavedProgress();
+  }, [userId]);
+
+  // Calculate progress including saved data
+  const { progress, stepProgress, missingFields } = calculateProfileProgress(
+    data,
+    savedProgress
+  );
 
   if (!showProfileAlert || progress === 100) return null;
 
@@ -51,66 +97,150 @@ const ProfileCompletionAlert = () => {
     dispatch(setShowProfileAlert(false));
   };
 
+  const renderStepProgress = () => {
+    return (
+      <View style={styles.stepProgressContainer}>
+        {Object.entries(stepProgress).map(([step, progress]) => (
+          <View key={step} style={styles.stepItem}>
+            <View style={styles.stepHeader}>
+              <Text style={styles.stepTitle}>Step {step}</Text>
+              <Text style={styles.stepPercentage}>{progress.percentage}%</Text>
+            </View>
+            <View style={styles.stepProgressBar}>
+              <Animated.View
+                style={[
+                  styles.stepProgressFill,
+                  {
+                    width: `${progress.percentage}%`,
+                    backgroundColor:
+                      progress.percentage === 100
+                        ? COLORS.success
+                        : COLORS.primary,
+                  },
+                ]}
+              />
+            </View>
+            <Text style={styles.stepDetails}>
+              {progress.completed}/{progress.total} completed
+            </Text>
+          </View>
+        ))}
+      </View>
+    );
+  };
+
+  const renderMissingFields = () => {
+    if (missingFields.length === 0) return null;
+
+    return (
+      <View style={styles.missingFieldsContainer}>
+        <Text style={styles.missingFieldsTitle}>
+          <Ionicons name="warning" size={16} color="#FF6B6B" /> Required Fields
+        </Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.missingFieldsScroll}
+        >
+          {missingFields.map((field, index) => (
+            <View key={index} style={styles.missingFieldChip}>
+              <Text style={styles.missingFieldText}>{field.label}</Text>
+            </View>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  };
+
   return (
     <Modal transparent animationType="fade" visible={showProfileAlert}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContainer}>
+      <Animated.View
+        style={[
+          styles.modalOverlay,
+          {
+            opacity: fadeAnim,
+          },
+        ]}
+      >
+        <Animated.View
+          style={[
+            styles.modalContainer,
+            {
+              transform: [
+                {
+                  scale: scaleAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.7, 1],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
           <LinearGradient
             colors={["#ffffff", "#f8f9ff"]}
             style={styles.modalContent}
           >
-            {/* Icon Container */}
+            {/* Animated Lottie Animation */}
             <View style={styles.iconContainer}>
-              <MaterialIcons name="favorite" size={40} color={COLORS.primary} />
+              <View style={styles.iconBackground}>
+                <Text style={styles.iconEmoji}>🚀</Text>
+              </View>
+              <Animated.View
+                style={[
+                  styles.progressPulse,
+                  {
+                    transform: [
+                      {
+                        scale: scaleAnim.interpolate({
+                          inputRange: [0, 0.5, 1],
+                          outputRange: [1, 1.2, 1],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              />
             </View>
 
-            {/* Text Content */}
             <View style={styles.textContainer}>
               <Text style={styles.title}>Your Journey to Love</Text>
               <Text style={styles.subtitle}>
                 {getProgressMessage(progress)}
-                <Text style={styles.progressHighlight}>({progress}%)</Text> to
-                unlock the full potential of finding your perfect match!
+                <Text style={styles.progressHighlight}> ({progress}%)</Text>
               </Text>
             </View>
 
-            {/* Progress Bar */}
-            <View style={styles.progressContainer}>
-              <View style={styles.progressBackground}>
-                <LinearGradient
-                  colors={[COLORS.primary, COLORS.secondary]}
-                  style={[styles.progressFill, { width: `${progress}%` }]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                />
-              </View>
-            </View>
-
-            {/* Missing Fields */}
-            {missingFields.length > 0 && (
-              <View style={styles.missingFieldsContainer}>
-                <Text style={styles.missingFieldsTitle}>
-                  Complete these fields:
-                </Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.missingFieldsScrollView}
-                >
-                  {missingFields.map((field, index) => (
-                    <View key={index} style={styles.missingFieldChip}>
-                      <Text style={styles.missingFieldText}>{field}</Text>
+            {!isLoading && (
+              <>
+                {savedProgress && (
+                  <View style={styles.savedProgressContainer}>
+                    <View style={styles.savedProgressHeader}>
+                      <Ionicons
+                        name="bookmark"
+                        size={18}
+                        color={COLORS.primary}
+                      />
+                      <Text style={styles.savedProgressTitle}>
+                        {" "}
+                        Saved Progress
+                      </Text>
                     </View>
-                  ))}
-                </ScrollView>
-              </View>
+                    <Text style={styles.savedProgressText}>
+                      You were last on step {savedProgress.step} of 4
+                    </Text>
+                    <Text style={styles.savedProgressDate}>
+                      Last updated:{" "}
+                      {new Date(savedProgress.lastUpdated).toLocaleString()}
+                    </Text>
+                  </View>
+                )}
+
+                {renderStepProgress()}
+                {renderMissingFields()}
+              </>
             )}
 
-            <Text style={styles.description}>
-              A complete profile attracts more meaningful connections
-            </Text>
-
-            {/* Buttons */}
             <View style={styles.buttonContainer}>
               <TouchableOpacity
                 onPress={handleLater}
@@ -130,29 +260,29 @@ const ProfileCompletionAlert = () => {
                   end={{ x: 1, y: 0 }}
                 >
                   <Text style={styles.completeButtonText}>
-                    Complete Profile
+                    {savedProgress ? "Continue Profile" : "Complete Profile"}
                   </Text>
                 </LinearGradient>
               </TouchableOpacity>
             </View>
           </LinearGradient>
-        </View>
-      </View>
+        </Animated.View>
+      </Animated.View>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.7)",
     justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
   modalContainer: {
+    width: "100%",
+    maxWidth: 400,
     borderRadius: 24,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
@@ -164,24 +294,44 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 24,
     alignItems: "center",
-    gap: 16,
+    overflow: "hidden",
   },
   iconContainer: {
+    position: "relative",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  },
+  iconBackground: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
     backgroundColor: `${COLORS.primary}15`,
-    padding: 16,
-    borderRadius: 50,
-    marginBottom: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+  },
+  iconEmoji: {
+    fontSize: 64,
+  },
+  progressPulse: {
+    position: "absolute",
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: `${COLORS.primary}10`,
+    zIndex: 5,
   },
   textContainer: {
     alignItems: "center",
-    gap: 8,
-    marginBottom: 8,
+    marginBottom: 16,
   },
   title: {
     fontSize: 24,
     fontWeight: "700",
-    textAlign: "center",
     color: "#1a1a1a",
+    marginBottom: 8,
+    textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
@@ -190,31 +340,100 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     paddingHorizontal: 10,
   },
-  progressContainer: {
+  progressHighlight: {
+    color: COLORS.primary,
+    fontWeight: "700",
+    fontSize: 18,
+  },
+  savedProgressContainer: {
     width: "100%",
-    marginVertical: 16,
-    paddingHorizontal: 4,
+    backgroundColor: `${COLORS.primary}10`,
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
   },
-  progressBackground: {
-    width: "100%",
-    height: 8,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 4,
-    overflow: "hidden",
-    position: "relative",
+  savedProgressHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
   },
-  progressFill: {
-    height: "100%",
-    position: "absolute",
-    left: 0,
-    right: 0,
+  savedProgressTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: COLORS.primary,
   },
-  description: {
+  savedProgressText: {
     fontSize: 14,
-    textAlign: "center",
+    color: "#666",
+    marginBottom: 2,
+  },
+  savedProgressDate: {
+    fontSize: 12,
     color: "#888",
-    paddingHorizontal: 20,
+  },
+  stepProgressContainer: {
+    width: "100%",
+    marginBottom: 16,
+  },
+  stepItem: {
+    marginBottom: 12,
+  },
+  stepHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  stepTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#666",
+  },
+  stepPercentage: {
+    fontSize: 14,
+    color: COLORS.primary,
+    fontWeight: "600",
+  },
+  stepProgressBar: {
+    height: 6,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 3,
+    overflow: "hidden",
+  },
+  stepProgressFill: {
+    height: "100%",
+    backgroundColor: COLORS.primary,
+  },
+  stepDetails: {
+    fontSize: 12,
+    color: "#888",
+    marginTop: 4,
+  },
+  missingFieldsContainer: {
+    width: "100%",
+    marginVertical: 10,
+  },
+  missingFieldsTitle: {
+    fontSize: 14,
+    color: "#666",
     marginBottom: 8,
+    paddingHorizontal: 10,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  missingFieldsScroll: {
+    paddingHorizontal: 10,
+  },
+  missingFieldChip: {
+    backgroundColor: `${COLORS.primary}15`,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginRight: 8,
+  },
+  missingFieldText: {
+    color: COLORS.primary,
+    fontSize: 12,
   },
   buttonContainer: {
     flexDirection: "row",
@@ -253,35 +472,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "600",
     fontSize: 16,
-  },
-  progressHighlight: {
-    color: COLORS.primary,
-    fontWeight: "700",
-    fontSize: 18,
-  },
-  missingFieldsContainer: {
-    width: "100%",
-    marginVertical: 10,
-  },
-  missingFieldsTitle: {
-    fontSize: 14,
-    color: "#666",
-    marginBottom: 8,
-    paddingHorizontal: 10,
-  },
-  missingFieldsScrollView: {
-    paddingHorizontal: 10,
-  },
-  missingFieldChip: {
-    backgroundColor: `${COLORS.primary}15`,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginRight: 8,
-  },
-  missingFieldText: {
-    color: COLORS.primary,
-    fontSize: 12,
   },
 });
 

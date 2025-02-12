@@ -1,95 +1,152 @@
 // utils/profileProgress.js
-export const calculateProfileProgress = (userData) => {
-  if (!userData) return { progress: 0, missingFields: [] };
 
-  const profile = userData.profile || {};
-
-  const mappedData = {
-    first_name: userData.first_name,
-    last_name: userData.last_name,
-    email: userData.email,
-    phone_number: userData.phone_number,
-    gender: userData.gender,
-    bio_en: profile.bio,
-    date_of_birth: profile.date_of_birth,
-    guardian_contact: profile.guardian_contact,
-    height: profile.height,
-    weight: profile.weight,
-    nationality_id: profile.nationality ? 1 : null,
-    country_of_residence_id: profile.country_of_residence ? 1 : null,
-    city_id: profile.city ? 1 : null,
-    educational_level_id: profile.educational_level ? 1 : null,
-    hair_color_id: profile.hair_color ? 1 : null,
-    skin_color_id: profile.skin_color ? 1 : null,
-    religion_id: profile.religion ? 1 : null,
-    marital_status_id: profile.marital_status ? 1 : null,
-    financial_status_id: profile.financial_status ? 1 : null,
-    employment_status: profile.employment_status === 1,
-    car_ownership: profile.car_ownership === 1,
-    job_title: profile.job_title || false,
-    drinking_status_id: profile.drinking_status ? 1 : null,
-    sports_activity_id: profile.sports_activity ? 1 : null,
-    social_media_presence_id: profile.social_media_presence ? 1 : null,
-    housing_status_id: profile.housing_status ? 1 : null,
-    number_of_children: profile.children || 0,
-    hobbies: profile.hobbies || [],
-    pets: profile.pets || [],
-    photos: profile.photos || [],
-  };
-
-  const requiredFields = [
-    { key: "first_name", label: "First Name" },
-    { key: "last_name", label: "Last Name" },
-    { key: "email", label: "Email" },
-    { key: "phone_number", label: "Phone Number" },
+const STEP_FIELDS = {
+  1: [
+    { key: "bio_en", label: "English Bio" },
+    { key: "bio_ar", label: "Arabic Bio" },
     { key: "gender", label: "Gender" },
-    { key: "bio_en", label: "Biography" },
     { key: "date_of_birth", label: "Date of Birth" },
     { key: "guardian_contact", label: "Guardian Contact" },
-    { key: "height", label: "Height" },
-    { key: "weight", label: "Weight" },
+  ],
+  2: [
     { key: "nationality_id", label: "Nationality" },
     { key: "country_of_residence_id", label: "Country of Residence" },
     { key: "city_id", label: "City" },
-    { key: "educational_level_id", label: "Educational Level" },
+    { key: "origin_id", label: "Origin" },
+    { key: "height", label: "Height" },
+    { key: "weight", label: "Weight" },
     { key: "hair_color_id", label: "Hair Color" },
     { key: "skin_color_id", label: "Skin Color" },
-    { key: "religion_id", label: "Religion" },
     { key: "marital_status_id", label: "Marital Status" },
-    { key: "financial_status_id", label: "Financial Status" },
-    { key: "employment_status", label: "Employment Status" },
-    { key: "car_ownership", label: "Car Ownership" },
-    { key: "job_title", label: "Job Title" },
+    { key: "number_of_children", label: "Number of Children" },
+    { key: "smoking_status", label: "Smoking Status" },
     { key: "drinking_status_id", label: "Drinking Status" },
     { key: "sports_activity_id", label: "Sports Activity" },
-    { key: "social_media_presence_id", label: "Social Media Presence" },
-    { key: "housing_status_id", label: "Housing Status" },
-    { key: "number_of_children", label: "Number of Children" },
+    { key: "sleep_habit_id", label: "Sleep Habits" },
+    { key: "marriage_budget_id", label: "Marriage Budget" },
+    { key: "religiosity_level_id", label: "Religiosity Level" },
+    { key: "religion_id", label: "Religion" },
     { key: "hobbies", label: "Hobbies" },
     { key: "pets", label: "Pets" },
-    { key: "photos", label: "Profile Photos" },
-  ];
+  ],
+  3: [
+    { key: "educational_level_id", label: "Education Level" },
+    { key: "specialization_id", label: "Specialization" },
+    { key: "employment_status", label: "Employment Status" },
+    { key: "position_level_id", label: "Position Level" },
+    { key: "job_title_id", label: "Job Title" },
+    { key: "financial_status_id", label: "Financial Status" },
+    { key: "housing_status_id", label: "Housing Status" },
+    { key: "car_ownership", label: "Car Ownership" },
+  ],
+  4: [{ key: "photos", label: "Profile Photo" }],
+};
 
-  let completedFields = 0;
+// utils/profileProgress.js
+
+// ... keep existing STEP_FIELDS ...
+
+export const calculateProfileProgress = (userData, savedProgress = null) => {
+  if (!userData) return { progress: 0, missingFields: [], stepProgress: {} };
+
+  const profile = userData.profile || {};
+  const formData = savedProgress?.formData || {};
+
+  // Combine data from API and saved form progress
+  const combinedData = {
+    ...userData,
+    ...profile,
+    ...formData,
+  };
+
+  // Calculate progress for each step
+  const stepProgress = {};
   const missingFields = [];
+  let totalCompleted = 0;
+  let totalFields = 0;
 
-  requiredFields.forEach(({ key, label }) => {
-    const value = mappedData[key];
+  Object.entries(STEP_FIELDS).forEach(([step, fields]) => {
+    let completedInStep = 0;
+    const stepMissingFields = [];
 
-    // Validation logic
-    const isCompleted =
-      (Array.isArray(value) && value.length > 0) ||
-      (typeof value === "boolean" && value === true) ||
-      (value !== null && value !== undefined && value !== "");
+    fields.forEach(({ key, label }) => {
+      const value = combinedData[key];
+      totalFields++;
 
-    if (isCompleted) {
-      completedFields++;
-    } else {
-      missingFields.push(label);
-    }
+      let isCompleted = false;
+
+      // Special handling for employment-related fields
+      if (key === "employment_status") {
+        // Consider employment status field completed if it's set
+        isCompleted = value !== null && value !== undefined;
+      } else if (key === "job_title_id" || key === "position_level_id") {
+        // For job title and position level, only check if employed
+        const employmentStatus = combinedData["employment_status"];
+
+        // If not employed, these fields are not required
+        if (employmentStatus === false || employmentStatus === null) {
+          isCompleted = true;
+        } else {
+          // If employed, check if job title or position level is set
+          isCompleted = value !== null && value !== undefined && value !== 0;
+        }
+      } else {
+        // Regular field validation
+        isCompleted =
+          (Array.isArray(value) && value.length > 0) ||
+          (typeof value === "boolean" && value === true) ||
+          (value !== null &&
+            value !== undefined &&
+            value !== "" &&
+            value !== 0);
+      }
+
+      if (isCompleted) {
+        completedInStep++;
+        totalCompleted++;
+      } else {
+        stepMissingFields.push({
+          label,
+          step: Number(step),
+        });
+      }
+    });
+
+    stepProgress[step] = {
+      completed: completedInStep,
+      total: fields.length,
+      percentage: Math.round((completedInStep / fields.length) * 100),
+    };
+
+    missingFields.push(...stepMissingFields);
   });
 
-  const progress = Math.round((completedFields / requiredFields.length) * 100);
+  const totalProgress = Math.round((totalCompleted / totalFields) * 100);
 
-  return { progress, missingFields };
+  // Sort missing fields by step
+  const sortedMissingFields = missingFields.sort((a, b) => a.step - b.step);
+
+  return {
+    progress: totalProgress,
+    stepProgress,
+    missingFields: sortedMissingFields,
+    completedFields: totalCompleted,
+    totalFields,
+  };
+};
+
+export const getProgressMessage = (progress) => {
+  if (progress < 20) return "Let's get started on your profile!";
+  if (progress < 40) return "You're making progress!";
+  if (progress < 60) return "You're halfway there!";
+  if (progress < 80) return "Almost complete!";
+  return "Just a few more details to go!";
+};
+
+export const getStepStatus = (stepProgress) => {
+  if (!stepProgress) return "not-started";
+  const { completed, total } = stepProgress;
+  if (completed === 0) return "not-started";
+  if (completed === total) return "completed";
+  return "in-progress";
 };

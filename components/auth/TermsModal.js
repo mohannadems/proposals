@@ -17,19 +17,30 @@ export const TermsModal = ({ visible, onAccept, onDecline }) => {
   const [isLoading, setIsLoading] = useState(false);
   const fadeAnim = useState(new Animated.Value(0))[0];
 
-  const handleAccept = () => {
-    setIsLoading(true);
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
+  const handleAccept = async () => {
+    try {
+      setIsLoading(true);
 
-    setTimeout(() => {
+      // Animate loading overlay
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+
+      // Perform your actual async operation here
+      // For example:
+      await onAccept();
+
+      // If operation succeeds, loading will be handled in the parent component
+    } catch (error) {
+      // Handle any errors
+      console.error("Error accepting terms:", error);
+
+      // Reset loading state
       setIsLoading(false);
       fadeAnim.setValue(0);
-      onAccept();
-    }, 3000);
+    }
   };
 
   const LoadingOverlay = () => (
@@ -107,7 +118,9 @@ export const TermsModal = ({ visible, onAccept, onDecline }) => {
                 onPress={handleAccept}
                 disabled={isLoading}
               >
-                <Text style={styles.buttonText}>Accept</Text>
+                <Text style={styles.buttonText}>
+                  {isLoading ? "Processing..." : "Accept"}
+                </Text>
               </TouchableOpacity>
             </View>
             {isLoading && <LoadingOverlay />}
