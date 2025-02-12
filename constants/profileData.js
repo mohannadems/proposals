@@ -50,11 +50,6 @@ export const PROFILE_DATA = {
   origins: [
     { id: 1, name: "Middle Eastern 🌍" },
     { id: 2, name: "African 🌴" },
-    { id: 3, name: "Asian 🌏" },
-    { id: 4, name: "European 🌍" },
-    { id: 5, name: "North American 🌎" },
-    { id: 6, name: "South American 🌎" },
-    { id: 7, name: "Oceanian 🌊" },
   ],
 
   marital_statuses: [

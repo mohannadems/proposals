@@ -39,14 +39,12 @@ export const profileValidationSchema = Yup.object().shape({
   nationality_id: createNumberValidation("nationality"),
   country_of_residence_id: createNumberValidation("country of residence"),
   city_id: createNumberValidation("city"),
-  origin_id: createNumberValidation("origin"),
+  origin_id: Yup.number().nullable().required("Please select your origin "),
 
   // Physical Attributes
-  height: Yup.number()
-    .nullable()
-    .transform((value) => (isNaN(value) ? null : value)),
+  height: Yup.number().nullable().required("Please select your Height "),
 
-  weight: Yup.number().nullable(),
+  weight: Yup.number().nullable().required("Please select your Weight "),
 
   hair_color_id: Yup.number().nullable(),
   skin_color_id: Yup.number()
@@ -54,8 +52,12 @@ export const profileValidationSchema = Yup.object().shape({
     .required("Please select your skin color"),
 
   // Education and Work
-  educational_level_id: createNumberValidation("education level"),
-  specialization_id: Yup.number().nullable(),
+  educational_level_id: Yup.number()
+    .nullable()
+    .required("Please select your Educational level"),
+  specialization_id: Yup.number()
+    .nullable()
+    .required("Please select your Specialication "),
   employment_status: Yup.boolean().nullable(),
   job_title_id: Yup.number()
     .nullable()
@@ -100,7 +102,7 @@ export const profileValidationSchema = Yup.object().shape({
   sports_activity_id: Yup.number().nullable(),
   social_media_presence_id: Yup.number()
     .nullable()
-    .transform((value) => (isNaN(value) ? null : value)),
+    .required("Please select your Social Media presence"),
   // Smoking and Drinking
   smoking_status: Yup.number()
     .nullable()
@@ -138,7 +140,10 @@ export const profileValidationSchema = Yup.object().shape({
     "Health issues description cannot exceed 500 characters"
   ),
 
-  zodiac_sign_id: Yup.number().nullable(),
+  zodiac_sign_id: Yup.number()
+    .nullable()
+    .required("Please select your Zodiac sign"),
+
   // Female-specific fields
   hijab_status: Yup.mixed().when("gender", {
     is: "female",
@@ -187,7 +192,8 @@ export const stepFields = {
     "financial_status_id",
     "housing_status_id",
     "car_ownership",
-    "zodiac_sign",
+    "zodiac_sign_id",
+    "social_media_presence_id",
   ],
   4: ["profile_image"],
 };

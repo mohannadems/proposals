@@ -230,6 +230,7 @@ const EducationWorkSection = () => {
         <CardHeader {...cardConfigs.social} />
         <AnimatedFormContainer>
           <FormDropdown
+            required
             control={control}
             name="social_media_presence_id"
             label="Social Media Presence 📱"
@@ -246,6 +247,7 @@ const EducationWorkSection = () => {
         <CardHeader {...cardConfigs.zodiac} />
         <AnimatedFormContainer>
           <FormDropdown
+            required
             control={control}
             name="zodiac_sign_id"
             label="Zodiac Sign ✨"

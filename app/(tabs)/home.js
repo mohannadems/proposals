@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   StyleSheet,
   View,
@@ -8,14 +8,15 @@ import {
   Image,
   Dimensions,
   Animated,
-  Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
-import ProfileCompletionAlert from "../../components/profile/ProfileCompletionAlert";
-const { width } = Dimensions.get("window");
-import { fetchProfile } from "../../store/slices/profile.slice";
 import { useDispatch } from "react-redux";
+import { fetchProfile } from "../../store/slices/profile.slice";
+import i18n from "../i18n";
+import { I18nManager } from "react-native";
+
+const { width } = Dimensions.get("window");
+
 const COLORS = {
   primary: "#B65165",
   secondary: "#5856D6",
@@ -34,6 +35,9 @@ const LandingPage = () => {
   const fadeAnim = new Animated.Value(0);
   const featureAnims = features.map(() => new Animated.Value(0));
   const testimonialAnims = testimonials.map(() => new Animated.Value(0));
+  const [, updateState] = useState();
+  const forceUpdate = useCallback(() => updateState({}), []);
+  const [currentLanguage, setCurrentLanguage] = useState(i18n.locale);
   useEffect(() => {
     dispatch(fetchProfile());
   }, [dispatch]);
@@ -66,7 +70,7 @@ const LandingPage = () => {
         })
       )
     ).start();
-  }, []);
+  }, [currentLanguage]);
 
   const headerHeight = scrollY.interpolate({
     inputRange: [0, 200],
@@ -74,159 +78,173 @@ const LandingPage = () => {
     extrapolate: "clamp",
   });
 
+  const changeLanguage = (lang) => {
+    i18n.locale = lang;
+    const isRTL = lang === "ar";
+    if (I18nManager.isRTL !== isRTL) {
+      I18nManager.forceRTL(isRTL);
+      // In a real app, you might want to show an alert here advising the user to restart the app
+      // for the RTL changes to take full effect
+    }
+    setCurrentLanguage(lang);
+  };
   return (
-    <>
-      <View style={styles.container}>
-        <Animated.ScrollView
-          style={styles.scrollView}
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-            { useNativeDriver: false }
-          )}
-          scrollEventThrottle={16}
-        >
-          {/* Hero Section */}
-          <Animated.View
-            style={[styles.heroContainer, { height: headerHeight }]}
+    <View style={styles.container}>
+      <Animated.ScrollView
+        style={styles.scrollView}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
+        scrollEventThrottle={16}
+      >
+        <Animated.View style={[styles.heroContainer, { height: headerHeight }]}>
+          <LinearGradient
+            colors={COLORS.primaryGradient}
+            style={styles.gradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
           >
-            <LinearGradient
-              colors={COLORS.primaryGradient}
-              style={styles.gradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
+            <Animated.View style={[styles.heroContent, { opacity: fadeAnim }]}>
+              <Text style={styles.heroTitle}>
+                {i18n.t("Find Your Perfect Match")}
+              </Text>
+              <Text style={styles.heroSubtitle}>
+                {i18n.t("Where Meaningful Connections Begin")}
+              </Text>
+              <TouchableOpacity style={styles.heroButton}>
+                <View style={styles.buttonBlur}>
+                  <Text style={styles.heroButtonText}>
+                    {i18n.t("Get Started")}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </Animated.View>
+          </LinearGradient>
+        </Animated.View>
+
+        <View style={styles.statsContainer}>
+          <View style={styles.statsCard}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>2M+</Text>
+              <Text style={styles.statLabel}>{i18n.t("Active Users")}</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>150K</Text>
+              <Text style={styles.statLabel}>{i18n.t("Daily Matches")}</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>95%</Text>
+              <Text style={styles.statLabel}>{i18n.t("Success Rate")}</Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{i18n.t("Premium Features")}</Text>
+          <View style={styles.featuresGrid}>
+            {features.map((feature, index) => (
               <Animated.View
-                style={[styles.heroContent, { opacity: fadeAnim }]}
+                key={index}
+                style={[
+                  styles.featureCardContainer,
+                  {
+                    opacity: featureAnims[index],
+                    transform: [
+                      {
+                        translateY: featureAnims[index].interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [50, 0],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
               >
-                <Text style={styles.heroTitle}>
-                  Find Your{"\n"}Perfect Match
-                </Text>
-                <Text style={styles.heroSubtitle}>
-                  Where Meaningful Connections Begin
-                </Text>
-                <TouchableOpacity style={styles.heroButton}>
-                  <View style={styles.buttonBlur}>
-                    <Text style={styles.heroButtonText}>Get Started</Text>
-                  </View>
-                </TouchableOpacity>
-              </Animated.View>
-            </LinearGradient>
-          </Animated.View>
-
-          {/* Stats Section */}
-          <View style={styles.statsContainer}>
-            <View style={styles.statsCard}>
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>2M+</Text>
-                <Text style={styles.statLabel}>Active Users</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>150K</Text>
-                <Text style={styles.statLabel}>Daily Matches</Text>
-              </View>
-              <View style={styles.statDivider} />
-              <View style={styles.statItem}>
-                <Text style={styles.statNumber}>95%</Text>
-                <Text style={styles.statLabel}>Success Rate</Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Features Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Premium Features</Text>
-            <View style={styles.featuresGrid}>
-              {features.map((feature, index) => (
-                <Animated.View
-                  key={index}
-                  style={[
-                    styles.featureCardContainer,
-                    {
-                      opacity: featureAnims[index],
-                      transform: [
-                        {
-                          translateY: featureAnims[index].interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [50, 0],
-                          }),
-                        },
-                      ],
-                    },
-                  ]}
-                >
-                  <View style={styles.featureCard}>
-                    <LinearGradient
-                      colors={[COLORS.white, "#F8F9FA"]}
-                      style={styles.featureGradient}
-                    >
-                      <View style={styles.featureIcon}>
-                        <feature.icon />
-                      </View>
-                      <Text style={styles.featureTitle}>{feature.title}</Text>
-                      <Text style={styles.featureDescription}>
-                        {feature.description}
-                      </Text>
-                    </LinearGradient>
-                  </View>
-                </Animated.View>
-              ))}
-            </View>
-          </View>
-
-          {/* Testimonials Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Success Stories</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.testimonialScroll}
-            >
-              {testimonials.map((testimonial, index) => (
-                <Animated.View
-                  key={index}
-                  style={[
-                    styles.testimonialCard,
-                    {
-                      opacity: testimonialAnims[index],
-                      transform: [
-                        {
-                          translateX: testimonialAnims[index].interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [50, 0],
-                          }),
-                        },
-                      ],
-                    },
-                  ]}
-                >
-                  <View style={styles.testimonialContentView}>
-                    {/* Centered Image */}
-                    <View style={styles.testimonialImageWrapper}>
-                      <Image
-                        source={testimonial.image}
-                        style={styles.testimonialImageStyle}
-                      />
+                <View style={styles.featureCard}>
+                  <LinearGradient
+                    colors={[COLORS.white, "#F8F9FA"]}
+                    style={styles.featureGradient}
+                  >
+                    <View style={styles.featureIcon}>
+                      <feature.icon />
                     </View>
-
-                    {/* Testimonial Content */}
-                    <Text style={styles.testimonialText}>
-                      {testimonial.text}
+                    <Text style={styles.featureTitle}>
+                      {i18n.t(feature.title)}
                     </Text>
-                    <Text style={styles.testimonialName}>
-                      {testimonial.name}
+                    <Text style={styles.featureDescription}>
+                      {i18n.t(feature.description)}
                     </Text>
-                    <Text style={styles.testimonialLocation}>
-                      {testimonial.location}
-                    </Text>
-                  </View>
-                </Animated.View>
-              ))}
-            </ScrollView>
+                  </LinearGradient>
+                </View>
+              </Animated.View>
+            ))}
           </View>
-        </Animated.ScrollView>
-      </View>
-    </>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{i18n.t("Success Stories")}</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.testimonialScroll}
+          >
+            {testimonials.map((testimonial, index) => (
+              <Animated.View
+                key={index}
+                style={[
+                  styles.testimonialCard,
+                  {
+                    opacity: testimonialAnims[index],
+                    transform: [
+                      {
+                        translateX: testimonialAnims[index].interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [50, 0],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              >
+                <View style={styles.testimonialContentView}>
+                  <View style={styles.testimonialImageWrapper}>
+                    <Image
+                      source={testimonial.image}
+                      style={styles.testimonialImageStyle}
+                    />
+                  </View>
+                  <Text style={styles.testimonialText}>
+                    {i18n.t(testimonial.text)}
+                  </Text>
+                  <Text style={styles.testimonialName}>{testimonial.name}</Text>
+                  <Text style={styles.testimonialLocation}>
+                    {testimonial.location}
+                  </Text>
+                </View>
+              </Animated.View>
+            ))}
+          </ScrollView>
+        </View>
+
+        <View style={styles.languageButtons}>
+          <TouchableOpacity
+            onPress={() => changeLanguage("en")}
+            style={styles.languageButton}
+          >
+            <Text>English</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => changeLanguage("ar")}
+            style={styles.languageButton}
+          >
+            <Text>العربية</Text>
+          </TouchableOpacity>
+        </View>
+      </Animated.ScrollView>
+    </View>
   );
 };
 
@@ -249,6 +267,7 @@ const styles = StyleSheet.create({
   },
   heroContent: {
     marginTop: 60,
+    alignItems: I18nManager.isRTL ? "flex-start" : "flex-end",
   },
   heroTitle: {
     fontSize: 48,
@@ -256,6 +275,7 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     lineHeight: 56,
     marginBottom: 16,
+    textAlign: I18nManager.isRTL ? "left" : "right",
   },
   heroSubtitle: {
     fontSize: 18,
@@ -506,6 +526,17 @@ const styles = StyleSheet.create({
     color: "#ffffff", // Text color
     fontWeight: "bold",
   },
+  languageButtons: {
+    flexDirection: "row",
+    justifyContent: "center",
+    marginVertical: 20,
+  },
+  languageButton: {
+    padding: 10,
+    marginHorizontal: 10,
+    backgroundColor: COLORS.primary,
+    borderRadius: 5,
+  },
 });
 
 // Mock data for features
@@ -538,7 +569,6 @@ const features = [
   },
 ];
 
-// Mock data for testimonials
 const testimonials = [
   {
     image: require("../../assets/images/11.jpg"),
