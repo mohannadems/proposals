@@ -131,14 +131,14 @@ const PhotoUploader = ({ currentPhotoUrl, onPhotoUpdate, onError }) => {
 const styles = StyleSheet.create({
   photoContainer: {
     position: "relative",
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
   },
   avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
     borderWidth: 3,
     borderColor: COLORS.white,
     shadowColor: "#000",

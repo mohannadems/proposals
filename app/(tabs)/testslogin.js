@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState, useRef } from "react";
 import {
   View,
@@ -12,9 +10,10 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  Keyboard,
+  KeyboardAvoidingView,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import { Feather, FontAwesome, AntDesign } from "@expo/vector-icons";
 
@@ -125,6 +124,8 @@ const FormInput = ({
   onToggleSecure,
   keyboardType,
   autoCapitalize = "none",
+  returnKeyType,
+  onSubmitEditing,
 }) => {
   const [isFocused, setIsFocused] = useState(false);
   const shakeAnimation = useRef(new Animated.Value(0)).current;
@@ -187,6 +188,9 @@ const FormInput = ({
           onBlur={() => setIsFocused(false)}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
+          returnKeyType={returnKeyType}
+          onSubmitEditing={onSubmitEditing}
+          blurOnSubmit={false}
         />
         {onToggleSecure && (
           <TouchableOpacity
@@ -223,6 +227,10 @@ const AuthScreen = () => {
     name: "",
   });
   const [errors, setErrors] = useState({});
+
+  const nameInputRef = useRef(null);
+  const emailInputRef = useRef(null);
+  const passwordInputRef = useRef(null);
 
   const slideAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -267,6 +275,7 @@ const AuthScreen = () => {
   };
 
   const handleSubmit = async () => {
+    Keyboard.dismiss();
     if (validateForm()) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setIsLoading(true);
@@ -278,8 +287,20 @@ const AuthScreen = () => {
     }
   };
 
+  const focusNextInput = (currentRef, nextRef) => {
+    if (nextRef && nextRef.current) {
+      nextRef.current.focus();
+    } else {
+      handleSubmit();
+    }
+  };
+
   return (
-    <>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
+    >
       <StatusBar barStyle="light-content" />
 
       <LinearGradient
@@ -299,6 +320,7 @@ const AuthScreen = () => {
 
       <ScrollView
         style={styles.content}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
@@ -324,6 +346,7 @@ const AuthScreen = () => {
 
           {!isLogin && (
             <FormInput
+              ref={nameInputRef}
               icon="user"
               placeholder="Full Name"
               value={form.name}
@@ -332,10 +355,15 @@ const AuthScreen = () => {
               }
               error={errors.name}
               autoCapitalize="words"
+              returnKeyType="next"
+              onSubmitEditing={() =>
+                focusNextInput(nameInputRef, emailInputRef)
+              }
             />
           )}
 
           <FormInput
+            ref={emailInputRef}
             icon="mail"
             placeholder="Email Address"
             value={form.email}
@@ -344,9 +372,14 @@ const AuthScreen = () => {
             }
             keyboardType="email-address"
             error={errors.email}
+            returnKeyType="next"
+            onSubmitEditing={() =>
+              focusNextInput(emailInputRef, passwordInputRef)
+            }
           />
 
           <FormInput
+            ref={passwordInputRef}
             icon="lock"
             placeholder="Password"
             value={form.password}
@@ -356,6 +389,8 @@ const AuthScreen = () => {
             secureTextEntry={!showPassword}
             error={errors.password}
             onToggleSecure={() => setShowPassword(!showPassword)}
+            returnKeyType="done"
+            onSubmitEditing={handleSubmit}
           />
 
           {isLogin && (
@@ -401,7 +436,7 @@ const AuthScreen = () => {
           </TouchableOpacity>
         </Animated.View>
       </ScrollView>
-    </>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -440,6 +475,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 24,
+    paddingBottom: 32,
   },
   formContainer: {
     marginTop: 32,

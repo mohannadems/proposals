@@ -27,6 +27,7 @@ import PhotoUploader from "../../components/profile/PhotoUploader";
 import * as ImageManipulator from "expo-image-manipulator";
 import { updateProfilePhoto } from "../../store/slices/profile.slice";
 import * as ImagePicker from "expo-image-picker";
+import ModernLoadingScreen from "../../components/common/ModernLoader";
 
 // Utility function to get color based on completion percentage
 const getProgressColor = (value) => {
@@ -290,12 +291,7 @@ const ProfileScreen = () => {
   }, [profile]);
 
   if (loading && !refreshing) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>Loading your profile...</Text>
-      </View>
-    );
+    return <ModernLoadingScreen />;
   }
 
   if (error) {
@@ -439,7 +435,7 @@ const ProfileScreen = () => {
           </View>
         </LinearGradient>
 
-        <View style={styles.content}>
+        <ScrollView style={styles.content}>
           <ProfileSection
             title="Basic Information"
             fields={sectionFields.basic}
@@ -718,7 +714,7 @@ const ProfileScreen = () => {
               </Text>
             </View>
           )}
-        </View>
+        </ScrollView>
       </ScrollView>
     </>
   );
