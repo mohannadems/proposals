@@ -138,7 +138,6 @@ const getStorageKeys = (userId) => ({
 });
 const saveFormProgress = async (userId, step, formData) => {
   if (!userId) {
-    console.log("No user ID available, skipping save");
     return;
   }
 
@@ -159,7 +158,6 @@ const saveFormProgress = async (userId, step, formData) => {
       storageKeys.FORM_DATA,
       JSON.stringify(dataToSave)
     );
-    console.log("Form progress saved for user:", userId);
   } catch (error) {
     console.error("Error saving form progress:", error);
   }
@@ -167,7 +165,6 @@ const saveFormProgress = async (userId, step, formData) => {
 
 const loadFormProgress = async (userId) => {
   if (!userId) {
-    console.log("No user ID available, skipping load");
     return null;
   }
 
@@ -199,7 +196,6 @@ const clearFormProgress = async (userId) => {
   try {
     const storageKeys = getStorageKeys(userId);
     await AsyncStorage.removeItem(storageKeys.FORM_DATA);
-    console.log("Form progress cleared for user:", userId);
   } catch (error) {
     console.error("Error clearing form progress:", error);
   }
@@ -211,7 +207,6 @@ const clearAllFormProgress = async () => {
       key.startsWith("profile_form_data_")
     );
     await AsyncStorage.multiRemove(formDataKeys);
-    console.log("All form progress cleared");
   } catch (error) {
     console.error("Error clearing all form progress:", error);
   }
@@ -219,7 +214,6 @@ const clearAllFormProgress = async () => {
 // Part 3: Component Setup & Handlers
 const fillProfileData = () => {
   const userId = useSelector((state) => state.profile.data?.id);
-  console.log(userId, "user id ");
 
   const scrollViewRef = useRef(null);
   const navigation = useNavigation();
@@ -239,18 +233,11 @@ const fillProfileData = () => {
   });
   const handleNext = useCallback(async () => {
     try {
-      // Debug logs for step tracking
-      console.log("Current step:", currentStep);
-      console.log("FORM_STEPS length:", FORM_STEPS.length);
-      console.log("Is last step?:", currentStep === FORM_STEPS.length);
-      console.log("Current step data:", FORM_STEPS[currentStep - 1]);
-
       const currentStepFields = stepFields[currentStep];
       const formValues = methods.getValues();
 
       // Only validate current step fields
       const validationResult = await methods.trigger(currentStepFields);
-      console.log("Step validation result:", validationResult);
 
       const currentErrors = Object.entries(methods.formState.errors)
         .filter(([key]) => currentStepFields.includes(key))
@@ -262,27 +249,20 @@ const fillProfileData = () => {
       if (validationResult && currentErrors.length === 0) {
         // Check if we're on step 4 (Profile Picture)
         if (currentStep === 4) {
-          console.log("On final step (Profile Picture), attempting submission");
           // Validate all fields before submission
           const isValid = await methods.trigger();
-          console.log("Final validation result:", isValid);
 
           if (isValid) {
-            console.log("All validations passed, preparing form data");
             const formData = methods.getValues();
-            console.log("Form data ready for submission:", formData);
 
             try {
-              console.log("Calling onSubmit...");
               await onSubmit(formData);
-              console.log("Submission completed successfully");
               return;
             } catch (submitError) {
               console.error("Submission failed:", submitError);
               throw submitError;
             }
           } else {
-            console.log("Final validation failed, showing errors");
             const allErrors = Object.entries(methods.formState.errors).map(
               ([key, error]) => error.message
             );
@@ -293,7 +273,6 @@ const fillProfileData = () => {
         }
 
         // If not on last step, proceed to next step
-        console.log("Moving to next step");
         Animated.timing(fadeAnim, {
           toValue: 0,
           duration: 200,
@@ -301,7 +280,6 @@ const fillProfileData = () => {
         }).start(() => {
           setCurrentStep((prev) => {
             const newStep = Math.min(prev + 1, FORM_STEPS.length);
-            console.log("Moving to step:", newStep);
             return newStep;
           });
 
@@ -316,7 +294,6 @@ const fillProfileData = () => {
           }).start();
         });
       } else {
-        console.log("Validation errors found:", currentErrors);
         let errorsToShow = currentErrors;
 
         if (errorsToShow.length === 0) {
@@ -361,7 +338,6 @@ const fillProfileData = () => {
         setIsLoading(true);
 
         if (!userId) {
-          console.log("No user ID available, resetting to initial state");
           methods.reset(initialFormState);
           return;
         }
@@ -377,16 +353,13 @@ const fillProfileData = () => {
           const hoursDiff = (now - savedDate) / (1000 * 60 * 60);
 
           if (hoursDiff < 24) {
-            console.log("Loading saved progress for user:", userId);
             setCurrentStep(step);
             methods.reset(formData);
           } else {
-            console.log("Saved data expired, clearing progress");
             await clearFormProgress(userId);
             methods.reset(initialFormState);
           }
         } else {
-          console.log("No saved progress found, using initial state");
           methods.reset(initialFormState);
         }
       } catch (error) {
@@ -409,14 +382,7 @@ const fillProfileData = () => {
 
     saveProgress();
   }, [currentStep, methods.watch(), userId]);
-  // Also add this debug log at the component level
-  useEffect(() => {
-    console.log("Step changed to:", currentStep);
-    console.log("Is final step?:", currentStep === 4);
-  }, [currentStep]);
-
-  // Also add this console log where FORM_STEPS is defined
-  console.log("FORM_STEPS:", FORM_STEPS);
+  useEffect(() => {}, [currentStep]);
 
   // Helper function to calculate age
   const calculateAge = (birthDate) => {
@@ -452,13 +418,10 @@ const fillProfileData = () => {
     resolver: yupResolver(profileValidationSchema),
   });
 
-  // Watch employment status to conditionally render and manage job details
   const employment_status = watch("employment_status");
 
-  // Effect to reset job details when employment status changes
   useEffect(() => {
     if (employment_status === false) {
-      // Reset job-related fields to null when not employed
       setValue("job_title_id", null);
       setValue("position_level_id", null);
     }
@@ -531,8 +494,14 @@ const fillProfileData = () => {
         drinking_status_id: Number(data.drinking_status_id) || null,
 
         // Arrays
-        hobbies: Array.isArray(data.hobbies) ? data.hobbies.map(Number) : [],
-        pets: Array.isArray(data.pets) ? data.pets.map(Number) : [],
+        hobbies:
+          Array.isArray(data.hobbies) && data.hobbies.length > 0
+            ? data.hobbies.map((id) => parseInt(id, 10))
+            : [],
+        pets:
+          Array.isArray(data.pets) && data.pets.length > 0
+            ? data.pets.map((id) => parseInt(id, 10))
+            : [],
 
         // Additional Information
         health_issues_en: String(data.health_issues_en || ""),
@@ -562,8 +531,6 @@ const fillProfileData = () => {
           delete submissionData[key];
         }
       });
-
-      console.log("Submitting data:", submissionData);
 
       // First update profile
       const resultAction = await dispatch(updateProfile(submissionData));
@@ -625,21 +592,17 @@ const fillProfileData = () => {
     }
   };
   const handleFormSubmit = useCallback(async () => {
-    console.log("handleFormSubmit called");
     try {
       // Validate all fields
       const isValid = await methods.trigger();
-      console.log("Form validation result:", isValid);
 
       if (isValid) {
         // Get form data
         const formData = methods.getValues();
-        console.log("Form data before submission:", formData);
 
         // Call onSubmit
         await onSubmit(formData);
       } else {
-        console.log("Form validation failed:", methods.formState.errors);
         const allErrors = Object.entries(methods.formState.errors).map(
           ([_, error]) => error.message
         );

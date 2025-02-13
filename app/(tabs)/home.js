@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
   },
   heroContent: {
     marginTop: 60,
-    alignItems: I18nManager.isRTL ? "flex-start" : "flex-end",
+    alignItems: I18nManager.isRTL ? "flex-end" : "flex-start",
   },
   heroTitle: {
     fontSize: 48,
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     color: COLORS.white,
     lineHeight: 56,
     marginBottom: 16,
-    textAlign: I18nManager.isRTL ? "left" : "right",
+    textAlign: I18nManager.isRTL ? "right" : "left",
   },
   heroSubtitle: {
     fontSize: 18,

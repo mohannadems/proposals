@@ -3,13 +3,13 @@ import { ScrollView, View, Text, StyleSheet } from "react-native";
 import { useFormContext } from "react-hook-form";
 import FeatherIcon from "react-native-vector-icons/Feather";
 import MaterialIcon from "react-native-vector-icons/MaterialIcons";
-
 // Import components
 import { AnimatedCard } from "./AnimatedBase";
 import { CardHeader } from "./CardHeader";
 import { SectionHeader } from "./SectionHeader";
 import { HobbyItem } from "./HobbyComponents";
 import { PetItem } from "./PetComponents";
+import { Platform } from "react-native";
 import {
   AnimatedFormContainer,
   AnimatedDropdown,
@@ -34,7 +34,6 @@ const LifestyleSection = () => {
       contentContainerStyle={styles.scrollContent}
     >
       <SectionHeader />
-
       {/* Origin & Residence */}
       <AnimatedCard delay={100}>
         <CardHeader {...cardConfigs.origin} />
@@ -75,7 +74,6 @@ const LifestyleSection = () => {
           />
         </AnimatedFormContainer>
       </AnimatedCard>
-
       {/* Personal Info */}
       <AnimatedCard delay={200}>
         <CardHeader {...cardConfigs.personal} />
@@ -108,7 +106,6 @@ const LifestyleSection = () => {
           </FormRow>
         </AnimatedFormContainer>
       </AnimatedCard>
-
       {/* Physical Attributes */}
       <AnimatedCard delay={400}>
         <CardHeader {...cardConfigs.physical} />
@@ -122,6 +119,7 @@ const LifestyleSection = () => {
               icon={
                 <FeatherIcon name="arrow-up" size={20} color={COLORS.primary} />
               }
+              required
             />
             <AnimatedDropdown
               control={control}
@@ -135,6 +133,7 @@ const LifestyleSection = () => {
                   color={COLORS.primary}
                 />
               }
+              required
             />
           </FormRow>
           <FormRow>
@@ -150,6 +149,7 @@ const LifestyleSection = () => {
                   color={COLORS.primary}
                 />
               }
+              required
             />
             <AnimatedDropdown
               required
@@ -164,7 +164,6 @@ const LifestyleSection = () => {
           </FormRow>
         </AnimatedFormContainer>
       </AnimatedCard>
-
       {/* Lifestyle & Preferences */}
       <AnimatedCard delay={500}>
         <CardHeader {...cardConfigs.lifestyle} />
@@ -297,8 +296,6 @@ const LifestyleSection = () => {
           />
         </AnimatedFormContainer>
       </AnimatedCard>
-
-      {/* Pets */}
       <AnimatedCard delay={700}>
         <CardHeader {...cardConfigs.pets} />
         <AnimatedFormContainer>
@@ -314,7 +311,6 @@ const LifestyleSection = () => {
           />
         </AnimatedFormContainer>
       </AnimatedCard>
-
       {/* Religion */}
       <AnimatedCard delay={800}>
         <CardHeader {...cardConfigs.spiritual} />
@@ -343,29 +339,57 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   preferenceItem: {
-    backgroundColor: COLORS.grayLight,
-    borderRadius: 12,
-    padding: 12,
-    margin: 4,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: COLORS.grayLight,
+    borderRadius: 24,
+
+    margin: 4,
     borderWidth: 2,
     borderColor: "transparent",
+    minHeight: 48,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
   },
   preferenceItemSelected: {
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primaryDark,
+    borderColor: "transparent",
+
+    transform: [{ scale: 1.02 }],
+    ...Platform.select({
+      ios: {
+        shadowColor: COLORS.primaryDark,
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
   preferenceText: {
-    flexDirection: "column",
-    display: "flex",
-    fontSize: 14,
-    fontWeight: "600",
+    flex: 1,
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: "500",
     color: COLORS.text,
-    textAlign: "center",
+    textAlign: "left",
+    paddingHorizontal: 8,
   },
   preferenceTextSelected: {
     color: COLORS.white,
+    fontWeight: "600",
   },
 });
 

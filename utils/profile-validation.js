@@ -124,11 +124,30 @@ export const profileValidationSchema = Yup.object().shape({
 
   // Additional Information
   hobbies: Yup.array()
-    .of(Yup.number())
-    .min(0, "Hobbies cannot be negative")
-    .max(3, "Maximum 3 hobbies allowed"),
+    .transform((value, originalValue) => {
+      // If "none" is selected or no value, return empty array
+      if (!originalValue || originalValue.includes("none")) {
+        return [];
+      }
+      // Convert selected values to integers
+      return originalValue.map((id) =>
+        typeof id === "string" ? parseInt(id) : id
+      );
+    })
+    .of(Yup.number().integer()),
 
-  pets: Yup.array().of(Yup.number()),
+  pets: Yup.array()
+    .transform((value, originalValue) => {
+      // If "none" is selected or no value, return empty array
+      if (!originalValue || originalValue.includes("none")) {
+        return [];
+      }
+      // Convert selected values to integers
+      return originalValue.map((id) =>
+        typeof id === "string" ? parseInt(id) : id
+      );
+    })
+    .of(Yup.number().integer()),
 
   health_issues_en: Yup.string().max(
     500,

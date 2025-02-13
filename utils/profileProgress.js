@@ -52,14 +52,13 @@ export const calculateProfileProgress = (userData, savedProgress = null) => {
   const profile = userData.profile || {};
   const formData = savedProgress?.formData || {};
 
-  // Combine data from API and saved form progress
+  // Merge user data from different sources
   const combinedData = {
     ...userData,
     ...profile,
     ...formData,
   };
 
-  // Calculate progress for each step
   const stepProgress = {};
   const missingFields = [];
   let totalCompleted = 0;
@@ -75,30 +74,32 @@ export const calculateProfileProgress = (userData, savedProgress = null) => {
 
       let isCompleted = false;
 
-      // Special handling for employment-related fields
       if (key === "employment_status") {
-        // Consider employment status field completed if it's set
         isCompleted = value !== null && value !== undefined;
       } else if (key === "job_title_id" || key === "position_level_id") {
-        // For job title and position level, only check if employed
         const employmentStatus = combinedData["employment_status"];
-
-        // If not employed, these fields are not required
-        if (employmentStatus === false || employmentStatus === null) {
-          isCompleted = true;
-        } else {
-          // If employed, check if job title or position level is set
-          isCompleted = value !== null && value !== undefined && value !== 0;
-        }
-      } else {
-        // Regular field validation
         isCompleted =
-          (Array.isArray(value) && value.length > 0) ||
-          (typeof value === "boolean" && value === true) ||
-          (value !== null &&
+          employmentStatus === false || employmentStatus === null
+            ? true
+            : value !== null && value !== undefined && value !== 0;
+      } else if (key === "hobbies" || key === "pets") {
+        // Consider both null and empty array as valid completed states
+        isCompleted = true; // Always mark as completed since they're optional
+      } else {
+        // General validation for other fields
+        if (Array.isArray(value)) {
+          isCompleted = value.length > 0;
+        } else if (typeof value === "boolean") {
+          isCompleted = value === true;
+        } else if (typeof value === "object" && value !== null) {
+          isCompleted = Object.keys(value).length > 0;
+        } else {
+          isCompleted =
+            value !== null &&
             value !== undefined &&
             value !== "" &&
-            value !== 0);
+            value !== 0;
+        }
       }
 
       if (isCompleted) {
@@ -121,20 +122,17 @@ export const calculateProfileProgress = (userData, savedProgress = null) => {
     missingFields.push(...stepMissingFields);
   });
 
-  const totalProgress = Math.round((totalCompleted / totalFields) * 100);
-
-  // Sort missing fields by step
-  const sortedMissingFields = missingFields.sort((a, b) => a.step - b.step);
+  const totalProgress =
+    totalFields > 0 ? Math.round((totalCompleted / totalFields) * 100) : 0;
 
   return {
     progress: totalProgress,
     stepProgress,
-    missingFields: sortedMissingFields,
+    missingFields: missingFields.sort((a, b) => a.step - b.step),
     completedFields: totalCompleted,
     totalFields,
   };
 };
-
 export const getProgressMessage = (progress) => {
   if (progress < 20) return "Let's get started on your profile!";
   if (progress < 40) return "You're making progress!";
