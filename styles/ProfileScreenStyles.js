@@ -24,6 +24,15 @@ export default StyleSheet.create({
     padding: 8,
     borderRadius: 20,
   },
+  logoutButtonn: {
+    position: "absolute",
+    top: 170,
+    right: 20,
+    zIndex: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    padding: 8,
+    borderRadius: 20,
+  },
   profileHeader: {
     alignItems: "center",
     width: "100%",

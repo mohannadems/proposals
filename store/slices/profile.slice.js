@@ -36,14 +36,23 @@ export const updateProfile = createAsyncThunk(
 );
 export const updateProfilePhoto = createAsyncThunk(
   "profile/updatePhoto",
-  async (formData, { rejectWithValue }) => {
+  async ({ formData, onProgress }, { rejectWithValue }) => {
     try {
-      const response = await profileService.updateProfilePhoto(formData);
+      const response = await profileService.updateProfilePhoto(
+        formData,
+        onProgress
+      );
       console.log(
         "Full server response in action:",
         JSON.stringify(response, null, 2)
       );
-      return response.data || response; // Return the entire response or its data property
+
+      if (response.success) {
+        return response;
+      }
+      return rejectWithValue(
+        response.message || "Failed to update profile photo"
+      );
     } catch (error) {
       console.error("Photo upload error details:", error);
       return rejectWithValue(

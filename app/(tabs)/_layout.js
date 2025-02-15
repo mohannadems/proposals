@@ -3,8 +3,15 @@ import { View, Text, StyleSheet } from "react-native";
 import { Tabs } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { COLORS } from "../../constants/colors";
+import * as Haptics from "expo-haptics";
 
 export default function TabsLayout() {
+  const handleTabPress = (focused) => {
+    if (focused) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    }
+  };
+
   return (
     <Tabs
       screenOptions={({ route }) => ({
@@ -20,6 +27,9 @@ export default function TabsLayout() {
           } else if (route.name === "profile") {
             iconName = "user";
           }
+
+          // Trigger haptic feedback when tab is focused
+          handleTabPress(focused);
 
           return (
             <View

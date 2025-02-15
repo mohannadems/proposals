@@ -155,7 +155,7 @@ const ProfileScreen = () => {
   const progressAnimation = useMemo(() => new Animated.Value(0), []);
 
   useEffect(() => {
-    dispatch(fetchProfile());
+    dispatch(fetchProfile(), updateProfilePhoto());
   }, [dispatch]);
   const onRefresh = useCallback(
     async (retries = 3) => {
@@ -377,6 +377,12 @@ const ProfileScreen = () => {
         >
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <MaterialIcons name="logout" size={24} color={COLORS.white} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.logoutButtonn}
+            onPress={() => router.push("../(subscription)/subscriptionScreen")}
+          >
+            <MaterialIcons name="settings" size={24} color={COLORS.white} />
           </TouchableOpacity>
           <View
             style={styles.profileHeader}

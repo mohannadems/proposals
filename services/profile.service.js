@@ -37,11 +37,19 @@ export const profileService = {
       throw error;
     }
   },
-  updateProfilePhoto: async (formData) => {
+  updateProfilePhoto: async (formData, onProgress) => {
     try {
       const response = await api.post("/user/profile/photo", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
+        },
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const progress = (progressEvent.loaded / progressEvent.total) * 100;
+            if (onProgress) {
+              onProgress(progress);
+            }
+          }
         },
       });
 

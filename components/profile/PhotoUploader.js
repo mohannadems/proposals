@@ -12,9 +12,12 @@ import {
   updateProfilePhoto,
 } from "../../store/slices/profile.slice";
 import { isSuccessfulResponse } from "../../utils/profile-validation";
+import CircularProgress from "./CircularProgress";
 const PhotoUploader = ({ currentPhotoUrl, onPhotoUpdate, onError }) => {
   const dispatch = useDispatch();
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [localImageUri, setLocalImageUri] = useState(null);
 
   const pickImage = async () => {
     try {
@@ -47,6 +50,10 @@ const PhotoUploader = ({ currentPhotoUrl, onPhotoUpdate, onError }) => {
 
   const handleUpload = async (uri) => {
     setUploading(true);
+    setUploadProgress(0);
+    // Set the local image immediately to show the selected image
+    setLocalImageUri(uri);
+
     try {
       const formData = new FormData();
       formData.append("profile_photo", {
@@ -55,39 +62,35 @@ const PhotoUploader = ({ currentPhotoUrl, onPhotoUpdate, onError }) => {
         name: "profile_photo.jpg",
       });
 
-      const response = await dispatch(updateProfilePhoto(formData)).unwrap();
+      const response = await dispatch(
+        updateProfilePhoto({
+          formData,
+          onProgress: (progress) => {
+            setUploadProgress(progress);
+          },
+        })
+      ).unwrap();
 
-      if (response && response.success) {
+      if (response.success) {
         await updateProfileAndPhoto();
-
-        // Show a modern, customized alert for success
         Alert.alert(
           "Photo Updated",
-          response.message ||
-            "Your profile photo has been successfully updated.",
-          [
-            {
-              text: "Great!",
-              style: "default",
-              onPress: () => {
-                // You can add any additional actions here if needed
-              },
-            },
-          ],
-          { cancelable: false }
+          "Your profile photo has been successfully updated."
         );
       } else {
+        setLocalImageUri(null); // Reset local image if upload fails
         throw new Error(response.message || "Failed to update profile photo");
       }
     } catch (error) {
-      console.error("Upload error in component:", error);
+      setLocalImageUri(null); // Reset local image if upload fails
+      console.error("Upload error:", error);
       Alert.alert(
         "Update Failed",
-        error.message || "Unable to update photo. Please try again.",
-        [{ text: "OK", style: "destructive" }]
+        error.message || "Unable to update photo. Please try again."
       );
     } finally {
       setUploading(false);
+      setUploadProgress(0);
     }
   };
   const updateProfileAndPhoto = async () => {
@@ -108,11 +111,13 @@ const PhotoUploader = ({ currentPhotoUrl, onPhotoUpdate, onError }) => {
     >
       <Image
         source={
-          currentPhotoUrl
+          localImageUri
+            ? { uri: localImageUri }
+            : currentPhotoUrl
             ? { uri: currentPhotoUrl }
             : require("../../assets/images/avatar.jpg")
         }
-        style={styles.avatar}
+        style={[styles.avatar, uploading && styles.uploadingImage]}
       />
       <View style={styles.editContainer}>
         <View style={styles.editButton}>
@@ -121,7 +126,7 @@ const PhotoUploader = ({ currentPhotoUrl, onPhotoUpdate, onError }) => {
       </View>
       {uploading && (
         <View style={styles.uploadingOverlay}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
+          <CircularProgress progress={uploadProgress} />
         </View>
       )}
     </TouchableOpacity>
@@ -180,10 +185,13 @@ const styles = StyleSheet.create({
   },
   uploadingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(255, 255, 255, 0.7)",
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 60,
+    borderRadius: 80,
+  },
+  uploadingImage: {
+    opacity: 0.7,
   },
 });
 export default PhotoUploader;
