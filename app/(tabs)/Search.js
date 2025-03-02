@@ -21,9 +21,9 @@ import withProfileCompletion from "../../components/profile/withProfileCompletio
 import MatchingLoadingScreen from "../../components/match-and-search/MatchingLoadingScreen";
 import { router } from "expo-router";
 const COLORS = {
-  primary: "#B65165",
+  primary: "#9e086c",
   primaryLight: "#D97485",
-  primaryGradient: ["#B65165", "#D97485"],
+  primaryGradient: ["#9e086c", "#D97485"],
   secondary: "#5856D6",
   background: "#F8F9FA",
   white: "#FFFFFF",

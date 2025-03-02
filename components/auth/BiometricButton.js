@@ -7,7 +7,7 @@ import { AUTH_MESSAGES } from "../../constants/auth";
 export const BiometricButton = ({ onPress }) => {
   return (
     <TouchableOpacity style={loginStyles.biometricButton} onPress={onPress}>
-      <MaterialIcons name="face" size={24} color="#B65165" />
+      <MaterialIcons name="face" size={24} color="#9e086c" />
       <Text style={loginStyles.biometricButtonText}>
         {AUTH_MESSAGES.SIGN_IN_FACE_ID}
       </Text>

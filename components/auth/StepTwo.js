@@ -63,7 +63,7 @@ export const StepTwo = ({
           style={registerStyles.backButton}
           onPress={onPreviousStep}
         >
-          <MaterialIcons name="arrow-back" size={24} color="#B65165" />
+          <MaterialIcons name="arrow-back" size={24} color="#9e086c" />
           <Text style={registerStyles.backButtonText}>
             {REGISTER_MESSAGES.BACK}
           </Text>

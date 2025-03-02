@@ -57,7 +57,7 @@ export default function SelectInput({
         <MaterialIcons
           name={multiple ? "check-box" : "arrow-drop-down"}
           size={24}
-          color="#B65165"
+          color="#9e086c"
         />
         <Text
           style={[
@@ -121,7 +121,7 @@ export default function SelectInput({
                   {(multiple
                     ? value?.includes(item.value)
                     : value === item.value) && (
-                    <MaterialIcons name="check" size={20} color="#B65165" />
+                    <MaterialIcons name="check" size={20} color="#9e086c" />
                   )}
                 </TouchableOpacity>
               )}

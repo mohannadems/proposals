@@ -98,7 +98,7 @@ export default function VerifyOTPScreen() {
       style={styles.container}
     >
       <View style={styles.header}>
-        <MaterialIcons name="verified" size={60} color="#B65165" />
+        <MaterialIcons name="verified" size={60} color="#9e086c" />
         <Text style={styles.title}>Verify Your Email</Text>
         <Text style={styles.subtitle}>
           Enter the 6-digit code sent to {tempEmail}
@@ -109,7 +109,7 @@ export default function VerifyOTPScreen() {
         <OTPTextInput
           handleTextChange={setOTP}
           inputCount={6}
-          tintColor="#B65165"
+          tintColor="#9e086c"
           offTintColor={validationError ? "#FF3B30" : "#E5E5EA"}
           textInputStyle={[
             styles.otpInput,
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
   },
   verifyButton: {
     height: 56,
-    backgroundColor: "#B65165",
+    backgroundColor: "#9e086c",
     borderRadius: 28,
     justifyContent: "center",
     alignItems: "center",
@@ -229,7 +229,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   resendLink: {
-    color: "#B65165",
+    color: "#9e086c",
     fontWeight: "600",
   },
 });

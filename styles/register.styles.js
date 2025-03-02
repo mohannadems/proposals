@@ -25,7 +25,7 @@ export const registerStyles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#B65165",
+    color: "#9e086c",
     marginBottom: 8,
   },
   subtitle: {
@@ -51,7 +51,7 @@ export const registerStyles = StyleSheet.create({
     alignItems: "center",
   },
   activeStepDot: {
-    backgroundColor: "#B65165",
+    backgroundColor: "#9e086c",
   },
   stepLine: {
     width: 60,
@@ -60,7 +60,7 @@ export const registerStyles = StyleSheet.create({
     marginHorizontal: 4,
   },
   activeStepLine: {
-    backgroundColor: "#B65165",
+    backgroundColor: "#9e086c",
   },
   stepText: {
     color: "#666",
@@ -84,7 +84,7 @@ export const registerStyles = StyleSheet.create({
     flexDirection: "row",
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#B65165",
+    backgroundColor: "#9e086c",
     justifyContent: "center",
     alignItems: "center",
     gap: 12,
@@ -102,7 +102,7 @@ export const registerStyles = StyleSheet.create({
     borderRadius: 28,
     backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#B65165",
+    borderColor: "#9e086c",
     justifyContent: "center",
     alignItems: "center",
     gap: 12,
@@ -112,7 +112,7 @@ export const registerStyles = StyleSheet.create({
     flexDirection: "row",
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#B65165",
+    backgroundColor: "#9e086c",
     justifyContent: "center",
     alignItems: "center",
     gap: 12,
@@ -126,7 +126,7 @@ export const registerStyles = StyleSheet.create({
     fontWeight: "600",
   },
   backButtonText: {
-    color: "#B65165",
+    color: "#9e086c",
     fontSize: 18,
     fontWeight: "600",
   },
@@ -135,7 +135,7 @@ export const registerStyles = StyleSheet.create({
     alignItems: "center",
   },
   loginLinkText: {
-    color: "#B65165",
+    color: "#9e086c",
     fontSize: 16,
   },
   errorContainer: {

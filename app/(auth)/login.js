@@ -76,7 +76,7 @@ export default function LoginScreen() {
           <FontAwesome
             name="heart"
             size={24}
-            color="#B65165"
+            color="#9e086c"
             style={loginStyles.decorationHeart}
           />
         </View>

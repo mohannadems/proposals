@@ -25,7 +25,7 @@ export const loginStyles = StyleSheet.create({
   welcomeText: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#B65165",
+    color: "#9e086c",
     marginBottom: 8,
   },
   subtitle: {
@@ -50,14 +50,14 @@ export const loginStyles = StyleSheet.create({
     marginBottom: 24,
   },
   forgotPasswordText: {
-    color: "#B65165",
+    color: "#9e086c",
     fontSize: 14,
   },
   loginButton: {
     flexDirection: "row",
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#B65165",
+    backgroundColor: "#9e086c",
     justifyContent: "center",
     alignItems: "center",
     gap: 12,
@@ -76,14 +76,14 @@ export const loginStyles = StyleSheet.create({
     borderRadius: 28,
     backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#B65165",
+    borderColor: "#9e086c",
     justifyContent: "center",
     alignItems: "center",
     gap: 12,
     marginTop: 16,
   },
   biometricButtonText: {
-    color: "#B65165",
+    color: "#9e086c",
     fontSize: 18,
     fontWeight: "600",
   },
@@ -109,7 +109,7 @@ export const loginStyles = StyleSheet.create({
     color: "#666",
   },
   registerLinkBold: {
-    color: "#B65165",
+    color: "#9e086c",
     fontWeight: "600",
   },
 });

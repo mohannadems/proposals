@@ -19,7 +19,7 @@ export default function AuthInput({
           <MaterialIcons
             name={leftIcon}
             size={20}
-            color={touched && error ? "#FF3B30" : "#B65165"}
+            color={touched && error ? "#FF3B30" : "#9e086c"}
             style={styles.icon}
           />
         )}

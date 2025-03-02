@@ -10,8 +10,8 @@ const SelectableItem = ({ item, isSelected, onClick }) => (
     className={`
       relative flex flex-col items-center justify-center p-4 
       rounded-xl cursor-pointer transition-all duration-200
-      ${isSelected ? "bg-[#B65165] text-white" : "bg-white hover:bg-gray-50"}
-      border-2 ${isSelected ? "border-[#B65165]" : "border-[#E5E5EA]"}
+      ${isSelected ? "bg-[#9e086c] text-white" : "bg-white hover:bg-gray-50"}
+      border-2 ${isSelected ? "border-[#9e086c]" : "border-[#E5E5EA]"}
     `}
   >
     {isSelected && (
@@ -20,7 +20,7 @@ const SelectableItem = ({ item, isSelected, onClick }) => (
         animate={{ scale: 1 }}
         className="absolute top-2 right-2 bg-white rounded-full p-1"
       >
-        <Check size={16} className="text-[#B65165]" />
+        <Check size={16} className="text-[#9e086c]" />
       </motion.div>
     )}
 

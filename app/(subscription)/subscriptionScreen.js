@@ -21,7 +21,7 @@ const CARD_WIDTH = width * 0.85;
 const CARD_HEIGHT = height * 0.5;
 
 const COLORS = {
-  primary: "#B65165",
+  primary: "#9e086c",
   secondary: "#5856D6",
   background: "#F8F9FA",
   white: "#FFFFFF",
@@ -29,7 +29,7 @@ const COLORS = {
   error: "#FF3B30",
   success: "#34C759",
   border: "#E5E5EA",
-  primaryGradient: ["#B65165", "#D97485"],
+  primaryGradient: ["#9e086c", "#D97485"],
 };
 
 const subscriptionPlans = [

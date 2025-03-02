@@ -17,7 +17,7 @@ export default function WelcomeScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={["#B65165", "#AB0CFB"]}
+        colors={["#9e086c", "#9e086c"]}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.background}
@@ -33,7 +33,7 @@ export default function WelcomeScreen() {
           <FontAwesome
             name="heart"
             size={40}
-            color="#B65165"
+            color="#9e086c"
             style={styles.heartIcon}
           />
         </View>
@@ -47,15 +47,15 @@ export default function WelcomeScreen() {
 
           <View style={styles.featureContainer}>
             <View style={styles.featureItem}>
-              <FontAwesome name="shield" size={24} color="#B65165" />
+              <FontAwesome name="shield" size={24} color="#9e086c" />
               <Text style={styles.featureText}>Safe & Secure</Text>
             </View>
             <View style={styles.featureItem}>
-              <FontAwesome name="check-circle" size={24} color="#B65165" />
+              <FontAwesome name="check-circle" size={24} color="#9e086c" />
               <Text style={styles.featureText}>Verified Profiles</Text>
             </View>
             <View style={styles.featureItem}>
-              <FontAwesome name="users" size={24} color="#B65165" />
+              <FontAwesome name="users" size={24} color="#9e086c" />
               <Text style={styles.featureText}>Quality Matches</Text>
             </View>
           </View>
@@ -73,7 +73,7 @@ export default function WelcomeScreen() {
               style={[styles.button, styles.secondaryButton]}
               onPress={() => router.push("/(auth)/register")}
             >
-              <MaterialIcons name="person-add" size={24} color="#B65165" />
+              <MaterialIcons name="person-add" size={24} color="#9e086c" />
               <Text style={[styles.buttonText, styles.secondaryButtonText]}>
                 Create New Account
               </Text>
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: "bold",
-    color: "#B65165",
+    color: "#9e086c",
     textAlign: "center",
     marginBottom: 12,
   },
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   },
   featureText: {
     marginTop: 8,
-    color: "#B65165",
+    color: "#9e086c",
     fontSize: 14,
   },
   buttonContainer: {
@@ -160,12 +160,12 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   primaryButton: {
-    backgroundColor: "#B65165",
+    backgroundColor: "#9e086c",
   },
   secondaryButton: {
     backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#B65165",
+    borderColor: "#9e086c",
   },
   buttonText: {
     fontSize: 18,
@@ -173,6 +173,6 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
   secondaryButtonText: {
-    color: "#B65165",
+    color: "#9e086c",
   },
 });

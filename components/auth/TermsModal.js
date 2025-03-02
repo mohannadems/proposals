@@ -53,7 +53,7 @@ export const TermsModal = ({ visible, onAccept, onDecline }) => {
       ]}
     >
       <View style={styles.loadingContent}>
-        <ActivityIndicator size="large" color="#B65165" />
+        <ActivityIndicator size="large" color="#9e086c" />
         <Text style={styles.loadingText}>Processing...</Text>
       </View>
     </Animated.View>
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
-    backgroundColor: "#B65165",
+    backgroundColor: "#9e086c",
     alignItems: "center",
   },
   modalTitle: {
@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#B65165",
+    color: "#9e086c",
     marginBottom: 12,
   },
   bulletPoint: {
@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
   },
   bullet: {
     fontSize: 16,
-    color: "#B65165",
+    color: "#9e086c",
     marginRight: 8,
     marginTop: -2,
   },
@@ -297,12 +297,12 @@ const styles = StyleSheet.create({
     marginHorizontal: 6,
   },
   acceptButton: {
-    backgroundColor: "#B65165",
+    backgroundColor: "#9e086c",
   },
   declineButton: {
     backgroundColor: "white",
     borderWidth: 1,
-    borderColor: "#B65165",
+    borderColor: "#9e086c",
   },
   buttonText: {
     color: "white",
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   declineText: {
-    color: "#B65165",
+    color: "#9e086c",
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 16,
-    color: "#B65165",
+    color: "#9e086c",
     fontWeight: "600",
   },
 });
