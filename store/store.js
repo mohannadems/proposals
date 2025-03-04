@@ -5,7 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import authReducer from "./slices/auth.slice";
 import profileReducer from "./slices/profile.slice";
 import profileCompletionReducer from "./slices/profileCompletionSlice";
-
+import profileAttributesReducer from "./slices/profileAttributesSlice";
 const persistConfig = {
   key: "root",
   storage: AsyncStorage,
@@ -23,6 +23,7 @@ export const store = configureStore({
     auth: authReducer,
     profile: persistedProfileReducer,
     profileCompletion: persistedProfileCompletionReducer,
+    profileAttributes: profileAttributesReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

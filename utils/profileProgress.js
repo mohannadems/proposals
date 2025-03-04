@@ -39,12 +39,7 @@ const STEP_FIELDS = {
     { key: "housing_status_id", label: "Housing Status" },
     { key: "car_ownership", label: "Car Ownership" },
   ],
-  4: [{ key: "photos", label: "Profile Photo" }],
 };
-
-// utils/profileProgress.js
-
-// ... keep existing STEP_FIELDS ...
 
 export const calculateProfileProgress = (userData, savedProgress = null) => {
   if (!userData) return { progress: 0, missingFields: [], stepProgress: {} };
@@ -82,6 +77,9 @@ export const calculateProfileProgress = (userData, savedProgress = null) => {
           employmentStatus === false || employmentStatus === null
             ? true
             : value !== null && value !== undefined && value !== 0;
+      } else if (key === "car_ownership") {
+        // Check if car_ownership is 0 (which means false)
+        isCompleted = value !== 0; // If value is 0, it's considered not completed
       } else if (key === "hobbies" || key === "pets") {
         // Consider both null and empty array as valid completed states
         isCompleted = true; // Always mark as completed since they're optional
@@ -133,6 +131,7 @@ export const calculateProfileProgress = (userData, savedProgress = null) => {
     totalFields,
   };
 };
+
 export const getProgressMessage = (progress) => {
   if (progress < 20) return "Let's get started on your profile!";
   if (progress < 40) return "You're making progress!";

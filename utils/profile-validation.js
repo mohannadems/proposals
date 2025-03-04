@@ -99,7 +99,9 @@ export const profileValidationSchema = Yup.object().shape({
   sleep_habit_id: Yup.number()
     .nullable()
     .required("Please select your sleep habites"),
-  sports_activity_id: Yup.number().nullable(),
+  sports_activity_id: Yup.number()
+    .nullable()
+    .required("Please select a sports activity"),
   social_media_presence_id: Yup.number()
     .nullable()
     .required("Please select your Social Media presence"),

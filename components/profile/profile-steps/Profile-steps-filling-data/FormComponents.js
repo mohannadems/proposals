@@ -4,6 +4,7 @@ import { FadeInDown } from "react-native-reanimated";
 import { LayoutAnimatedView } from "./AnimatedBase";
 import FormDropdown from "../../../common/FormDropdown";
 import { COLORS } from "../../../../constants/colors";
+
 export const AnimatedFormContainer = ({ children }) => {
   return (
     <LayoutAnimatedView
@@ -20,9 +21,11 @@ export const AnimatedDropdown = ({
   name,
   label,
   items,
-  icon,
+  leftIcon,
   required = false,
   containerStyle,
+  isLoading = false,
+  ...props
 }) => {
   return (
     <FormDropdown
@@ -31,9 +34,11 @@ export const AnimatedDropdown = ({
       label={label}
       items={items}
       placeholderTextColor={COLORS.text + "80"}
-      leftIcon={icon}
+      leftIcon={leftIcon}
       containerStyle={[styles.dropdownAnimated, containerStyle]}
       required={required}
+      isLoading={isLoading}
+      {...props}
     />
   );
 };

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "expo-router";
 import { MaterialIcons, Feather } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -21,13 +21,14 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withRepeat,
-  withTiming,
   withSequence,
+  withTiming,
 } from "react-native-reanimated";
 import { LinearGradient as ExpoLinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { calculateProfileProgress } from "../../utils/profileProgress";
 import ProfileCompletionAlert from "./ProfileCompletionAlert";
+import { fetchProfile } from "../../store/slices/profile.slice";
 
 const { width } = Dimensions.get("window");
 const scale = width / 375;
@@ -147,9 +148,14 @@ const StepCard = ({ step, info, isActive }) => {
   );
 };
 
+// Fix 1: Corrected HOC implementation
 const withProfileCompletion = (WrappedComponent) => {
+  // Fix 2: Move hooks outside of the HOC factory function
   return (props) => {
+    // All hooks inside the component function
+    const dispatch = useDispatch();
     const { data } = useSelector((state) => state.profile);
+    console.log(data);
     const userId = useSelector((state) => state.profile.data?.id);
     const router = useRouter();
     const insets = useSafeAreaInsets();
@@ -161,6 +167,11 @@ const withProfileCompletion = (WrappedComponent) => {
       missingFields: [],
     });
     const fadeAnim = useSharedValue(0);
+
+    // Fetch profile data
+    useEffect(() => {
+      dispatch(fetchProfile());
+    }, [dispatch]);
 
     useEffect(() => {
       fadeAnim.value = withTiming(1, { duration: 800 });

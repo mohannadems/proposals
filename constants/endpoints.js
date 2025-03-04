@@ -8,4 +8,11 @@ export const ENDPOINTS = {
   LOGOUT: "/logout",
   UPDATE_PROFILE_IMAGE: "/user/profile/photo",
   RESEND_OTP_MASSAGE: "/resend-verification-link",
+  PERSONAL_ATTRIBUTES: "/personal-attributes",
+  LIFESTYLE_INTERESTS: "/lifestyle-interests",
+  PROFESSIONAL_EDUCATIONAL: "/professional-educational",
+  GEOGRAPHIC: "/geographic",
+  SOCIAL_MEDIA_PRESENCES: "/social-media-presences",
+  JOB_TITLES: "/job-titles",
+  USER_PREFERENCES: "/user-preferences",
 };

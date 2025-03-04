@@ -82,11 +82,15 @@ const ProfileImageSection = () => {
       const formData = new FormData();
       formData.append("profile_photo", {
         uri: selectedImage.uri,
-        type: "image/jpeg",
+        type: selectedImage.type || "image/jpeg",
         name: "profile_photo.jpg",
       });
 
-      const response = await dispatch(updateProfilePhoto(formData)).unwrap();
+      // THIS IS THE FIX: Pass formData as an object with the expected structure
+      const response = await dispatch(
+        updateProfilePhoto({ formData }) // Wrapped in an object to match the thunk parameter structure
+      ).unwrap();
+
       if (response.error) {
         throw new Error(response.error);
       }
@@ -161,9 +165,18 @@ const ProfileImageSection = () => {
       setImageError("");
 
       const formData = new FormData();
-      formData.append("profile_photo", null);
+      // You might need to adjust this based on your API expectations
+      // Option 1: Add a special flag for removal
+      formData.append("remove_profile_photo", "true");
 
-      const response = await dispatch(updateProfilePhoto(formData)).unwrap();
+      // Or Option 2: Send an empty string (depends on your API)
+      // formData.append("profile_photo", "");
+
+      // THIS IS THE FIX: Pass formData as an object with the expected structure
+      const response = await dispatch(
+        updateProfilePhoto({ formData }) // Wrapped in an object
+      ).unwrap();
+
       if (response.error) {
         throw new Error(response.error);
       }
@@ -208,13 +221,6 @@ const ProfileImageSection = () => {
                 <Feather name="camera" size={24} color={COLORS.white} />
                 <Text style={styles.overlayText}>Change Photo</Text>
               </View>
-              <AnimatedTouchableOpacity
-                entering={FadeIn.delay(400)}
-                style={styles.removeImageButton}
-                onPress={removeImage}
-              >
-                <Feather name="x" size={20} color={COLORS.white} />
-              </AnimatedTouchableOpacity>
             </View>
           ) : (
             <View style={styles.placeholderContainer}>

@@ -27,6 +27,8 @@ const CARD_WIDTH = width - 48;
 const CARD_HEIGHT = height * 0.7;
 import { Link } from "expo-router";
 import withProfileCompletion from "../../components/profile/withProfileCompletion";
+import { useDispatch } from "react-redux";
+import { fetchProfileCompletionData } from "../../store/slices/profileCompletionSlice";
 
 const users = [
   {
@@ -227,7 +229,10 @@ const MatchesScreen = () => {
   const [activeFilter, setActiveFilter] = useState("nearby");
   const [scrollY] = useState(new Animated.Value(0));
   const [showFilters, setShowFilters] = useState(false);
-
+  const dispatch = useDispatch();
+  useEffect(() => {
+    dispatch(fetchProfileCompletionData());
+  }, [dispatch]);
   const headerHeight = scrollY.interpolate({
     inputRange: [0, 100],
     outputRange: [

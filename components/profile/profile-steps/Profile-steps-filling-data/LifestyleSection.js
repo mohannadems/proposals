@@ -1,6 +1,13 @@
-import React from "react";
-import { ScrollView, View, Text, StyleSheet } from "react-native";
+import React, { useEffect } from "react";
+import {
+  ScrollView,
+  View,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
 import { useFormContext } from "react-hook-form";
+import { useDispatch, useSelector } from "react-redux";
 import FeatherIcon from "react-native-vector-icons/Feather";
 import MaterialIcon from "react-native-vector-icons/MaterialIcons";
 // Import components
@@ -17,15 +24,106 @@ import {
   FormRow,
 } from "./FormComponents";
 
+// Import Redux actions and selectors
+import {
+  fetchAllProfileData,
+  fetchCitiesByCountry,
+  selectPersonalAttributes,
+  selectLifestyleInterests,
+  selectProfessionalEducational,
+  selectGeographic,
+  selectCitiesByCountry,
+  selectLoadingStates,
+} from "../../../../store/slices/profileAttributesSlice";
+
 // Import constants and styles
 import { cardConfigs } from "./constants";
 import { COLORS } from "../../../../constants/colors";
-import { PROFILE_DATA } from "../../../../constants/profileData";
 import SelectableGrid from "./SelectableGrid";
 
 const LifestyleSection = () => {
+  const dispatch = useDispatch();
   const { control, watch } = useFormContext();
   const smoking_status = watch("smoking_status");
+  const country_of_residence_id = watch("country_of_residence_id");
+
+  // Get data from Redux store
+  const personalAttributes = useSelector(selectPersonalAttributes);
+  const lifestyleInterests = useSelector(selectLifestyleInterests);
+  const professionalEducational = useSelector(selectProfessionalEducational);
+  const geographic = useSelector(selectGeographic);
+  const loading = useSelector(selectLoadingStates);
+
+  // Get cities for the selected country
+  const cities = useSelector((state) =>
+    selectCitiesByCountry(state, country_of_residence_id)
+  );
+
+  // Fetch all profile data on component mount
+  useEffect(() => {
+    dispatch(fetchAllProfileData());
+  }, [dispatch]);
+
+  // Fetch cities when country changes
+  useEffect(() => {
+    if (country_of_residence_id) {
+      dispatch(fetchCitiesByCountry(country_of_residence_id));
+    }
+  }, [dispatch, country_of_residence_id]);
+
+  // Extract needed data from Redux state
+  const {
+    hairColors = [],
+    heights = [],
+    weights = [],
+    origins = [],
+    maritalStatuses = [],
+    skinColors = [],
+    sleepHabits = [],
+  } = personalAttributes;
+
+  const {
+    hobbies = [],
+    pets = [],
+    sportsActivities = [],
+    smokingTools = [],
+    drinkingStatuses = [],
+    religiosityLevels = [],
+  } = lifestyleInterests;
+
+  const { marriageBudget = [] } = professionalEducational;
+
+  const { countries = [], religions = [], nationalities = [] } = geographic;
+
+  // Define child numbers and smoking statuses (not in API)
+  const childNumbers = [
+    { id: 1, name: "No Children 🚫" },
+    { id: 2, name: "1 Child 👶" },
+    { id: 3, name: "2 Children 🧒👧" },
+    { id: 4, name: "3 Children 👧🧒👦" },
+    { id: 5, name: "4 or More Children 👨‍👩‍👧‍👦" },
+  ];
+
+  const smokingStatuses = [
+    { id: 1, name: "Non-smoker" },
+    { id: 2, name: "Regular smoker" },
+    { id: 3, name: "Social smoker" },
+  ];
+
+  // Show loading state
+  if (
+    loading.personalAttributes ||
+    loading.lifestyleInterests ||
+    loading.professionalEducational ||
+    loading.geographic
+  ) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>Loading profile attributes...</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -42,16 +140,18 @@ const LifestyleSection = () => {
             control={control}
             name="nationality_id"
             label="Nationality 🌎"
-            items={PROFILE_DATA.nationalities}
-            icon={<FeatherIcon name="flag" size={20} color={COLORS.primary} />}
+            items={nationalities}
+            leftIcon={
+              <FeatherIcon name="flag" size={20} color={COLORS.primary} />
+            }
             required
           />
           <AnimatedDropdown
             control={control}
             name="country_of_residence_id"
             label="Country of Residence 📍"
-            items={PROFILE_DATA.countries}
-            icon={
+            items={countries}
+            leftIcon={
               <FeatherIcon name="map-pin" size={20} color={COLORS.primary} />
             }
             required
@@ -60,16 +160,21 @@ const LifestyleSection = () => {
             control={control}
             name="city_id"
             label="City 🏙️"
-            items={PROFILE_DATA.cities[watch("country_of_residence_id") || 1]}
-            icon={<FeatherIcon name="map" size={20} color={COLORS.primary} />}
+            items={cities}
+            isLoading={loading.cities}
+            leftIcon={
+              <FeatherIcon name="map" size={20} color={COLORS.primary} />
+            }
             required
           />
           <AnimatedDropdown
             control={control}
             name="origin_id"
             label="Origin 🏠"
-            items={PROFILE_DATA.origins}
-            icon={<FeatherIcon name="home" size={20} color={COLORS.primary} />}
+            items={origins}
+            leftIcon={
+              <FeatherIcon name="home" size={20} color={COLORS.primary} />
+            }
             required
           />
         </AnimatedFormContainer>
@@ -83,8 +188,8 @@ const LifestyleSection = () => {
               control={control}
               name="marital_status_id"
               label="Marital Status 💑"
-              items={PROFILE_DATA.maritalStatuses}
-              icon={
+              items={maritalStatuses}
+              leftIcon={
                 <MaterialIcon name="people" size={20} color={COLORS.primary} />
               }
               required
@@ -94,8 +199,8 @@ const LifestyleSection = () => {
               control={control}
               name="number_of_children"
               label="Children 👶"
-              items={PROFILE_DATA.childrenNumbers}
-              icon={
+              items={childNumbers}
+              leftIcon={
                 <MaterialIcon
                   name="child-care"
                   size={20}
@@ -115,8 +220,8 @@ const LifestyleSection = () => {
               control={control}
               name="height"
               label="Height 📏"
-              items={PROFILE_DATA.heights}
-              icon={
+              items={heights}
+              leftIcon={
                 <FeatherIcon name="arrow-up" size={20} color={COLORS.primary} />
               }
               required
@@ -125,8 +230,8 @@ const LifestyleSection = () => {
               control={control}
               name="weight"
               label="Weight ⚖️"
-              items={PROFILE_DATA.weights}
-              icon={
+              items={weights}
+              leftIcon={
                 <MaterialIcon
                   name="fitness-center"
                   size={20}
@@ -141,8 +246,8 @@ const LifestyleSection = () => {
               control={control}
               name="hair_color_id"
               label="Hair Color 💁‍♂️"
-              items={PROFILE_DATA.hair_colors}
-              icon={
+              items={hairColors}
+              leftIcon={
                 <MaterialIcon
                   name="color-lens"
                   size={20}
@@ -156,8 +261,8 @@ const LifestyleSection = () => {
               control={control}
               name="skin_color_id"
               label="Skin Color 🎨"
-              items={PROFILE_DATA.skin_colors}
-              icon={
+              items={skinColors}
+              leftIcon={
                 <MaterialIcon name="palette" size={20} color={COLORS.primary} />
               }
             />
@@ -172,8 +277,8 @@ const LifestyleSection = () => {
             control={control}
             name="marriage_budget_id"
             label="Marriage Budget 💍"
-            items={PROFILE_DATA.marriageBudget}
-            icon={
+            items={marriageBudget}
+            leftIcon={
               <MaterialIcon
                 name="account-balance-wallet"
                 size={20}
@@ -186,8 +291,8 @@ const LifestyleSection = () => {
             control={control}
             name="religiosity_level_id"
             label="Religiosity Level 🕌"
-            items={PROFILE_DATA.religiosityLevels}
-            icon={
+            items={religiosityLevels}
+            leftIcon={
               <MaterialIcon
                 name="brightness-high"
                 size={20}
@@ -200,8 +305,8 @@ const LifestyleSection = () => {
             control={control}
             name="sleep_habit_id"
             label="Sleep Habits 😴"
-            items={PROFILE_DATA.sleep_habits}
-            icon={
+            items={sleepHabits}
+            leftIcon={
               <MaterialIcon
                 name="nightlight-round"
                 size={20}
@@ -211,11 +316,12 @@ const LifestyleSection = () => {
             required
           />
           <AnimatedDropdown
+            required
             control={control}
             name="sports_activity_id"
             label="Sports Activity 🏃‍♂️"
-            items={PROFILE_DATA.sports_activities}
-            icon={
+            items={sportsActivities}
+            leftIcon={
               <MaterialIcon name="sports" size={20} color={COLORS.primary} />
             }
           />
@@ -229,12 +335,10 @@ const LifestyleSection = () => {
             control={control}
             name="smoking_status"
             label="Smoking Status 🚭"
-            items={[
-              { id: 1, name: "Non-smoker" },
-              { id: 2, name: "Regular smoker" },
-              { id: 3, name: "Social smoker" },
-            ]}
-            icon={<FeatherIcon name="wind" size={20} color={COLORS.primary} />}
+            items={smokingStatuses}
+            leftIcon={
+              <FeatherIcon name="wind" size={20} color={COLORS.primary} />
+            }
             required
           />
 
@@ -244,7 +348,7 @@ const LifestyleSection = () => {
               <SelectableGrid
                 control={control}
                 name="smoking_tools"
-                items={PROFILE_DATA.smoking_tools}
+                items={smokingTools}
                 label="Smoking Preferences"
                 multiple
                 renderItem={(item, isSelected) => (
@@ -273,8 +377,8 @@ const LifestyleSection = () => {
             control={control}
             name="drinking_status_id"
             label="Drinking Status ☕"
-            items={PROFILE_DATA.drinking_statuses}
-            icon={
+            items={drinkingStatuses}
+            leftIcon={
               <FeatherIcon name="coffee" size={20} color={COLORS.primary} />
             }
           />
@@ -287,7 +391,7 @@ const LifestyleSection = () => {
           <SelectableGrid
             control={control}
             name="hobbies"
-            items={PROFILE_DATA.hobbies}
+            items={hobbies}
             multiple
             numColumns={3}
             renderItem={(item, isSelected) => (
@@ -302,7 +406,7 @@ const LifestyleSection = () => {
           <SelectableGrid
             control={control}
             name="pets"
-            items={PROFILE_DATA.pets}
+            items={pets}
             multiple
             numColumns={3}
             renderItem={(item, isSelected) => (
@@ -319,8 +423,10 @@ const LifestyleSection = () => {
             control={control}
             name="religion_id"
             label="Religion 🕊️"
-            items={PROFILE_DATA.religions}
-            icon={<FeatherIcon name="moon" size={20} color={COLORS.primary} />}
+            items={religions}
+            leftIcon={
+              <FeatherIcon name="moon" size={20} color={COLORS.primary} />
+            }
             required
           />
         </AnimatedFormContainer>
@@ -338,12 +444,24 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
     paddingHorizontal: 16,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f8f9fa",
+    padding: 20,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: COLORS.primary,
+    fontWeight: "500",
+    marginTop: 10,
+  },
   preferenceItem: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: COLORS.grayLight,
     borderRadius: 24,
-
     margin: 4,
     borderWidth: 2,
     borderColor: "transparent",
@@ -364,7 +482,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primaryDark,
     borderColor: "transparent",
-
     transform: [{ scale: 1.02 }],
     ...Platform.select({
       ios: {

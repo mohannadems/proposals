@@ -1,12 +1,27 @@
-import React from "react";
-import { ScrollView, View, StyleSheet } from "react-native";
+import React, { useEffect } from "react";
+import {
+  ScrollView,
+  View,
+  StyleSheet,
+  ActivityIndicator,
+  Text,
+} from "react-native";
 import { useFormContext, Controller } from "react-hook-form";
+import { useDispatch, useSelector } from "react-redux";
 import FeatherIcon from "react-native-vector-icons/Feather";
 import MaterialIcon from "react-native-vector-icons/MaterialIcons";
 
 import { COLORS } from "../../../../constants/colors";
-import { PROFILE_DATA } from "../../../../constants/profileData";
 import FormDropdown from "../../../common/FormDropdown";
+
+// Import Redux actions and selectors
+import {
+  fetchAllProfileData,
+  selectProfessionalEducational,
+  selectGeographic,
+  selectPersonalAttributes,
+  selectLoadingStates,
+} from "../../../../store/slices/profileAttributesSlice";
 
 import { AnimatedCard, SectionHeader, ToggleButton } from "./AnimatedBase";
 import { CardHeader } from "./CardHeader";
@@ -64,9 +79,68 @@ const cardConfigs = {
   },
 };
 
+// Define social media presences (not in API)
+const socialMediaPresences = [
+  { id: 1, name: "Highly Active 📱" },
+  { id: 2, name: "Moderately Active 🖥️" },
+  { id: 3, name: "Rarely Active 📴" },
+  { id: 4, name: "Inactive 🚫" },
+];
+
+// Define job titles (not in API)
+const jobTitles = [
+  { id: 1, name: "Software Developer 💻" },
+  { id: 2, name: "Data Scientist 📊" },
+  { id: 3, name: "Cloud Engineer ☁️" },
+  { id: 4, name: "AI/ML Specialist 🤖" },
+  { id: 5, name: "Teacher 👨‍🏫" },
+  { id: 6, name: "Doctor 👩‍⚕️" },
+  { id: 7, name: "Engineer 👷‍♂️" },
+  { id: 8, name: "Business Analyst 📈" },
+  { id: 9, name: "Marketing Specialist 📣" },
+  { id: 10, name: "Accountant 💼" },
+];
+
 const EducationWorkSection = () => {
   const { control, watch, setValue } = useFormContext();
+  const dispatch = useDispatch();
   const employment_status = watch("employment_status");
+
+  // Get data from Redux store
+  const professionalEducational = useSelector(selectProfessionalEducational);
+  const geographic = useSelector(selectGeographic);
+  const personalAttributes = useSelector(selectPersonalAttributes);
+  const loading = useSelector(selectLoadingStates);
+
+  // Fetch all profile data on component mount
+  useEffect(() => {
+    dispatch(fetchAllProfileData());
+  }, [dispatch]);
+
+  // Extract needed data from Redux state
+  const {
+    educationalLevels = [],
+    specializations = [],
+    positionLevels = [],
+  } = professionalEducational;
+
+  const { housingStatuses = [], financialStatuses = [] } = geographic;
+
+  const { zodiacSigns = [] } = personalAttributes;
+
+  // Show loading state
+  if (
+    loading.personalAttributes ||
+    loading.professionalEducational ||
+    loading.geographic
+  ) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>Loading professional data...</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -88,8 +162,8 @@ const EducationWorkSection = () => {
             control={control}
             name="educational_level_id"
             label="Education Level 📚"
-            items={PROFILE_DATA.educational_levels}
-            icon={
+            items={educationalLevels}
+            leftIcon={
               <FeatherIcon
                 name="trending-up"
                 size={20}
@@ -101,8 +175,8 @@ const EducationWorkSection = () => {
             control={control}
             name="specialization_id"
             label="Field of Study 📖"
-            items={PROFILE_DATA.specializations}
-            icon={
+            items={specializations}
+            leftIcon={
               <FeatherIcon name="book-open" size={20} color={COLORS.primary} />
             }
           />
@@ -162,8 +236,8 @@ const EducationWorkSection = () => {
               control={control}
               name="job_title_id"
               label="Job Title 💼"
-              items={PROFILE_DATA.jobTitles}
-              icon={
+              items={jobTitles} // Using local static data as it's not in the API
+              leftIcon={
                 <FeatherIcon
                   name="briefcase"
                   size={20}
@@ -179,8 +253,8 @@ const EducationWorkSection = () => {
               control={control}
               name="position_level_id"
               label="Position Level 📈"
-              items={PROFILE_DATA.position_levels}
-              icon={
+              items={positionLevels}
+              leftIcon={
                 <FeatherIcon
                   name="arrow-up-right"
                   size={20}
@@ -206,8 +280,8 @@ const EducationWorkSection = () => {
             control={control}
             name="financial_status_id"
             label="Financial Status 💵"
-            items={PROFILE_DATA.financial_statuses}
-            icon={
+            items={financialStatuses}
+            leftIcon={
               <FeatherIcon
                 name="dollar-sign"
                 size={20}
@@ -219,8 +293,10 @@ const EducationWorkSection = () => {
             control={control}
             name="housing_status_id"
             label="Housing Status 🏠"
-            items={PROFILE_DATA.housing_statuses}
-            icon={<FeatherIcon name="home" size={20} color={COLORS.primary} />}
+            items={housingStatuses}
+            leftIcon={
+              <FeatherIcon name="home" size={20} color={COLORS.primary} />
+            }
           />
         </AnimatedFormContainer>
       </AnimatedCard>
@@ -234,8 +310,8 @@ const EducationWorkSection = () => {
             control={control}
             name="social_media_presence_id"
             label="Social Media Presence 📱"
-            items={PROFILE_DATA.social_media_presences}
-            icon={
+            items={socialMediaPresences} // Using local static data as it's not in the API
+            leftIcon={
               <FeatherIcon name="share-2" size={20} color={COLORS.primary} />
             }
           />
@@ -251,8 +327,8 @@ const EducationWorkSection = () => {
             control={control}
             name="zodiac_sign_id"
             label="Zodiac Sign ✨"
-            items={PROFILE_DATA.zodiac_signs}
-            icon={
+            items={zodiacSigns}
+            leftIcon={
               <MaterialIcon name="stars" size={20} color={COLORS.primary} />
             }
           />
@@ -308,6 +384,19 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingVertical: 24,
     paddingHorizontal: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#f8f9fa",
+    padding: 20,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: COLORS.primary,
+    fontWeight: "500",
+    marginTop: 10,
   },
 });
 

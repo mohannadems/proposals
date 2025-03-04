@@ -34,12 +34,18 @@ export const updateProfile = createAsyncThunk(
     }
   }
 );
+// Alternative approach: Modify the thunk to accept just formData directly
+
 export const updateProfilePhoto = createAsyncThunk(
   "profile/updatePhoto",
-  async ({ formData, onProgress }, { rejectWithValue }) => {
+  async (formData, { rejectWithValue }) => {
     try {
+      // Check if formData is wrapped in an object (for backward compatibility)
+      const actualFormData = formData.formData ? formData.formData : formData;
+      const onProgress = formData.onProgress || null;
+
       const response = await profileService.updateProfilePhoto(
-        formData,
+        actualFormData,
         onProgress
       );
       console.log(

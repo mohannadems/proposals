@@ -1,5 +1,5 @@
 // app/components/common/FormDropdown.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Modal,
   FlatList,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { Controller } from "react-hook-form";
 import { COLORS } from "../../constants/colors";
@@ -21,29 +22,51 @@ const FormDropdown = ({
   placeholder,
   containerStyle,
   required = false,
+  isLoading = false,
+  leftIcon,
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
+  const [dropdownItems, setDropdownItems] = useState([]);
+
+  // Update dropdown items when items prop changes
+  useEffect(() => {
+    if (items && Array.isArray(items)) {
+      setDropdownItems(items);
+    }
+  }, [items]);
 
   const getSelectedItemLabel = (value) => {
-    const selectedItem = items.find((item) => item.id === value);
-    return selectedItem ? selectedItem.name : "";
+    const selectedItem = dropdownItems.find((item) => item.id === value);
+    return selectedItem ? selectedItem.name || selectedItem.budget || "" : "";
   };
 
   const renderPicker = ({ value, onChange }) => {
     return (
       <View>
         <TouchableOpacity
-          style={styles.dropdownButton}
-          onPress={() => setModalVisible(true)}
+          style={[styles.dropdownButton, isLoading && styles.disabledDropdown]}
+          onPress={() => !isLoading && setModalVisible(true)}
+          disabled={isLoading}
         >
+          {leftIcon && <View style={styles.iconContainer}>{leftIcon}</View>}
+
           <Text
-            style={value ? styles.selectedTextStyle : styles.placeholderStyle}
+            style={[
+              value ? styles.selectedTextStyle : styles.placeholderStyle,
+              { flex: 1 },
+            ]}
+            numberOfLines={1}
           >
             {value
               ? getSelectedItemLabel(value)
               : placeholder || `Select ${label}`}
           </Text>
-          <Ionicons name="chevron-down" size={20} color={COLORS.grayDark} />
+
+          {isLoading ? (
+            <ActivityIndicator size="small" color={COLORS.primary} />
+          ) : (
+            <Ionicons name="chevron-down" size={20} color={COLORS.grayDark} />
+          )}
         </TouchableOpacity>
 
         <Modal
@@ -64,39 +87,47 @@ const FormDropdown = ({
                 </TouchableOpacity>
               </View>
 
-              <FlatList
-                data={items}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={[
-                      styles.optionItem,
-                      value === item.id && styles.selectedOption,
-                    ]}
-                    onPress={() => {
-                      onChange(item.id);
-                      setModalVisible(false);
-                    }}
-                  >
-                    <Text
+              {dropdownItems.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>No options available</Text>
+                </View>
+              ) : (
+                <FlatList
+                  data={dropdownItems}
+                  keyExtractor={(item) => item.id.toString()}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
                       style={[
-                        styles.optionText,
-                        value === item.id && styles.selectedOptionText,
+                        styles.optionItem,
+                        value === item.id && styles.selectedOption,
                       ]}
+                      onPress={() => {
+                        onChange(item.id);
+                        setModalVisible(false);
+                      }}
                     >
-                      {item.name}
-                    </Text>
-                    {value === item.id && (
-                      <Ionicons
-                        name="checkmark"
-                        size={20}
-                        color={COLORS.primary}
-                      />
-                    )}
-                  </TouchableOpacity>
-                )}
-                ItemSeparatorComponent={() => <View style={styles.separator} />}
-              />
+                      <Text
+                        style={[
+                          styles.optionText,
+                          value === item.id && styles.selectedOptionText,
+                        ]}
+                      >
+                        {item.name || item.budget || ""}
+                      </Text>
+                      {value === item.id && (
+                        <Ionicons
+                          name="checkmark"
+                          size={20}
+                          color={COLORS.primary}
+                        />
+                      )}
+                    </TouchableOpacity>
+                  )}
+                  ItemSeparatorComponent={() => (
+                    <View style={styles.separator} />
+                  )}
+                />
+              )}
             </View>
           </View>
         </Modal>
@@ -112,10 +143,19 @@ const FormDropdown = ({
       render={({ field: { value, onChange }, fieldState: { error } }) => (
         <View style={[styles.container, containerStyle]}>
           {label && (
-            <Text style={styles.label}>
-              {label}
-              {required && <Text style={styles.required}> *</Text>}
-            </Text>
+            <View style={styles.labelContainer}>
+              <Text style={styles.label}>
+                {label}
+                {required && <Text style={styles.required}> *</Text>}
+              </Text>
+              {isLoading && (
+                <ActivityIndicator
+                  size="small"
+                  color={COLORS.primary}
+                  style={styles.labelLoader}
+                />
+              )}
+            </View>
           )}
 
           {renderPicker({ value, onChange })}
@@ -131,11 +171,20 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: 16,
   },
+  labelContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
   label: {
     fontSize: 14,
     fontWeight: "500",
     color: COLORS.text,
-    marginBottom: 8,
+    flex: 1,
+  },
+  labelLoader: {
+    marginLeft: 8,
   },
   required: {
     color: COLORS.error,
@@ -150,6 +199,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  iconContainer: {
+    marginRight: 10,
   },
   placeholderStyle: {
     fontSize: 16,
@@ -211,6 +263,20 @@ const styles = StyleSheet.create({
   separator: {
     height: 1,
     backgroundColor: COLORS.border,
+  },
+  disabledDropdown: {
+    backgroundColor: COLORS.grayLight,
+    opacity: 0.7,
+  },
+  emptyContainer: {
+    padding: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyText: {
+    fontSize: 16,
+    color: COLORS.grayDark,
+    textAlign: "center",
   },
 });
 

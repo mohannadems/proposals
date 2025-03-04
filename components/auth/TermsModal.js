@@ -29,10 +29,13 @@ export const TermsModal = ({ visible, onAccept, onDecline }) => {
       }).start();
 
       // Perform your actual async operation here
-      // For example:
       await onAccept();
 
-      // If operation succeeds, loading will be handled in the parent component
+      // IMPORTANT FIX: Reset loading state after successful completion
+      setIsLoading(false);
+      fadeAnim.setValue(0);
+
+      // The parent component might handle navigation or other post-acceptance logic
     } catch (error) {
       // Handle any errors
       console.error("Error accepting terms:", error);

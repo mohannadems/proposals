@@ -153,7 +153,7 @@ const ProfileScreen = () => {
 
   const [refreshing, setRefreshing] = useState(false);
   const progressAnimation = useMemo(() => new Animated.Value(0), []);
-
+  console.log(fetchProfile(), "asdfsadfsadf");
   useEffect(() => {
     dispatch(fetchProfile(), updateProfilePhoto());
   }, [dispatch]);
