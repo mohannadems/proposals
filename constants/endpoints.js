@@ -15,4 +15,5 @@ export const ENDPOINTS = {
   SOCIAL_MEDIA_PRESENCES: "/social-media-presences",
   JOB_TITLES: "/job-titles",
   USER_PREFERENCES: "/user-preferences",
+  SEARCH_PARTNERS: "/user-preferences",
 };

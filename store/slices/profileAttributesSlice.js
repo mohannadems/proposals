@@ -216,6 +216,7 @@ const profileAttributesSlice = createSlice({
         state.positionLevels = action.payload.position_levels || [];
         state.educationalLevels = action.payload.educational_levels || [];
         state.marriageBudget = action.payload.marriage_budget || [];
+        console.log("Personal Attributes Data:", action.payload);
       })
       .addCase(fetchProfessionalEducational.rejected, (state, action) => {
         state.loading.professionalEducational = false;

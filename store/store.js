@@ -6,6 +6,7 @@ import authReducer from "./slices/auth.slice";
 import profileReducer from "./slices/profile.slice";
 import profileCompletionReducer from "./slices/profileCompletionSlice";
 import profileAttributesReducer from "./slices/profileAttributesSlice";
+import searchReducer from "./slices/searchSlice";
 const persistConfig = {
   key: "root",
   storage: AsyncStorage,
@@ -24,6 +25,7 @@ export const store = configureStore({
     profile: persistedProfileReducer,
     profileCompletion: persistedProfileCompletionReducer,
     profileAttributes: profileAttributesReducer,
+    search: searchReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
