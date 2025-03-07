@@ -45,6 +45,7 @@ export const register = createAsyncThunk(
     }
   }
 );
+
 // Logout Thunk
 export const logout = createAsyncThunk(
   "auth/logout",
@@ -53,7 +54,7 @@ export const logout = createAsyncThunk(
       // Optional: Call backend logout endpoint
       await api.post(ENDPOINTS.LOGOUT);
 
-      // Clear local storage
+      // Clear token but NOT user ID (for persistent preferences)
       await AsyncStorage.removeItem("userToken");
       await AsyncStorage.removeItem("userData");
 
@@ -64,6 +65,23 @@ export const logout = createAsyncThunk(
     } catch (error) {
       console.error("Logout error:", error);
       return rejectWithValue(error.response?.data || "Logout failed");
+    }
+  }
+);
+
+// New thunk to completely clear user data (optional)
+export const clearUserData = createAsyncThunk(
+  "auth/clearUserData",
+  async (_, { rejectWithValue }) => {
+    try {
+      await authService.clearAllUserData();
+      setAuthToken(null);
+      return true;
+    } catch (error) {
+      console.error("Clear user data error:", error);
+      return rejectWithValue(
+        error.response?.data || "Failed to clear user data"
+      );
     }
   }
 );
@@ -104,6 +122,7 @@ export const resendOTP = createAsyncThunk(
     }
   }
 );
+
 export const checkAuthState = createAsyncThunk(
   "auth/checkAuthState",
   async (_, { dispatch }) => {
@@ -129,14 +148,7 @@ export const checkAuthState = createAsyncThunk(
 // Auth Slice
 const authSlice = createSlice({
   name: "auth",
-  initialState: {
-    user: null,
-    tokens: null,
-    loading: false,
-    error: null,
-    isAuthenticated: false,
-    tempEmail: null,
-  },
+  initialState,
   reducers: {
     setTempEmail: (state, action) => {
       state.tempEmail = action.payload;
@@ -158,10 +170,12 @@ const authSlice = createSlice({
 
         // Store auth data
         AsyncStorage.setItem("userToken", action.payload.data.access_token);
-        AsyncStorage.setItem(
-          "userData",
-          JSON.stringify(action.payload.data.user)
-        );
+        if (action.payload.data.user) {
+          AsyncStorage.setItem(
+            "userData",
+            JSON.stringify(action.payload.data.user)
+          );
+        }
         setAuthToken(action.payload.data.access_token);
       })
       .addCase(login.rejected, (state, action) => {
@@ -254,6 +268,14 @@ const authSlice = createSlice({
       })
       .addCase(checkAuthState.rejected, (state) => {
         state.loading = false;
+      })
+      // Clear User Data Cases (new)
+      .addCase(clearUserData.fulfilled, (state) => {
+        state.loading = false;
+        state.user = null;
+        state.tokens = null;
+        state.isAuthenticated = false;
+        state.tempEmail = null;
       });
   },
 });

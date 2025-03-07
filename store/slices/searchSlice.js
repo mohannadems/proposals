@@ -127,8 +127,29 @@ const searchSlice = createSlice({
       })
       .addCase(getSavedPreferences.fulfilled, (state, action) => {
         state.loading = false;
+        console.log("REDUCER: Got preferences data:", action.payload?.data);
+
         if (action.payload && action.payload.data) {
-          state.preferences = { ...state.preferences, ...action.payload.data };
+          // Check if we received a non-empty object
+          if (Object.keys(action.payload.data).length > 0) {
+            // REPLACE the preferences instead of merging
+            console.log("Updating preferences in Redux state");
+
+            // Make sure to preserve any default values that might not be in the response
+            const loadedPrefs = action.payload.data;
+
+            // Update each field only if it exists in the loaded preferences
+            Object.keys(loadedPrefs).forEach((key) => {
+              if (state.preferences.hasOwnProperty(key)) {
+                state.preferences[key] = loadedPrefs[key];
+              }
+            });
+
+            // Flag that we have preferences loaded
+            state.hasLoadedPreferences = true;
+          } else {
+            console.log("Received empty preferences object");
+          }
         }
       })
       .addCase(getSavedPreferences.rejected, (state, action) => {

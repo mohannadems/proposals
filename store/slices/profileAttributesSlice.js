@@ -118,6 +118,7 @@ const initialState = {
   positionLevels: [],
   educationalLevels: [],
   marriageBudget: [],
+  jobTitles: [],
 
   // Geographic
   countries: [],
@@ -136,6 +137,7 @@ const initialState = {
     professionalEducational: false,
     geographic: false,
     cities: false,
+    jobTitles: false,
   },
 
   // Error states
@@ -145,6 +147,7 @@ const initialState = {
     professionalEducational: null,
     geographic: null,
     cities: null,
+    jobTitles: null,
   },
 };
 
@@ -293,6 +296,7 @@ export const selectProfessionalEducational = (state) => ({
   positionLevels: state.profileAttributes.positionLevels,
   educationalLevels: state.profileAttributes.educationalLevels,
   marriageBudget: state.profileAttributes.marriageBudget,
+  jobTitles: state.profileAttributes.jobTitles,
 });
 
 export const selectGeographic = (state) => ({

@@ -1,301 +1,411 @@
-// components/SearchResults.js
-import React from "react";
+import React, { useRef, useEffect } from "react";
 import {
   View,
   Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
   FlatList,
+  StyleSheet,
+  TouchableOpacity,
   Image,
+  SafeAreaView,
+  StatusBar,
+  Animated,
+  Dimensions,
+  ActivityIndicator,
+  Share,
+  Platform,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../../constants/colors";
 
-const SearchResults = ({ navigation, results = [], onBack }) => {
-  // Placeholder for when no image is available
-  const renderProfileImage = (match) => {
-    return (
-      <View style={styles.profileImageContainer}>
-        {match.photo_url ? (
-          <Image
-            source={{ uri: match.photo_url }}
-            style={styles.profileImage}
-            resizeMode="cover"
-          />
-        ) : (
-          <View style={styles.placeholderImage}>
-            <Ionicons name="person" size={40} color="#FFFFFF" />
-          </View>
-        )}
-        <View style={styles.matchPercentage}>
-          <Text style={styles.matchPercentageText}>93%</Text>
-        </View>
-      </View>
-    );
+const { width } = Dimensions.get("window");
+
+const SearchResults = ({ results, onBack }) => {
+  // Animation references
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+
+  useEffect(() => {
+    // Animate results in when component mounts
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
+
+  // Handle share functionality
+  const handleShare = async (profile) => {
+    try {
+      await Share.share({
+        message: `Check out this profile: ${profile.name}, ${profile.age} | ${profile.city_name}, ${profile.country_name}`,
+        title: "Share Profile",
+      });
+    } catch (error) {
+      console.error("Error sharing:", error);
+    }
   };
 
-  // Render a single attribute (e.g. age, location)
-  const renderAttribute = (icon, text) => {
-    if (!text) return null;
+  // Handle empty results
+  if (!results || results.length === 0) {
     return (
-      <View style={styles.attribute}>
-        <Ionicons name={icon} size={16} color="#777" />
-        <Text style={styles.attributeText}>{text}</Text>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
+        <LinearGradient colors={COLORS.primaryGradient} style={styles.header}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity onPress={onBack} style={styles.backButton}>
+              <Text style={styles.backButtonText}>← Back</Text>
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Search Results</Text>
+            <View style={styles.emptySpace} />
+          </View>
+        </LinearGradient>
+
+        <View style={styles.emptyContainer}>
+          <Image
+            source={require("../../assets/images/11.jpg")} // Make sure to add this image to your assets
+            style={styles.emptyImage}
+            defaultSource={require("../../assets/images/11.jpg")}
+          />
+          <Text style={styles.emptyTitle}>No results found</Text>
+          <Text style={styles.emptyText}>
+            Try adjusting your preferences to find more matches
+          </Text>
+          <TouchableOpacity style={styles.returnButton} onPress={onBack}>
+            <Text style={styles.returnButtonText}>Return to Search</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
     );
-  };
+  }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Ionicons name="arrow-back" size={24} color="#333" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Your Matches</Text>
-      </View>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
 
-      {results.length > 0 ? (
-        <FlatList
-          data={results}
-          keyExtractor={(item, index) =>
-            item.id?.toString() || index.toString()
-          }
-          contentContainerStyle={styles.listContent}
-          renderItem={({ item: match }) => (
-            <TouchableOpacity
-              style={styles.matchCard}
-              onPress={() =>
-                navigation.navigate("ProfileDetail", { profileId: match.id })
-              }
+      <LinearGradient colors={COLORS.primaryGradient} style={styles.header}>
+        <View style={styles.headerContent}>
+          <TouchableOpacity onPress={onBack} style={styles.backButton}>
+            <Text style={styles.backButtonText}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Search Results</Text>
+          <TouchableOpacity style={styles.filterButton}>
+            <Text style={styles.filterButtonText}>Filter</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.resultsSummary}>
+          <Text style={styles.resultCount}>{results.length} matches found</Text>
+        </View>
+      </LinearGradient>
+
+      <Animated.FlatList
+        data={results}
+        renderItem={({ item, index }) => {
+          // Calculate animation delay based on index
+          const itemFade = new Animated.Value(0);
+          const itemSlide = new Animated.Value(50);
+
+          // Start item animation with staggered delay
+          Animated.parallel([
+            Animated.timing(itemFade, {
+              toValue: 1,
+              duration: 400,
+              delay: index * 100,
+              useNativeDriver: true,
+            }),
+            Animated.timing(itemSlide, {
+              toValue: 0,
+              duration: 400,
+              delay: index * 100,
+              useNativeDriver: true,
+            }),
+          ]).start();
+
+          return (
+            <Animated.View
+              style={[
+                styles.resultCardContainer,
+                {
+                  opacity: itemFade,
+                  transform: [{ translateY: itemSlide }],
+                },
+              ]}
             >
-              {renderProfileImage(match)}
+              <View style={styles.resultCard}>
+                <Image
+                  source={{
+                    uri:
+                      item.profile_picture || "https://via.placeholder.com/150",
+                  }}
+                  style={styles.profileImage}
+                  defaultSource={require("../../assets/images/11.jpg")} // Make sure to have this default image in assets
+                />
 
-              <View style={styles.matchInfo}>
-                <Text style={styles.matchName}>
-                  {match.name || "Potential Match"}
-                </Text>
+                <LinearGradient
+                  colors={["transparent", "rgba(0,0,0,0.7)"]}
+                  style={styles.imageOverlay}
+                >
+                  <Text style={styles.profileName}>
+                    {item.name || "User"}, {item.age || "?"}
+                  </Text>
+                  <Text style={styles.profileLocation}>
+                    {item.city_name || "Unknown"}, {item.country_name || ""}
+                  </Text>
+                </LinearGradient>
 
-                <View style={styles.attributesContainer}>
-                  {renderAttribute(
-                    "calendar-outline",
-                    match.age ? `${match.age} years` : null
-                  )}
-                  {renderAttribute("location-outline", match.city)}
-                  {renderAttribute("business-outline", match.job_title)}
-                  {renderAttribute("school-outline", match.education)}
+                <View style={styles.profileInfo}>
+                  <View style={styles.infoRow}>
+                    <View style={styles.infoItem}>
+                      <Text style={styles.infoLabel}>Education</Text>
+                      <Text style={styles.infoValue}>
+                        {item.education_name || "Not specified"}
+                      </Text>
+                    </View>
+
+                    <View style={styles.infoItem}>
+                      <Text style={styles.infoLabel}>Occupation</Text>
+                      <Text style={styles.infoValue}>
+                        {item.job_title || "Not specified"}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.infoRow}>
+                    <View style={styles.infoItem}>
+                      <Text style={styles.infoLabel}>Marital Status</Text>
+                      <Text style={styles.infoValue}>
+                        {item.marital_status || "Not specified"}
+                      </Text>
+                    </View>
+
+                    <View style={styles.infoItem}>
+                      <Text style={styles.infoLabel}>Height</Text>
+                      <Text style={styles.infoValue}>
+                        {item.height || "Not specified"}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
 
                 <View style={styles.actionButtons}>
-                  <TouchableOpacity style={styles.actionButtonSecondary}>
-                    <Ionicons
-                      name="bookmark-outline"
-                      size={20}
-                      color={COLORS.primary}
-                    />
+                  <TouchableOpacity
+                    style={styles.shareButton}
+                    onPress={() => handleShare(item)}
+                  >
+                    <Text style={styles.shareButtonText}>Share</Text>
                   </TouchableOpacity>
 
-                  <TouchableOpacity style={styles.actionButtonPrimary}>
-                    <Text style={styles.actionButtonText}>View Profile</Text>
-                    <Ionicons
-                      name="chevron-forward"
-                      size={16}
-                      color="#FFFFFF"
-                    />
+                  <TouchableOpacity style={styles.viewProfileButton}>
+                    <Text style={styles.viewProfileText}>View Profile</Text>
                   </TouchableOpacity>
                 </View>
               </View>
-            </TouchableOpacity>
-          )}
-        />
-      ) : (
-        <View style={styles.emptyState}>
-          <View style={styles.emptyStateIcon}>
-            <Ionicons name="search" size={50} color="#FFFFFF" />
-          </View>
-          <Text style={styles.emptyStateTitle}>No matches found</Text>
-          <Text style={styles.emptyStateDescription}>
-            Try adjusting your search preferences to find potential matches
-          </Text>
-
-          <TouchableOpacity style={styles.modifyButton} onPress={onBack}>
-            <Text style={styles.modifyButtonText}>Modify Search</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    </View>
+            </Animated.View>
+          );
+        }}
+        keyExtractor={(item) =>
+          item.id ? item.id.toString() : Math.random().toString()
+        }
+        contentContainerStyle={styles.resultsList}
+        showsVerticalScrollIndicator={false}
+      />
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FB",
+    backgroundColor: COLORS.background,
   },
   header: {
-    backgroundColor: "#FFFFFF",
+    paddingTop: Platform.OS === "ios" ? 0 : StatusBar.currentHeight,
+    paddingBottom: 16,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  headerContent: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#F0F0F0",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
+    paddingTop: 16,
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "bold",
-    color: "#333",
+    color: COLORS.white,
+    textAlign: "center",
   },
-  listContent: {
-    padding: 16,
+  backButton: {
+    padding: 6,
   },
-  matchCard: {
-    backgroundColor: "#FFFFFF",
+  backButtonText: {
+    fontSize: 16,
+    color: COLORS.white,
+    fontWeight: "500",
+  },
+  filterButton: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
     borderRadius: 16,
-    marginBottom: 16,
+  },
+  filterButtonText: {
+    color: COLORS.white,
+    fontWeight: "500",
+  },
+  emptySpace: {
+    width: 50, // Match the width of the back button for center alignment
+  },
+  resultsSummary: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+  },
+  resultCount: {
+    fontSize: 14,
+    color: COLORS.white,
+    fontWeight: "500",
+    opacity: 0.9,
+  },
+  resultsList: {
+    padding: 16,
+    paddingBottom: 30,
+  },
+  resultCardContainer: {
+    marginBottom: 20,
+    borderRadius: 16,
     overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 5,
   },
-  profileImageContainer: {
-    height: 180,
-    position: "relative",
+  resultCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    overflow: "hidden",
   },
   profileImage: {
     width: "100%",
-    height: "100%",
+    height: 200,
+    backgroundColor: "#E1E1E1", // Placeholder color
   },
-  placeholderImage: {
-    width: "100%",
-    height: "100%",
-    backgroundColor: "#DDD",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  matchPercentage: {
+  imageOverlay: {
     position: "absolute",
-    top: 12,
-    right: 12,
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-  },
-  matchPercentageText: {
-    color: "#FFFFFF",
-    fontWeight: "bold",
-    fontSize: 12,
-  },
-  matchInfo: {
+    bottom: 0,
+    left: 0,
+    right: 0,
     padding: 16,
   },
-  matchName: {
-    fontSize: 18,
+  profileName: {
+    fontSize: 22,
     fontWeight: "bold",
-    color: "#333",
-    marginBottom: 8,
+    color: COLORS.white,
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
-  attributesContainer: {
+  profileLocation: {
+    fontSize: 16,
+    color: COLORS.white,
+    opacity: 0.9,
+    textShadowColor: "rgba(0,0,0,0.5)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  },
+  profileInfo: {
+    padding: 16,
+  },
+  infoRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    marginBottom: 16,
+    marginBottom: 12,
   },
-  attribute: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#F5F5F5",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginRight: 8,
-    marginBottom: 8,
+  infoItem: {
+    flex: 1,
   },
-  attributeText: {
-    fontSize: 13,
-    color: "#555",
-    marginLeft: 4,
+  infoLabel: {
+    fontSize: 12,
+    color: COLORS.lightText,
+    marginBottom: 2,
+  },
+  infoValue: {
+    fontSize: 16,
+    color: COLORS.text,
+    fontWeight: "500",
   },
   actionButtons: {
     flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "center",
     borderTopWidth: 1,
-    borderTopColor: "#F0F0F0",
-    paddingTop: 12,
+    borderTopColor: COLORS.divider,
+    padding: 12,
   },
-  actionButtonSecondary: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(158, 8, 108, 0.08)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  actionButtonPrimary: {
-    backgroundColor: COLORS.primary,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  actionButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "bold",
-    fontSize: 14,
-    marginRight: 4,
-  },
-  emptyState: {
+  shareButton: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 32,
-  },
-  emptyStateIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: COLORS.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  emptyStateTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 8,
-  },
-  emptyStateDescription: {
-    fontSize: 16,
-    color: "#777",
-    textAlign: "center",
-    marginBottom: 24,
-  },
-  modifyButton: {
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 24,
+    alignItems: "center",
+    borderRightWidth: 1,
+    borderRightColor: COLORS.divider,
   },
-  modifyButtonText: {
-    color: "#FFFFFF",
+  shareButtonText: {
+    color: COLORS.text,
+    fontWeight: "500",
+  },
+  viewProfileButton: {
+    flex: 2,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  viewProfileText: {
+    color: COLORS.primary,
+    fontWeight: "bold",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 30,
+  },
+  emptyImage: {
+    width: 150,
+    height: 150,
+    marginBottom: 20,
+    opacity: 0.8,
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: COLORS.text,
+    marginBottom: 10,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: COLORS.lightText,
+    textAlign: "center",
+    marginBottom: 30,
+    lineHeight: 22,
+  },
+  returnButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 25,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  returnButtonText: {
+    color: COLORS.white,
     fontWeight: "bold",
     fontSize: 16,
   },

@@ -351,7 +351,6 @@ const ProfileScreen = () => {
   };
   return (
     <>
-      <ProfileCompletionAlert />
       <ScrollView
         style={styles.container}
         contentContainerStyle={{

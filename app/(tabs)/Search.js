@@ -1,1360 +1,1733 @@
-// app/search.js
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
+  StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
-  SafeAreaView,
   StatusBar,
   Animated,
+  Platform,
+  Image,
+  KeyboardAvoidingView,
+  Alert,
+  Dimensions,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { COLORS } from "../../constants/colors";
+import { authService } from "../../services/auth.service";
+import { searchService } from "../../services/searchService";
 import {
+  getSavedPreferences,
+  submitSearchPreferences,
   updatePreference,
   resetPreferences,
-  submitSearchPreferences,
 } from "../../store/slices/searchSlice";
-
-// Import selectors from profileAttributesSlice
 import {
-  selectPersonalAttributes,
-  selectLifestyleInterests,
-  selectProfessionalEducational,
-  selectGeographic,
-  selectCitiesByCountry,
   fetchAllProfileData,
+  selectGeographic,
+  selectPersonalAttributes,
+  selectProfessionalEducational,
+  selectLifestyleInterests,
+  selectCitiesByCountry,
   fetchCitiesByCountry,
 } from "../../store/slices/profileAttributesSlice";
+import { COLORS } from "../../constants/colors";
+import {
+  Ionicons,
+  MaterialCommunityIcons,
+  FontAwesome5,
+} from "@expo/vector-icons";
 
 // Import custom components
-import DropdownFilter from "../../components/search/DropdownFilter";
-import SliderFilter from "../../components/search/SliderFilter";
-import ToggleFilter from "../../components/search/ToggleFilter";
-import MultiSelectFilter from "../../components/search/MultiSelectFilter";
+import ModernDropdown from "../../components/search/ModernDropdown";
+import RangeSlider from "../../components/search/RangeSlider";
+import MultiSelectChips from "../../components/search/MultiSelectChips";
 import SearchResults from "../../components/search/SearchResults";
+// Age range presets for easier selection
+const AGE_RANGE_PRESETS = [
+  { label: "18-25", min: 18, max: 25 },
+  { label: "26-35", min: 26, max: 35 },
+  { label: "36-45", min: 36, max: 45 },
+  { label: "46-60", min: 46, max: 60 },
+  { label: "All Ages", min: 18, max: 70 },
+];
 
-// Required fields by section
-const REQUIRED_FIELDS = {
-  basic: [
-    "preferred_age_min",
-    "preferred_age_max",
-    "preferred_marital_status_id",
-  ],
-  location: ["preferred_country_id"],
-  lifestyle: ["preferred_smoking_status"],
-  education: ["preferred_educational_level_id"],
-  appearance: ["preferred_height_id"],
-};
+const { width } = Dimensions.get("window");
+const TILE_SIZE = (width - 48) / 2; // 2 tiles per row with 16px padding on each side
 
 const SearchScreen = ({ navigation }) => {
+  const [preferencesUserId, setPreferencesUserId] = useState(null);
   const dispatch = useDispatch();
-  const {
-    preferences,
-    loading: searchLoading,
-    error,
-    success,
-    searchResults,
-  } = useSelector((state) => state.search);
-  const loadingStates = useSelector(
-    (state) => state.profileAttributes?.loading || {}
-  );
-  const personalAttributes = useSelector(selectPersonalAttributes);
-  const lifestyleInterests = useSelector(selectLifestyleInterests);
-  const professionalEducational = useSelector(selectProfessionalEducational);
-  const geographic = useSelector(selectGeographic);
-
+  const [isLoading, setIsLoading] = useState(true);
   const [showResults, setShowResults] = useState(false);
-  const [expandedSection, setExpandedSection] = useState("basic"); // Default to basic open
-  const [sectionCompletionStatus, setSectionCompletionStatus] = useState({
+  const [hasSearched, setHasSearched] = useState(false);
+  const [activeSection, setActiveSection] = useState(null); // null means showing the tile view
+  const scrollViewRef = useRef(null);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const cardOffset = useRef(new Animated.Value(50)).current;
+  const [isMounted, setIsMounted] = useState(true);
+
+  // State to track completion of each section
+  const [sectionStatus, setSectionStatus] = useState({
     basic: false,
-    location: false,
-    lifestyle: false,
     education: false,
-    appearance: false,
+    personal: false,
+    lifestyle: false,
   });
 
-  // Animation value for the button pulse effect
-  const pulseAnim = useState(new Animated.Value(1))[0];
+  // Get all the required data from Redux store
+  const { preferences, searchResults, loading, error, success } = useSelector(
+    (state) => state.search
+  );
+  const geographic = useSelector(selectGeographic);
+  const personalAttributes = useSelector(selectPersonalAttributes);
+  const professionalEducational = useSelector(selectProfessionalEducational);
+  const lifestyleInterests = useSelector(selectLifestyleInterests);
 
-  // Load all profile data when component mounts
-  useEffect(() => {
-    dispatch(fetchAllProfileData());
-  }, [dispatch]);
-
-  // Fetch cities when country is selected
-  useEffect(() => {
-    if (preferences.preferred_country_id) {
-      dispatch(fetchCitiesByCountry(preferences.preferred_country_id));
-    }
-  }, [dispatch, preferences.preferred_country_id]);
-
-  // Update section completion status when preferences change
-  useEffect(() => {
-    const newCompletionStatus = {};
-
-    Object.keys(REQUIRED_FIELDS).forEach((section) => {
-      const requiredFieldsForSection = REQUIRED_FIELDS[section];
-      const allFieldsCompleted = requiredFieldsForSection.every((field) => {
-        if (
-          field === "preferred_smoking_status" &&
-          preferences[field] === false
-        ) {
-          return true; // Consider false as a valid value for smoking status
-        }
-        return preferences[field] !== null && preferences[field] !== undefined;
-      });
-
-      newCompletionStatus[section] = allFieldsCompleted;
-    });
-
-    setSectionCompletionStatus(newCompletionStatus);
-  }, [preferences]);
-
-  // Pulse animation for submit button when form is complete
-  useEffect(() => {
-    const isFormComplete = Object.values(sectionCompletionStatus).every(
-      (status) => status
-    );
-
-    if (isFormComplete) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseAnim, {
-            toValue: 1.05,
-            duration: 700,
-            useNativeDriver: true,
-          }),
-          Animated.timing(pulseAnim, {
-            toValue: 1,
-            duration: 700,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    } else {
-      pulseAnim.setValue(1);
-    }
-  }, [sectionCompletionStatus, pulseAnim]);
-
-  // Get cities for the selected country
+  // Get cities based on the selected country
+  const selectedCountryId = preferences.preferred_country_id;
   const cities = useSelector((state) =>
-    selectCitiesByCountry(state, preferences.preferred_country_id)
+    selectCitiesByCountry(state, selectedCountryId)
   );
 
-  // Calculate overall form completion percentage
-  const formCompletionPercentage = useMemo(() => {
-    const totalRequiredFields = Object.values(REQUIRED_FIELDS).flat().length;
-    const completedFields = Object.values(REQUIRED_FIELDS)
-      .flat()
-      .filter((field) => {
-        if (
-          field === "preferred_smoking_status" &&
-          preferences[field] === false
-        ) {
-          return true;
+  // Debug helper function
+  const debugSearchPreferences = async () => {
+    try {
+      const debugInfo = await searchService.debugPreferences();
+      console.log("Debug Info:", debugInfo);
+      Alert.alert("Preferences Debug Info", JSON.stringify(debugInfo, null, 2));
+    } catch (error) {
+      console.error("Debug error:", error);
+      Alert.alert("Debug Error", error.message);
+    }
+  };
+
+  // Define initializeScreen function outside of any useEffect
+  const initializeScreen = async () => {
+    if (!isMounted) return;
+    setIsLoading(true);
+
+    try {
+      console.log("Initializing search screen...");
+
+      // First, ensure we have a valid user ID for preferences
+      const userId = await authService.getUserId();
+      setPreferencesUserId(userId);
+      console.log(`Using user ID for preferences: ${userId || "none"}`);
+
+      // Fetch all profile attributes data first
+      await dispatch(fetchAllProfileData()).unwrap();
+      console.log("Fetched profile attributes data");
+
+      // Get user preferences with detailed logging
+      console.log("Getting saved preferences...");
+      try {
+        const preferencesResult = await dispatch(
+          getSavedPreferences()
+        ).unwrap();
+
+        console.log(
+          "Loaded preferences:",
+          preferencesResult
+            ? `Found ${Object.keys(preferencesResult).length} preference keys`
+            : "No preferences found"
+        );
+
+        // If a country is selected, fetch its cities
+        if (preferencesResult?.preferred_country_id) {
+          dispatch(
+            fetchCitiesByCountry(preferencesResult.preferred_country_id)
+          );
+          console.log(
+            `Fetching cities for country ID: ${preferencesResult.preferred_country_id}`
+          );
         }
-        return preferences[field] !== null && preferences[field] !== undefined;
-      }).length;
 
-    return Math.floor((completedFields / totalRequiredFields) * 100);
-  }, [preferences]);
+        // Force a manual status update after API response
+        setTimeout(() => {
+          if (isMounted) {
+            updateSectionStatus();
+            console.log("Section status updated after preferences loaded");
+          }
+        }, 200);
+      } catch (prefsError) {
+        console.error("Error loading preferences:", prefsError);
+      }
 
-  // Handle selection for single-select options
-  const handleSelect = useCallback(
-    (field, value) => {
-      dispatch(updatePreference({ field, value }));
-    },
-    [dispatch]
-  );
-
-  // Handle multi-select options (like smoking tools, pets)
-  const handleMultiSelect = useCallback(
-    (field, value) => {
-      const currentValues = preferences[field] || [];
-      const updatedValues = currentValues.includes(value)
-        ? currentValues.filter((id) => id !== value)
-        : [...currentValues, value];
-
-      dispatch(updatePreference({ field, value: updatedValues }));
-    },
-    [dispatch, preferences]
-  );
-
-  // Handle form submission
-  const handleSubmit = () => {
-    // Check if all required fields are filled
-    const isFormComplete = Object.values(sectionCompletionStatus).every(
-      (status) => status
-    );
-
-    if (!isFormComplete) {
-      // Find the first incomplete section
-      const incompleteSection = Object.keys(sectionCompletionStatus).find(
-        (section) => !sectionCompletionStatus[section]
-      );
-
-      // Expand that section
-      setExpandedSection(incompleteSection);
-
-      // Show error message
-      dispatch(
-        updatePreference({
-          field: "error",
-          value: "Please complete all required fields before searching",
-        })
-      );
-      return;
+      // Animate content in
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(cardOffset, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } catch (error) {
+      console.error("Error initializing search screen:", error);
+      if (isMounted) {
+        Alert.alert("Error", "Failed to load search data. Please try again.");
+      }
+    } finally {
+      if (isMounted) {
+        setIsLoading(false);
+      }
     }
+  };
 
-    // Add language parameter if not already set
-    const searchParams = {
-      ...preferences,
-      language: preferences.language || 1,
+  // Run initializeScreen on component mount
+  useEffect(() => {
+    setIsMounted(true);
+
+    // First run - initialize the screen
+    initializeScreen();
+
+    // Cleanup function
+    return () => {
+      setIsMounted(false);
     };
+  }, []);
 
-    // Dispatch the search action
-    dispatch(submitSearchPreferences(searchParams)).then(() => {
-      setShowResults(true);
-    });
-  };
+  // Instead of navigation focus, use an effect to check auth status changes
+  // This will help detect login/logout changes
+  const authState = useSelector((state) => state.auth);
 
-  // Reset all preferences
-  const handleReset = () => {
-    dispatch(resetPreferences());
-    setExpandedSection("basic");
-  };
+  useEffect(() => {
+    if (!isMounted || isLoading) return;
 
-  // Toggle section expansion
-  const toggleSection = (section) => {
-    if (expandedSection === section) {
-      setExpandedSection(null);
-    } else {
-      setExpandedSection(section);
+    console.log("Auth state changed - checking if preferences need refreshing");
+
+    // When auth state changes, check if we need to refresh
+    authService
+      .getUserId()
+      .then(async (newUserId) => {
+        console.log(
+          `Current user ID: ${preferencesUserId}, New user ID: ${newUserId}`
+        );
+
+        if (newUserId !== preferencesUserId) {
+          console.log("User ID changed, refreshing preferences");
+          setPreferencesUserId(newUserId);
+
+          // Force-debug to see what's happening with preferences
+          const debugInfo = await searchService.debugPreferences();
+          console.log("Preferences debug info:", debugInfo);
+
+          // Full refresh
+          initializeScreen();
+        } else if (authState.isAuthenticated) {
+          // Same user but ensure preferences are loaded
+          console.log(
+            "Auth state changed but same user ID, checking preferences"
+          );
+
+          const preferencesExist = Object.keys(preferences).some(
+            (key) =>
+              preferences[key] !== null &&
+              preferences[key] !== undefined &&
+              preferences[key] !== "" &&
+              (typeof preferences[key] !== "object" ||
+                Object.keys(preferences[key]).length > 0)
+          );
+
+          if (!preferencesExist) {
+            console.log("No preferences found, reloading");
+            initializeScreen();
+          } else {
+            console.log("Preferences exist, updating section status");
+            updateSectionStatus();
+          }
+        }
+      })
+      .catch((error) => {
+        console.error("Error checking user ID:", error);
+      });
+  }, [authState, isLoading]);
+
+  // Update section status when preferences change
+  useEffect(() => {
+    // This will run whenever preferences change
+    if (!isLoading && isMounted) {
+      console.log("Preferences changed, updating section status");
+      updateSectionStatus();
+    }
+  }, [preferences, isLoading]);
+
+  // Handle country selection to fetch cities
+  useEffect(() => {
+    if (selectedCountryId) {
+      dispatch(fetchCitiesByCountry(selectedCountryId));
+    }
+  }, [selectedCountryId, dispatch]);
+
+  // Enhance updateSectionStatus function for better debugging
+  const updateSectionStatus = () => {
+    if (!isMounted) return;
+
+    try {
+      console.log(
+        "Updating section status with current preferences:",
+        Object.keys(preferences).filter(
+          (key) => preferences[key] !== null && preferences[key] !== undefined
+        )
+      );
+
+      const newStatus = {
+        basic: isBasicSectionComplete(),
+        education: isEducationSectionComplete(),
+        personal: isPersonalSectionComplete(),
+        lifestyle: isLifestyleSectionComplete(),
+      };
+
+      console.log("New section status:", newStatus);
+      setSectionStatus(newStatus);
+    } catch (error) {
+      console.error("Error updating section status:", error);
     }
   };
 
-  // Render required field indicator
-  const renderRequiredIndicator = () => (
-    <Text style={styles.fieldRequired}>*</Text>
-  );
-
-  // Check if all the profile data is still loading
-  const isDataLoading =
-    loadingStates.personalAttributes ||
-    loadingStates.lifestyleInterests ||
-    loadingStates.professionalEducational ||
-    loadingStates.geographic;
-
-  if (isDataLoading) {
-    return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <View style={styles.loadingContent}>
-          <View style={styles.loadingIcon}>
-            <Ionicons name="search" size={44} color={COLORS.white} />
-          </View>
-          <Text style={styles.loadingTitle}>Setting Up</Text>
-          <Text style={styles.loadingSubtitle}>
-            Loading your preferences and preparing the perfect search for you
-          </Text>
-          <ActivityIndicator
-            style={styles.loadingIndicator}
-            size="large"
-            color={COLORS.primary}
-          />
-        </View>
-      </SafeAreaView>
+  // Check if each section is complete
+  const isBasicSectionComplete = () => {
+    return !!(
+      preferences.preferred_nationality_id ||
+      preferences.preferred_origin_id ||
+      preferences.preferred_country_id ||
+      preferences.preferred_age_min !== 18 ||
+      preferences.preferred_age_max !== 50
     );
-  }
+  };
 
-  if (showResults && success) {
-    // Import the SearchResults component
-    const SearchResults =
-      require("../../components/search/SearchResults").default;
+  const isEducationSectionComplete = () => {
+    return !!(
+      preferences.preferred_educational_level_id ||
+      preferences.preferred_specialization_id ||
+      preferences.preferred_employment_status !== null ||
+      preferences.preferred_job_title_id ||
+      preferences.preferred_financial_status_id ||
+      preferences.preferred_marriage_budget_id
+    );
+  };
 
+  const isPersonalSectionComplete = () => {
+    return !!(
+      preferences.preferred_height_id ||
+      preferences.preferred_weight_id ||
+      preferences.preferred_marital_status_id ||
+      preferences.preferred_social_media_presence_id
+    );
+  };
+
+  const isLifestyleSectionComplete = () => {
+    return !!(
+      preferences.preferred_smoking_status !== null ||
+      preferences.preferred_drinking_status_id ||
+      preferences.preferred_sports_activity_id ||
+      preferences.preferred_sleep_habit_id ||
+      (preferences.preferred_pets_id &&
+        preferences.preferred_pets_id.length > 0) ||
+      preferences.preferred_religiosity_level_id
+    );
+  };
+
+  // Handle preference changes
+  const handlePreferenceChange = (field, value) => {
+    dispatch(updatePreference({ field, value }));
+
+    // If changing country, clear the selected city
+    if (field === "preferred_country_id") {
+      dispatch(updatePreference({ field: "preferred_city_id", value: null }));
+    }
+
+    // Update section status after a short delay to allow state update
+    setTimeout(() => updateSectionStatus(), 100);
+  };
+
+  // Handle age range preset selection
+  const handleAgeRangePreset = (min, max) => {
+    handlePreferenceChange("preferred_age_min", min);
+    handlePreferenceChange("preferred_age_max", max);
+  };
+
+  // Submit search preferences and show results
+  const handleSearch = async () => {
+    setIsLoading(true);
+    try {
+      await dispatch(submitSearchPreferences(preferences)).unwrap();
+      setHasSearched(true);
+      setShowResults(true);
+    } catch (error) {
+      console.error("Error submitting search preferences:", error);
+      Alert.alert(
+        "Error",
+        "Failed to submit search preferences. Please try again."
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Reset to default preferences
+  const handleReset = () => {
+    Alert.alert(
+      "Reset Preferences",
+      "Are you sure you want to reset all search preferences to default values?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Reset",
+          style: "destructive",
+          onPress: () => {
+            dispatch(resetPreferences());
+            updateSectionStatus();
+            Alert.alert(
+              "Success",
+              "Preferences have been reset to default values."
+            );
+          },
+        },
+      ]
+    );
+  };
+
+  // Navigate to a specific section
+  const handleNavigateToSection = (section) => {
+    setActiveSection(section);
+
+    // Scroll to top when switching sections
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollTo({ y: 0, animated: true });
+    }
+  };
+
+  // Return from section to main tiles view
+  const handleReturnToTiles = () => {
+    setActiveSection(null);
+  };
+
+  // Complete section and return to tiles
+  const handleCompleteSection = () => {
+    updateSectionStatus();
+    setActiveSection(null);
+  };
+
+  if (isLoading) {
     return (
-      <SearchResults
-        navigation={navigation}
-        results={searchResults || []}
-        onBack={() => setShowResults(false)}
-      />
+      <View style={styles.loadingContainer}>
+        <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
+        <LinearGradient
+          colors={COLORS.primaryGradient}
+          style={styles.loadingGradient}
+        >
+          <ActivityIndicator size="large" color={COLORS.white} />
+          <Text style={styles.loadingText}>Loading preferences...</Text>
+        </LinearGradient>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor={COLORS.white} />
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
 
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Find Your Partner</Text>
-        <TouchableOpacity style={styles.resetButton} onPress={handleReset}>
-          <Text style={styles.resetButtonText}>Reset</Text>
-          <Ionicons name="refresh-outline" size={18} color={COLORS.primary} />
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView
-        style={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Form completion progress */}
-        <View style={styles.formCompletionStatus}>
-          <Ionicons
-            name={
-              formCompletionPercentage === 100
-                ? "checkmark-circle"
-                : "information-circle"
-            }
-            size={18}
-            color={formCompletionPercentage === 100 ? "#34C759" : "#888"}
-          />
-          <Text style={styles.formCompletionText}>
-            {formCompletionPercentage === 100
-              ? "All required fields completed!"
-              : `Form completion: ${formCompletionPercentage}%`}
-          </Text>
-        </View>
-
-        {/* Progress bar */}
-        <View style={styles.progressBar}>
-          <View
-            style={[
-              styles.progressFill,
-              { width: `${formCompletionPercentage}%` },
-            ]}
-          />
-        </View>
-
-        <Text style={styles.requiredFieldNote}>
-          Fields marked with {renderRequiredIndicator()} are required
-        </Text>
-
-        {/* Basic Information Section */}
-        <TouchableOpacity
-          style={[
-            styles.sectionHeader,
-            expandedSection === "basic" && styles.sectionHeaderActive,
-          ]}
-          onPress={() => toggleSection("basic")}
-        >
-          <View style={styles.sectionTitleRow}>
-            <Ionicons
-              name="person"
-              size={22}
-              color={
-                expandedSection === "basic" ? COLORS.white : COLORS.primary
-              }
-            />
-            <Text
-              style={[
-                styles.sectionTitle,
-                expandedSection === "basic" && styles.sectionTitleActive,
-              ]}
-            >
-              Basic Information
-            </Text>
-          </View>
-          {sectionCompletionStatus.basic && (
-            <View style={styles.sectionCompletionBadge}>
-              <Ionicons name="checkmark" size={16} color="#FFFFFF" />
-            </View>
-          )}
-          <Ionicons
-            name={expandedSection === "basic" ? "chevron-up" : "chevron-down"}
-            size={22}
-            color={expandedSection === "basic" ? COLORS.white : COLORS.text}
-          />
-        </TouchableOpacity>
-
-        {expandedSection === "basic" && (
-          <View style={styles.sectionContent}>
-            <View style={styles.fieldLabel}>
-              <Text style={styles.fieldLabelText}>Age Range</Text>
-              {renderRequiredIndicator()}
-            </View>
-            <View style={styles.sliderContainer}>
-              <SliderFilter
-                minValue={18}
-                maxValue={65}
-                startValue={preferences.preferred_age_min || 18}
-                endValue={preferences.preferred_age_max || 50}
-                onValueChange={(min, max) => {
-                  handleSelect("preferred_age_min", min);
-                  handleSelect("preferred_age_max", max);
-                }}
-              />
-            </View>
-
-            <View style={styles.fieldLabel}>
-              <Text style={styles.fieldLabelText}>Marital Status</Text>
-              {renderRequiredIndicator()}
-            </View>
-            <DropdownFilter
-              value={preferences.preferred_marital_status_id}
-              items={personalAttributes.maritalStatuses || []}
-              onSelect={(value) =>
-                handleSelect("preferred_marital_status_id", value)
-              }
-              loading={loadingStates.personalAttributes}
-              containerStyle={
-                preferences.preferred_marital_status_id
-                  ? styles.dropdownButtonSelected
-                  : {}
-              }
-            />
-
-            <View style={styles.fieldLabel}>
-              <Text style={styles.fieldLabelText}>Religion</Text>
-            </View>
-            <DropdownFilter
-              value={preferences.preferred_religion_id}
-              items={geographic.religions || []}
-              onSelect={(value) => handleSelect("preferred_religion_id", value)}
-              loading={loadingStates.geographic}
-              containerStyle={
-                preferences.preferred_religion_id
-                  ? styles.dropdownButtonSelected
-                  : {}
-              }
-            />
-
-            <View style={styles.fieldLabel}>
-              <Text style={styles.fieldLabelText}>Religiosity Level</Text>
-            </View>
-            <DropdownFilter
-              value={preferences.preferred_religiosity_level_id}
-              items={lifestyleInterests.religiosityLevels || []}
-              onSelect={(value) =>
-                handleSelect("preferred_religiosity_level_id", value)
-              }
-              loading={loadingStates.lifestyleInterests}
-              containerStyle={
-                preferences.preferred_religiosity_level_id
-                  ? styles.dropdownButtonSelected
-                  : {}
-              }
-            />
-          </View>
-        )}
-
-        {/* Location Information */}
-        <TouchableOpacity
-          style={[
-            styles.sectionHeader,
-            expandedSection === "location" && styles.sectionHeaderActive,
-          ]}
-          onPress={() => toggleSection("location")}
-        >
-          <View style={styles.sectionTitleRow}>
-            <Ionicons
-              name="location"
-              size={22}
-              color={
-                expandedSection === "location" ? COLORS.white : COLORS.primary
-              }
-            />
-            <Text
-              style={[
-                styles.sectionTitle,
-                expandedSection === "location" && styles.sectionTitleActive,
-              ]}
-            >
-              Location
-            </Text>
-          </View>
-          {sectionCompletionStatus.location && (
-            <View style={styles.sectionCompletionBadge}>
-              <Ionicons name="checkmark" size={16} color="#FFFFFF" />
-            </View>
-          )}
-          <Ionicons
-            name={
-              expandedSection === "location" ? "chevron-up" : "chevron-down"
-            }
-            size={22}
-            color={expandedSection === "location" ? COLORS.white : COLORS.text}
-          />
-        </TouchableOpacity>
-
-        {expandedSection === "location" && (
-          <View style={styles.sectionContent}>
-            <View style={styles.fieldLabel}>
-              <Text style={styles.fieldLabelText}>Nationality</Text>
-            </View>
-            <DropdownFilter
-              value={preferences.preferred_nationality_id}
-              items={geographic.nationalities || []}
-              onSelect={(value) =>
-                handleSelect("preferred_nationality_id", value)
-              }
-              loading={loadingStates.geographic}
-              containerStyle={
-                preferences.preferred_nationality_id
-                  ? styles.dropdownButtonSelected
-                  : {}
-              }
-            />
-
-            <View style={styles.fieldLabel}>
-              <Text style={styles.fieldLabelText}>Origin</Text>
-            </View>
-            <DropdownFilter
-              value={preferences.preferred_origin_id}
-              items={personalAttributes.origins || []}
-              onSelect={(value) => handleSelect("preferred_origin_id", value)}
-              loading={loadingStates.personalAttributes}
-              containerStyle={
-                preferences.preferred_origin_id
-                  ? styles.dropdownButtonSelected
-                  : {}
-              }
-            />
-
-            <View style={styles.fieldLabel}>
-              <Text style={styles.fieldLabelText}>Country</Text>
-              {renderRequiredIndicator()}
-            </View>
-            <DropdownFilter
-              value={preferences.preferred_country_id}
-              items={geographic.countries || []}
-              onSelect={(value) => handleSelect("preferred_country_id", value)}
-              loading={loadingStates.geographic}
-              containerStyle={
-                preferences.preferred_country_id
-                  ? styles.dropdownButtonSelected
-                  : {}
-              }
-            />
-
-            {preferences.preferred_country_id && (
-              <>
-                <View style={styles.fieldLabel}>
-                  <Text style={styles.fieldLabelText}>City</Text>
-                </View>
-                <DropdownFilter
-                  value={preferences.preferred_city_id}
-                  items={cities || []}
-                  onSelect={(value) => handleSelect("preferred_city_id", value)}
-                  loading={loadingStates.cities}
-                  disabled={!cities || cities.length === 0}
-                  placeholder={
-                    cities && cities.length === 0
-                      ? "No cities available for this country"
-                      : "Select a city"
-                  }
-                  containerStyle={
-                    preferences.preferred_city_id
-                      ? styles.dropdownButtonSelected
-                      : {}
-                  }
-                />
-              </>
-            )}
-          </View>
-        )}
-
-        {/* Lifestyle Section */}
-        <TouchableOpacity
-          style={[
-            styles.sectionHeader,
-            expandedSection === "lifestyle" && styles.sectionHeaderActive,
-          ]}
-          onPress={() => toggleSection("lifestyle")}
-        >
-          <View style={styles.sectionTitleRow}>
-            <Ionicons
-              name="heart"
-              size={22}
-              color={
-                expandedSection === "lifestyle" ? COLORS.white : COLORS.primary
-              }
-            />
-            <Text
-              style={[
-                styles.sectionTitle,
-                expandedSection === "lifestyle" && styles.sectionTitleActive,
-              ]}
-            >
-              Lifestyle
-            </Text>
-          </View>
-          {sectionCompletionStatus.lifestyle && (
-            <View style={styles.sectionCompletionBadge}>
-              <Ionicons name="checkmark" size={16} color="#FFFFFF" />
-            </View>
-          )}
-          <Ionicons
-            name={
-              expandedSection === "lifestyle" ? "chevron-up" : "chevron-down"
-            }
-            size={22}
-            color={expandedSection === "lifestyle" ? COLORS.white : COLORS.text}
-          />
-        </TouchableOpacity>
-
-        {expandedSection === "lifestyle" && (
-          <View style={styles.sectionContent}>
-            <View style={styles.fieldLabel}>
-              <Text style={styles.fieldLabelText}>Marriage Budget</Text>
-            </View>
-
-            <DropdownFilter
-              value={preferences.preferred_marriage_budget_id}
-              items={professionalEducational.marriageBudget || []}
-              onSelect={(value) =>
-                handleSelect("preferred_marriage_budget_id", value)
-              }
-              loading={loadingStates.professionalEducational}
-              containerStyle={
-                preferences.preferred_marriage_budget_id
-                  ? styles.dropdownButtonSelected
-                  : {}
-              }
-            />
-
-            <View style={styles.fieldLabel}>
-              <Text style={styles.fieldLabelText}>Sleep Habits</Text>
-            </View>
-            <DropdownFilter
-              value={preferences.preferred_sleep_habit_id}
-              items={personalAttributes.sleepHabits || []}
-              onSelect={(value) =>
-                handleSelect("preferred_sleep_habit_id", value)
-              }
-              loading={loadingStates.personalAttributes}
-              containerStyle={
-                preferences.preferred_sleep_habit_id
-                  ? styles.dropdownButtonSelected
-                  : {}
-              }
-            />
-
-            <View style={styles.fieldLabel}>
-              <Text style={styles.fieldLabelText}>Smoking</Text>
-              {renderRequiredIndicator()}
-            </View>
-            <View style={styles.toggleContainer}>
-              <ToggleFilter
-                value={preferences.preferred_smoking_status}
-                onToggle={(value) =>
-                  handleSelect("preferred_smoking_status", value)
-                }
-              />
-            </View>
-
-            {preferences.preferred_smoking_status && (
-              <>
-                <View style={styles.fieldLabel}>
-                  <Text style={styles.fieldLabelText}>Smoking Tools</Text>
-                </View>
-                <MultiSelectFilter
-                  values={preferences.preferred_smoking_tools || []}
-                  items={lifestyleInterests.smokingTools || []}
-                  onSelect={(value) =>
-                    handleMultiSelect("preferred_smoking_tools", value)
-                  }
-                  loading={loadingStates.lifestyleInterests}
-                />
-              </>
-            )}
-
-            <View style={styles.fieldLabel}>
-              <Text style={styles.fieldLabelText}>Drinking Status</Text>
-            </View>
-            <DropdownFilter
-              value={preferences.preferred_drinking_status_id}
-              items={lifestyleInterests.drinkingStatuses || []}
-              onSelect={(value) =>
-                handleSelect("preferred_drinking_status_id", value)
-              }
-              loading={loadingStates.lifestyleInterests}
-              containerStyle={
-                preferences.preferred_drinking_status_id
-                  ? styles.dropdownButtonSelected
-                  : {}
-              }
-            />
-
-            <View style={styles.fieldLabel}>
-              <Text style={styles.fieldLabelText}>Sports Activity</Text>
-            </View>
-            <DropdownFilter
-              value={preferences.preferred_sports_activity_id}
-              items={lifestyleInterests.sportsActivities || []}
-              onSelect={(value) =>
-                handleSelect("preferred_sports_activity_id", value)
-              }
-              loading={loadingStates.lifestyleInterests}
-              containerStyle={
-                preferences.preferred_sports_activity_id
-                  ? styles.dropdownButtonSelected
-                  : {}
-              }
-            />
-
-            <View style={styles.fieldLabel}>
-              <Text style={styles.fieldLabelText}>Pets</Text>
-            </View>
-            <MultiSelectFilter
-              values={preferences.preferred_pets_id || []}
-              items={lifestyleInterests.pets || []}
-              onSelect={(value) =>
-                handleMultiSelect("preferred_pets_id", value)
-              }
-              loading={loadingStates.lifestyleInterests}
-            />
-          </View>
-        )}
-
-        {/* Education & Career Section */}
-        <TouchableOpacity
-          style={[
-            styles.sectionHeader,
-            expandedSection === "education" && styles.sectionHeaderActive,
-          ]}
-          onPress={() => toggleSection("education")}
-        >
-          <View style={styles.sectionTitleRow}>
-            <Ionicons
-              name="school"
-              size={22}
-              color={
-                expandedSection === "education" ? COLORS.white : COLORS.primary
-              }
-            />
-            <Text
-              style={[
-                styles.sectionTitle,
-                expandedSection === "education" && styles.sectionTitleActive,
-              ]}
-            >
-              Education & Career
-            </Text>
-          </View>
-          {sectionCompletionStatus.education && (
-            <View style={styles.sectionCompletionBadge}>
-              <Ionicons name="checkmark" size={16} color="#FFFFFF" />
-            </View>
-          )}
-          <Ionicons
-            name={
-              expandedSection === "education" ? "chevron-up" : "chevron-down"
-            }
-            size={22}
-            color={expandedSection === "education" ? COLORS.white : COLORS.text}
-          />
-        </TouchableOpacity>
-
-        {expandedSection === "education" && (
-          <View style={styles.sectionContent}>
-            <View style={styles.fieldLabel}>
-              <Text style={styles.fieldLabelText}>Educational Level</Text>
-              {renderRequiredIndicator()}
-            </View>
-            <DropdownFilter
-              value={preferences.preferred_educational_level_id}
-              items={professionalEducational.educationalLevels || []}
-              onSelect={(value) =>
-                handleSelect("preferred_educational_level_id", value)
-              }
-              loading={loadingStates.professionalEducational}
-              containerStyle={
-                preferences.preferred_educational_level_id
-                  ? styles.dropdownButtonSelected
-                  : {}
-              }
-            />
-
-            <View style={styles.fieldLabel}>
-              <Text style={styles.fieldLabelText}>Specialization</Text>
-            </View>
-            <DropdownFilter
-              value={preferences.preferred_specialization_id}
-              items={professionalEducational.specializations || []}
-              onSelect={(value) =>
-                handleSelect("preferred_specialization_id", value)
-              }
-              loading={loadingStates.professionalEducational}
-              containerStyle={
-                preferences.preferred_specialization_id
-                  ? styles.dropdownButtonSelected
-                  : {}
-              }
-            />
-
-            <View style={styles.fieldLabel}>
-              <Text style={styles.fieldLabelText}>Employed</Text>
-            </View>
-            <View style={styles.toggleContainer}>
-              <ToggleFilter
-                value={preferences.preferred_employment_status}
-                onToggle={(value) =>
-                  handleSelect("preferred_employment_status", value)
-                }
-              />
-            </View>
-
-            {preferences.preferred_employment_status && (
-              <>
-                <View style={styles.fieldLabel}>
-                  <Text style={styles.fieldLabelText}>Job Title</Text>
-                </View>
-                <DropdownFilter
-                  value={preferences.preferred_job_title_id}
-                  items={professionalEducational.jobTitles || []}
-                  onSelect={(value) =>
-                    handleSelect("preferred_job_title_id", value)
-                  }
-                  loading={loadingStates.professionalEducational}
-                  containerStyle={
-                    preferences.preferred_job_title_id
-                      ? styles.dropdownButtonSelected
-                      : {}
-                  }
-                />
-              </>
-            )}
-
-            <View style={styles.fieldLabel}>
-              <Text style={styles.fieldLabelText}>Financial Status</Text>
-            </View>
-            <DropdownFilter
-              value={preferences.preferred_financial_status_id}
-              items={geographic.financialStatuses || []}
-              onSelect={(value) =>
-                handleSelect("preferred_financial_status_id", value)
-              }
-              loading={loadingStates.geographic}
-              containerStyle={
-                preferences.preferred_financial_status_id
-                  ? styles.dropdownButtonSelected
-                  : {}
-              }
-            />
-          </View>
-        )}
-
-        {/* Appearance Section */}
-        <TouchableOpacity
-          style={[
-            styles.sectionHeader,
-            expandedSection === "appearance" && styles.sectionHeaderActive,
-          ]}
-          onPress={() => toggleSection("appearance")}
-        >
-          <View style={styles.sectionTitleRow}>
-            <Ionicons
-              name="body"
-              size={22}
-              color={
-                expandedSection === "appearance" ? COLORS.white : COLORS.primary
-              }
-            />
-            <Text
-              style={[
-                styles.sectionTitle,
-                expandedSection === "appearance" && styles.sectionTitleActive,
-              ]}
-            >
-              Appearance
-            </Text>
-          </View>
-          {sectionCompletionStatus.appearance && (
-            <View style={styles.sectionCompletionBadge}>
-              <Ionicons name="checkmark" size={16} color="#FFFFFF" />
-            </View>
-          )}
-          <Ionicons
-            name={
-              expandedSection === "appearance" ? "chevron-up" : "chevron-down"
-            }
-            size={22}
-            color={
-              expandedSection === "appearance" ? COLORS.white : COLORS.text
-            }
-          />
-        </TouchableOpacity>
-
-        {expandedSection === "appearance" && (
-          <View style={styles.sectionContent}>
-            <View style={styles.fieldLabel}>
-              <Text style={styles.fieldLabelText}>Height</Text>
-              {renderRequiredIndicator()}
-            </View>
-            <DropdownFilter
-              value={preferences.preferred_height_id}
-              items={personalAttributes.heights || []}
-              onSelect={(value) => handleSelect("preferred_height_id", value)}
-              loading={loadingStates.personalAttributes}
-              containerStyle={
-                preferences.preferred_height_id
-                  ? styles.dropdownButtonSelected
-                  : {}
-              }
-            />
-
-            <View style={styles.fieldLabel}>
-              <Text style={styles.fieldLabelText}>Weight</Text>
-            </View>
-            <DropdownFilter
-              value={preferences.preferred_weight_id}
-              items={personalAttributes.weights || []}
-              onSelect={(value) => handleSelect("preferred_weight_id", value)}
-              loading={loadingStates.personalAttributes}
-              containerStyle={
-                preferences.preferred_weight_id
-                  ? styles.dropdownButtonSelected
-                  : {}
-              }
-            />
-
-            <View style={styles.fieldLabel}>
-              <Text style={styles.fieldLabelText}>Hair Color</Text>
-            </View>
-            <DropdownFilter
-              value={preferences.preferred_hair_color_id}
-              items={personalAttributes.hairColors || []}
-              onSelect={(value) =>
-                handleSelect("preferred_hair_color_id", value)
-              }
-              loading={loadingStates.personalAttributes}
-              containerStyle={
-                preferences.preferred_hair_color_id
-                  ? styles.dropdownButtonSelected
-                  : {}
-              }
-            />
-
-            <View style={styles.fieldLabel}>
-              <Text style={styles.fieldLabelText}>Skin Color</Text>
-            </View>
-            <DropdownFilter
-              value={preferences.preferred_skin_color_id}
-              items={personalAttributes.skinColors || []}
-              onSelect={(value) =>
-                handleSelect("preferred_skin_color_id", value)
-              }
-              loading={loadingStates.personalAttributes}
-              containerStyle={
-                preferences.preferred_skin_color_id
-                  ? styles.dropdownButtonSelected
-                  : {}
-              }
-            />
-          </View>
-        )}
-
-        <View style={styles.spacer} />
-      </ScrollView>
-
-      <View style={styles.footer}>
-        <Animated.View
-          style={{
-            transform: [{ scale: pulseAnim }],
-            borderRadius: 50,
-            overflow: "hidden",
-            width: "100%",
-          }}
-        >
-          <LinearGradient
-            colors={
-              formCompletionPercentage === 100
-                ? [COLORS.primary, "#aa1a75"]
-                : ["#888", "#666"]
-            }
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.searchButton}
-          >
+      {/* Header */}
+      <LinearGradient colors={COLORS.primaryGradient} style={styles.header}>
+        {activeSection ? (
+          <View style={styles.sectionHeader}>
             <TouchableOpacity
-              onPress={handleSubmit}
-              disabled={searchLoading || formCompletionPercentage !== 100}
-              style={styles.searchButtonTouchable}
+              style={styles.backButton}
+              onPress={handleReturnToTiles}
             >
-              {searchLoading ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <>
-                  <Text style={styles.searchButtonText}>Find My Match</Text>
-                  <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-                </>
-              )}
+              <Ionicons name="arrow-back" size={24} color={COLORS.white} />
             </TouchableOpacity>
-          </LinearGradient>
-        </Animated.View>
-
-        {formCompletionPercentage !== 100 && (
-          <Text
-            style={{
-              textAlign: "center",
-              color: "#888",
-              marginTop: 8,
-              fontSize: 12,
-            }}
-          >
-            Complete all required fields to enable search
-          </Text>
+            <Text style={styles.headerTitle}>
+              {activeSection === "basic" && "Basic Information"}
+              {activeSection === "education" && "Education & Career"}
+              {activeSection === "personal" && "Personal Attributes"}
+              {activeSection === "lifestyle" && "Lifestyle"}
+            </Text>
+            <TouchableOpacity
+              style={styles.doneButton}
+              onPress={handleCompleteSection}
+            >
+              <Text style={styles.doneButtonText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <>
+            <Text style={styles.headerTitle}>Find Your Match</Text>
+            <Text style={styles.headerSubtitle}>
+              Complete the sections below to find your perfect partner
+            </Text>
+          </>
         )}
-      </View>
+      </LinearGradient>
 
-      {error && (
-        <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle-outline" size={20} color="#FFFFFF" />
-          <Text style={styles.errorText}>
-            {typeof error === "object"
-              ? error.message || "An error occurred"
-              : error}
-          </Text>
-        </View>
+      {showResults ? (
+        <SearchResults
+          results={searchResults}
+          onBack={() => setShowResults(false)}
+        />
+      ) : (
+        <Animated.ScrollView
+          ref={scrollViewRef}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          style={{ opacity: fadeAnim }}
+        >
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
+          )}
+
+          {/* Tiles View */}
+          {!activeSection && (
+            <View style={styles.tilesContainer}>
+              {/* Basic Information Tile */}
+              <TouchableOpacity
+                style={[
+                  styles.tile,
+                  sectionStatus.basic && styles.completeTile,
+                ]}
+                onPress={() => handleNavigateToSection("basic")}
+              >
+                <View style={styles.tileContent}>
+                  <View
+                    style={[
+                      styles.tileIconContainer,
+                      sectionStatus.basic && styles.completeTileIconContainer,
+                    ]}
+                  >
+                    <Ionicons
+                      name="person"
+                      size={32}
+                      color={
+                        sectionStatus.basic ? COLORS.white : COLORS.primary
+                      }
+                    />
+                  </View>
+                  <Text style={styles.tileTitle}>Basic Information</Text>
+                  <Text style={styles.tileSubtitle}>
+                    Nationality, location, age range
+                  </Text>
+                  {sectionStatus.basic && (
+                    <View style={styles.completeBadge}>
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={20}
+                        color={COLORS.success}
+                      />
+                      <Text style={styles.completeBadgeText}>Complete</Text>
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+
+              {/* Education & Career Tile */}
+              <TouchableOpacity
+                style={[
+                  styles.tile,
+                  sectionStatus.education && styles.completeTile,
+                ]}
+                onPress={() => handleNavigateToSection("education")}
+              >
+                <View style={styles.tileContent}>
+                  <View
+                    style={[
+                      styles.tileIconContainer,
+                      sectionStatus.education &&
+                        styles.completeTileIconContainer,
+                    ]}
+                  >
+                    <Ionicons
+                      name="school"
+                      size={32}
+                      color={
+                        sectionStatus.education ? COLORS.white : COLORS.primary
+                      }
+                    />
+                  </View>
+                  <Text style={styles.tileTitle}>Education & Career</Text>
+                  <Text style={styles.tileSubtitle}>
+                    Education, job, financial status
+                  </Text>
+                  {sectionStatus.education && (
+                    <View style={styles.completeBadge}>
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={20}
+                        color={COLORS.success}
+                      />
+                      <Text style={styles.completeBadgeText}>Complete</Text>
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+
+              {/* Personal Attributes Tile */}
+              <TouchableOpacity
+                style={[
+                  styles.tile,
+                  sectionStatus.personal && styles.completeTile,
+                ]}
+                onPress={() => handleNavigateToSection("personal")}
+              >
+                <View style={styles.tileContent}>
+                  <View
+                    style={[
+                      styles.tileIconContainer,
+                      sectionStatus.personal &&
+                        styles.completeTileIconContainer,
+                    ]}
+                  >
+                    <MaterialCommunityIcons
+                      name="human-male-height"
+                      size={32}
+                      color={
+                        sectionStatus.personal ? COLORS.white : COLORS.primary
+                      }
+                    />
+                  </View>
+                  <Text style={styles.tileTitle}>Personal Attributes</Text>
+                  <Text style={styles.tileSubtitle}>
+                    Height, weight, marital status
+                  </Text>
+                  {sectionStatus.personal && (
+                    <View style={styles.completeBadge}>
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={20}
+                        color={COLORS.success}
+                      />
+                      <Text style={styles.completeBadgeText}>Complete</Text>
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+
+              {/* Lifestyle Tile */}
+              <TouchableOpacity
+                style={[
+                  styles.tile,
+                  sectionStatus.lifestyle && styles.completeTile,
+                ]}
+                onPress={() => handleNavigateToSection("lifestyle")}
+              >
+                <View style={styles.tileContent}>
+                  <View
+                    style={[
+                      styles.tileIconContainer,
+                      sectionStatus.lifestyle &&
+                        styles.completeTileIconContainer,
+                    ]}
+                  >
+                    <FontAwesome5
+                      name="coffee"
+                      size={28}
+                      color={
+                        sectionStatus.lifestyle ? COLORS.white : COLORS.primary
+                      }
+                    />
+                  </View>
+                  <Text style={styles.tileTitle}>Lifestyle</Text>
+                  <Text style={styles.tileSubtitle}>
+                    Habits, pets, religiosity
+                  </Text>
+                  {sectionStatus.lifestyle && (
+                    <View style={styles.completeBadge}>
+                      <Ionicons
+                        name="checkmark-circle"
+                        size={20}
+                        color={COLORS.success}
+                      />
+                      <Text style={styles.completeBadgeText}>Complete</Text>
+                    </View>
+                  )}
+                </View>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Section Content - Only Show When Section Is Selected */}
+          {activeSection && (
+            <Animated.View
+              style={[
+                styles.formContainer,
+                { transform: [{ translateY: cardOffset }] },
+              ]}
+            >
+              {/* Basic Information Section */}
+              {activeSection === "basic" && (
+                <View style={styles.sectionCard}>
+                  <View style={styles.sectionDescription}>
+                    <Text style={styles.descriptionText}>
+                      Tell us about the basic attributes you're looking for in a
+                      partner
+                    </Text>
+                  </View>
+
+                  <ModernDropdown
+                    label="Nationality"
+                    value={preferences.preferred_nationality_id}
+                    items={geographic.nationalities.map((item) => ({
+                      label: item.name,
+                      value: item.id,
+                    }))}
+                    onValueChange={(value) =>
+                      handlePreferenceChange("preferred_nationality_id", value)
+                    }
+                    placeholder="Select nationality (optional)"
+                  />
+
+                  <ModernDropdown
+                    label="Origin"
+                    value={preferences.preferred_origin_id}
+                    items={personalAttributes.origins.map((item) => ({
+                      label: item.name,
+                      value: item.id,
+                    }))}
+                    onValueChange={(value) =>
+                      handlePreferenceChange("preferred_origin_id", value)
+                    }
+                    placeholder="Select origin (optional)"
+                  />
+
+                  <ModernDropdown
+                    label="Country"
+                    value={preferences.preferred_country_id}
+                    items={geographic.countries.map((item) => ({
+                      label: item.name,
+                      value: item.id,
+                    }))}
+                    onValueChange={(value) =>
+                      handlePreferenceChange("preferred_country_id", value)
+                    }
+                    placeholder="Select country (optional)"
+                  />
+
+                  {selectedCountryId && (
+                    <ModernDropdown
+                      label="City"
+                      value={preferences.preferred_city_id}
+                      items={cities.map((item) => ({
+                        label: item.name,
+                        value: item.id,
+                      }))}
+                      onValueChange={(value) =>
+                        handlePreferenceChange("preferred_city_id", value)
+                      }
+                      placeholder="Select city (optional)"
+                    />
+                  )}
+
+                  <View style={styles.ageRangeContainer}>
+                    <Text style={styles.inputLabel}>Age Range</Text>
+                    <Text style={styles.ageRangeDisplay}>
+                      {preferences.preferred_age_min} -{" "}
+                      {preferences.preferred_age_max} years
+                    </Text>
+
+                    {/* Age Range Presets */}
+                    <View style={styles.agePresets}>
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                      >
+                        {AGE_RANGE_PRESETS.map((preset, index) => (
+                          <TouchableOpacity
+                            key={index}
+                            style={[
+                              styles.agePresetButton,
+                              preferences.preferred_age_min === preset.min &&
+                                preferences.preferred_age_max === preset.max &&
+                                styles.activeAgePreset,
+                            ]}
+                            onPress={() =>
+                              handleAgeRangePreset(preset.min, preset.max)
+                            }
+                          >
+                            <Text
+                              style={[
+                                styles.agePresetText,
+                                preferences.preferred_age_min === preset.min &&
+                                  preferences.preferred_age_max ===
+                                    preset.max &&
+                                  styles.activeAgePresetText,
+                              ]}
+                            >
+                              {preset.label}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+
+                    <RangeSlider
+                      minValue={18}
+                      maxValue={70}
+                      initialLowValue={preferences.preferred_age_min}
+                      initialHighValue={preferences.preferred_age_max}
+                      onValueChange={(low, high) => {
+                        handlePreferenceChange("preferred_age_min", low);
+                        handlePreferenceChange("preferred_age_max", high);
+                      }}
+                    />
+                  </View>
+                </View>
+              )}
+
+              {/* Education & Career Section */}
+              {activeSection === "education" && (
+                <View style={styles.sectionCard}>
+                  <View style={styles.sectionDescription}>
+                    <Text style={styles.descriptionText}>
+                      Specify educational and career preferences for your ideal
+                      match
+                    </Text>
+                  </View>
+
+                  <ModernDropdown
+                    label="Educational Level"
+                    value={preferences.preferred_educational_level_id}
+                    items={professionalEducational.educationalLevels.map(
+                      (item) => ({
+                        label: item.name,
+                        value: item.id,
+                      })
+                    )}
+                    onValueChange={(value) =>
+                      handlePreferenceChange(
+                        "preferred_educational_level_id",
+                        value
+                      )
+                    }
+                    placeholder="Select educational level (optional)"
+                  />
+
+                  <ModernDropdown
+                    label="Specialization"
+                    value={preferences.preferred_specialization_id}
+                    items={professionalEducational.specializations.map(
+                      (item) => ({
+                        label: item.name,
+                        value: item.id,
+                      })
+                    )}
+                    onValueChange={(value) =>
+                      handlePreferenceChange(
+                        "preferred_specialization_id",
+                        value
+                      )
+                    }
+                    placeholder="Select specialization (optional)"
+                  />
+
+                  <View style={styles.toggleContainerWithLabel}>
+                    <View style={styles.toggleLabelRow}>
+                      <Text style={styles.inputLabel}>Employment Status</Text>
+                      <TouchableOpacity
+                        onPress={() =>
+                          handlePreferenceChange(
+                            "preferred_employment_status",
+                            null
+                          )
+                        }
+                        style={styles.clearButton}
+                      >
+                        <Text style={styles.clearButtonText}>Clear</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    {preferences.preferred_employment_status !== null ? (
+                      <View style={styles.toggleButtons}>
+                        <TouchableOpacity
+                          style={[
+                            styles.toggleButton,
+                            preferences.preferred_employment_status === true &&
+                              styles.activeToggle,
+                          ]}
+                          onPress={() =>
+                            handlePreferenceChange(
+                              "preferred_employment_status",
+                              true
+                            )
+                          }
+                        >
+                          <Text
+                            style={[
+                              styles.toggleText,
+                              preferences.preferred_employment_status ===
+                                true && styles.activeToggleText,
+                            ]}
+                          >
+                            Employed
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[
+                            styles.toggleButton,
+                            preferences.preferred_employment_status === false &&
+                              styles.activeToggle,
+                          ]}
+                          onPress={() =>
+                            handlePreferenceChange(
+                              "preferred_employment_status",
+                              false
+                            )
+                          }
+                        >
+                          <Text
+                            style={[
+                              styles.toggleText,
+                              preferences.preferred_employment_status ===
+                                false && styles.activeToggleText,
+                            ]}
+                          >
+                            Unemployed
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        style={styles.addPreferenceButton}
+                        onPress={() =>
+                          handlePreferenceChange(
+                            "preferred_employment_status",
+                            true
+                          )
+                        }
+                      >
+                        <Text style={styles.addPreferenceText}>
+                          Add employment preference
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+
+                  {/* Only show job title if employment status is true (employed) or null */}
+                  {preferences.preferred_employment_status !== false && (
+                    <ModernDropdown
+                      label="Job Title"
+                      value={preferences.preferred_job_title_id}
+                      items={
+                        professionalEducational.jobTitles
+                          ? professionalEducational.jobTitles.map((item) => ({
+                              label: item.name,
+                              value: item.id,
+                            }))
+                          : []
+                      }
+                      onValueChange={(value) =>
+                        handlePreferenceChange("preferred_job_title_id", value)
+                      }
+                      placeholder="Select job title (optional)"
+                    />
+                  )}
+
+                  <ModernDropdown
+                    label="Financial Status"
+                    value={preferences.preferred_financial_status_id}
+                    items={geographic.financialStatuses.map((item) => ({
+                      label: item.name,
+                      value: item.id,
+                    }))}
+                    onValueChange={(value) =>
+                      handlePreferenceChange(
+                        "preferred_financial_status_id",
+                        value
+                      )
+                    }
+                    placeholder="Select financial status (optional)"
+                  />
+
+                  <ModernDropdown
+                    label="Marriage Budget"
+                    value={preferences.preferred_marriage_budget_id}
+                    items={professionalEducational.marriageBudget.map(
+                      (item) => ({
+                        label: item.name,
+                        value: item.id,
+                      })
+                    )}
+                    onValueChange={(value) =>
+                      handlePreferenceChange(
+                        "preferred_marriage_budget_id",
+                        value
+                      )
+                    }
+                    placeholder="Select marriage budget (optional)"
+                  />
+                </View>
+              )}
+
+              {/* Personal Attributes Section */}
+              {activeSection === "personal" && (
+                <View style={styles.sectionCard}>
+                  <View style={styles.sectionDescription}>
+                    <Text style={styles.descriptionText}>
+                      Set preferences for physical and personal attributes
+                    </Text>
+                  </View>
+
+                  <ModernDropdown
+                    label="Height"
+                    value={preferences.preferred_height_id}
+                    items={personalAttributes.heights.map((item) => ({
+                      label: item.name,
+                      value: item.id,
+                    }))}
+                    onValueChange={(value) =>
+                      handlePreferenceChange("preferred_height_id", value)
+                    }
+                    placeholder="Select height (optional)"
+                  />
+
+                  <ModernDropdown
+                    label="Weight"
+                    value={preferences.preferred_weight_id}
+                    items={personalAttributes.weights.map((item) => ({
+                      label: item.name,
+                      value: item.id,
+                    }))}
+                    onValueChange={(value) =>
+                      handlePreferenceChange("preferred_weight_id", value)
+                    }
+                    placeholder="Select weight (optional)"
+                  />
+
+                  <ModernDropdown
+                    label="Marital Status"
+                    value={preferences.preferred_marital_status_id}
+                    items={personalAttributes.maritalStatuses.map((item) => ({
+                      label: item.name,
+                      value: item.id,
+                    }))}
+                    onValueChange={(value) =>
+                      handlePreferenceChange(
+                        "preferred_marital_status_id",
+                        value
+                      )
+                    }
+                    placeholder="Select marital status (optional)"
+                  />
+
+                  <ModernDropdown
+                    label="Social Media Presence"
+                    value={preferences.preferred_social_media_presence_id}
+                    items={[
+                      { label: "Active on social media", value: 1 },
+                      { label: "Moderate social media use", value: 2 },
+                      { label: "Limited social media use", value: 3 },
+                      { label: "No social media presence", value: 4 },
+                    ]}
+                    onValueChange={(value) =>
+                      handlePreferenceChange(
+                        "preferred_social_media_presence_id",
+                        value
+                      )
+                    }
+                    placeholder="Select social media presence (optional)"
+                  />
+                </View>
+              )}
+
+              {/* Lifestyle Section */}
+              {activeSection === "lifestyle" && (
+                <View style={styles.sectionCard}>
+                  <View style={styles.sectionDescription}>
+                    <Text style={styles.descriptionText}>
+                      Set preferences for lifestyle habits and preferences
+                    </Text>
+                  </View>
+
+                  <View style={styles.toggleContainerWithLabel}>
+                    <View style={styles.toggleLabelRow}>
+                      <Text style={styles.inputLabel}>Smoking Status</Text>
+                      <TouchableOpacity
+                        onPress={() => {
+                          handlePreferenceChange(
+                            "preferred_smoking_status",
+                            null
+                          );
+                          handlePreferenceChange("preferred_smoking_tools", []);
+                        }}
+                        style={styles.clearButton}
+                      >
+                        <Text style={styles.clearButtonText}>Clear</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    {preferences.preferred_smoking_status !== null ? (
+                      <View style={styles.toggleButtons}>
+                        <TouchableOpacity
+                          style={[
+                            styles.toggleButton,
+                            preferences.preferred_smoking_status === true &&
+                              styles.activeToggle,
+                          ]}
+                          onPress={() => {
+                            handlePreferenceChange(
+                              "preferred_smoking_status",
+                              true
+                            );
+                          }}
+                        >
+                          <Text
+                            style={[
+                              styles.toggleText,
+                              preferences.preferred_smoking_status === true &&
+                                styles.activeToggleText,
+                            ]}
+                          >
+                            Smoker
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[
+                            styles.toggleButton,
+                            preferences.preferred_smoking_status === false &&
+                              styles.activeToggle,
+                          ]}
+                          onPress={() => {
+                            handlePreferenceChange(
+                              "preferred_smoking_status",
+                              false
+                            );
+                            handlePreferenceChange(
+                              "preferred_smoking_tools",
+                              []
+                            );
+                          }}
+                        >
+                          <Text
+                            style={[
+                              styles.toggleText,
+                              preferences.preferred_smoking_status === false &&
+                                styles.activeToggleText,
+                            ]}
+                          >
+                            Non-smoker
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        style={styles.addPreferenceButton}
+                        onPress={() =>
+                          handlePreferenceChange(
+                            "preferred_smoking_status",
+                            true
+                          )
+                        }
+                      >
+                        <Text style={styles.addPreferenceText}>
+                          Add smoking preference
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+
+                  {/* Only show smoking tools if preferred_smoking_status is true (smoker) */}
+                  {preferences.preferred_smoking_status === true && (
+                    <View style={styles.chipSelectorContainer}>
+                      <Text style={styles.inputLabel}>Smoking Tools</Text>
+                      <MultiSelectChips
+                        items={lifestyleInterests.smokingTools.map((item) => ({
+                          id: item.id,
+                          name: item.name,
+                        }))}
+                        selectedItems={preferences.preferred_smoking_tools}
+                        onSelectItem={(items) =>
+                          handlePreferenceChange(
+                            "preferred_smoking_tools",
+                            items
+                          )
+                        }
+                      />
+                    </View>
+                  )}
+
+                  <ModernDropdown
+                    label="Drinking Status"
+                    value={preferences.preferred_drinking_status_id}
+                    items={lifestyleInterests.drinkingStatuses.map((item) => ({
+                      label: item.name,
+                      value: item.id,
+                    }))}
+                    onValueChange={(value) =>
+                      handlePreferenceChange(
+                        "preferred_drinking_status_id",
+                        value
+                      )
+                    }
+                    placeholder="Select drinking status (optional)"
+                  />
+
+                  <ModernDropdown
+                    label="Sports Activity"
+                    value={preferences.preferred_sports_activity_id}
+                    items={lifestyleInterests.sportsActivities.map((item) => ({
+                      label: item.name,
+                      value: item.id,
+                    }))}
+                    onValueChange={(value) =>
+                      handlePreferenceChange(
+                        "preferred_sports_activity_id",
+                        value
+                      )
+                    }
+                    placeholder="Select sports activity (optional)"
+                  />
+
+                  <ModernDropdown
+                    label="Sleep Habit"
+                    value={preferences.preferred_sleep_habit_id}
+                    items={personalAttributes.sleepHabits.map((item) => ({
+                      label: item.name,
+                      value: item.id,
+                    }))}
+                    onValueChange={(value) =>
+                      handlePreferenceChange("preferred_sleep_habit_id", value)
+                    }
+                    placeholder="Select sleep habit (optional)"
+                  />
+
+                  <View style={styles.chipSelectorContainer}>
+                    <View style={styles.toggleLabelRow}>
+                      <Text style={styles.inputLabel}>Pets</Text>
+                      {preferences.preferred_pets_id?.length > 0 && (
+                        <TouchableOpacity
+                          onPress={() =>
+                            handlePreferenceChange("preferred_pets_id", [])
+                          }
+                          style={styles.clearButton}
+                        >
+                          <Text style={styles.clearButtonText}>Clear</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                    <MultiSelectChips
+                      items={lifestyleInterests.pets.map((item) => ({
+                        id: item.id,
+                        name: item.name,
+                      }))}
+                      selectedItems={preferences.preferred_pets_id}
+                      onSelectItem={(items) =>
+                        handlePreferenceChange("preferred_pets_id", items)
+                      }
+                    />
+                  </View>
+
+                  <ModernDropdown
+                    label="Religiosity Level"
+                    value={preferences.preferred_religiosity_level_id}
+                    items={
+                      lifestyleInterests.religiosityLevels
+                        ? lifestyleInterests.religiosityLevels.map((item) => ({
+                            label: item.name,
+                            value: item.id,
+                          }))
+                        : []
+                    }
+                    onValueChange={(value) =>
+                      handlePreferenceChange(
+                        "preferred_religiosity_level_id",
+                        value
+                      )
+                    }
+                    placeholder="Select religiosity level (optional)"
+                  />
+                </View>
+              )}
+
+              {/* Complete Section Button */}
+              <TouchableOpacity
+                style={styles.completeSectionButton}
+                onPress={handleCompleteSection}
+              >
+                <Text style={styles.completeSectionButtonText}>
+                  Save & Complete This Section
+                </Text>
+              </TouchableOpacity>
+            </Animated.View>
+          )}
+
+          {/* Show the search button only on the main tiles screen */}
+          {!activeSection && (
+            <View style={styles.searchButtonContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.searchButton,
+                  !Object.values(sectionStatus).some((value) => value) &&
+                    styles.disabledSearchButton,
+                ]}
+                onPress={handleSearch}
+                disabled={
+                  !Object.values(sectionStatus).some((value) => value) ||
+                  loading
+                }
+              >
+                {loading ? (
+                  <ActivityIndicator size="small" color={COLORS.white} />
+                ) : (
+                  <>
+                    <Ionicons
+                      name="search"
+                      size={20}
+                      color={COLORS.white}
+                      style={styles.searchIcon}
+                    />
+                    <Text style={styles.searchButtonText}>
+                      Find Matches (
+                      {
+                        Object.values(sectionStatus).filter((value) => value)
+                          .length
+                      }
+                      /4 completed)
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+
+              {hasSearched && (
+                <TouchableOpacity
+                  style={styles.viewResultsButton}
+                  onPress={() => setShowResults(true)}
+                >
+                  <Text style={styles.viewResultsText}>
+                    View Previous Results
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {Object.values(sectionStatus).some((value) => value) && (
+                <TouchableOpacity
+                  style={styles.resetFiltersButton}
+                  onPress={handleReset}
+                >
+                  <Text style={styles.resetFiltersText}>Reset All Filters</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
+          {/* Show a tip at the bottom of the main screen */}
+          {!activeSection &&
+            !Object.values(sectionStatus).every((value) => value) && (
+              <View style={styles.tipsContainer}>
+                <View style={styles.tipCard}>
+                  <Ionicons
+                    name="bulb-outline"
+                    size={24}
+                    color={COLORS.primary}
+                    style={styles.tipIcon}
+                  />
+                  <Text style={styles.tipText}>
+                    {Object.values(sectionStatus).some((value) => value)
+                      ? "Complete all sections to find your perfect match! You can search with partially completed preferences."
+                      : "Tap on a section to start setting your preferences. You don't need to complete all sections to search."}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+          {hasSearched && !activeSection && (
+            <View style={styles.savedPreferencesCard}>
+              <Text style={styles.savedPreferencesTitle}>
+                Your filters are saved!
+              </Text>
+              <Text style={styles.savedPreferencesText}>
+                These preferences will be automatically applied each time you
+                return to the search screen.
+              </Text>
+            </View>
+          )}
+        </Animated.ScrollView>
       )}
-    </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 };
-
-// The styles are imported from the modernized-styles artifact
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F7FA",
+    backgroundColor: COLORS.background,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
-    backgroundColor: "#F5F7FA",
-  },
-  loadingContent: {
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
-    padding: 30,
-    alignItems: "center",
-    width: "85%",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 15,
-    elevation: 8,
-  },
-  loadingIcon: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
     backgroundColor: COLORS.primary,
+  },
+  loadingGradient: {
+    flex: 1,
+    width: "100%",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 24,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 6,
   },
-  loadingTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 12,
-    color: "#333",
-    letterSpacing: 0.5,
-  },
-  loadingSubtitle: {
-    fontSize: 16,
-    color: "#666",
-    textAlign: "center",
-    marginBottom: 30,
-    lineHeight: 22,
-  },
-  loadingIndicator: {
+  loadingText: {
     marginTop: 16,
-    transform: [{ scale: 1.2 }],
-  },
-  header: {
-    backgroundColor: COLORS.white,
-    paddingVertical: 20,
-    paddingHorizontal: 20,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
-    marginBottom: 5,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#333",
-    letterSpacing: 0.5,
-  },
-  resetButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(158, 8, 108, 0.08)",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 50,
-    shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  resetButtonText: {
-    color: COLORS.primary,
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: "600",
-    marginRight: 6,
-  },
-  contentContainer: {
-    flex: 1,
-    padding: 16,
-  },
-  sectionHeader: {
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.02)",
-  },
-  sectionHeaderActive: {
-    backgroundColor: COLORS.primary,
-    shadowColor: COLORS.primary,
-    shadowOpacity: 0.2,
-    elevation: 5,
-    borderColor: COLORS.primary,
-  },
-  sectionTitleRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#333",
-    marginLeft: 12,
-    letterSpacing: 0.3,
-  },
-  sectionTitleActive: {
     color: COLORS.white,
   },
-  sectionContent: {
+  header: {
+    paddingTop: Platform.OS === "ios" ? 90 : 40,
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: COLORS.white,
+    textAlign: "center",
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: COLORS.white,
+    opacity: 0.9,
+    textAlign: "center",
+    marginTop: 8,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  backButton: {
+    padding: 6,
+  },
+  doneButton: {
+    backgroundColor: "rgba(255,255,255,0.3)",
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+  },
+  doneButtonText: {
+    color: COLORS.white,
+    fontWeight: "600",
+  },
+  scrollContent: {
+    paddingTop: 20,
+    paddingBottom: 40,
+  },
+  tilesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    padding: 16,
+  },
+  tile: {
+    width: TILE_SIZE,
+    height: TILE_SIZE,
+    backgroundColor: COLORS.white,
+    borderRadius: 16,
+    marginBottom: 16,
+    padding: 16,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
+    borderWidth: 2,
+    borderColor: "transparent",
+  },
+  completeTile: {
+    borderColor: COLORS.success + "50",
+    backgroundColor: COLORS.white,
+  },
+  tileContent: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  tileIconContainer: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: COLORS.lightPrimary,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  completeTileIconContainer: {
+    backgroundColor: COLORS.primary,
+  },
+  tileTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: COLORS.text,
+    textAlign: "center",
+    marginBottom: 4,
+  },
+  tileSubtitle: {
+    fontSize: 12,
+    color: COLORS.lightText,
+    textAlign: "center",
+  },
+  completeBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.success + "20",
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    marginTop: 8,
+  },
+  completeBadgeText: {
+    fontSize: 12,
+    color: COLORS.success,
+    marginLeft: 4,
+    fontWeight: "500",
+  },
+  errorContainer: {
+    marginHorizontal: 16,
+    padding: 12,
+    backgroundColor: COLORS.error + "20", // 20% opacity
+    borderRadius: 8,
+    marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  errorText: {
+    color: COLORS.error,
+    fontSize: 14,
+    fontWeight: "500",
+    flex: 1,
+  },
+  formContainer: {
+    padding: 16,
+  },
+  sectionCard: {
     backgroundColor: COLORS.white,
     borderRadius: 16,
     padding: 20,
-    marginBottom: 16,
-    shadowColor: "#000",
+    marginBottom: 20,
+    shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
+    shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 3,
-    borderWidth: 1,
-    borderColor: "rgba(0,0,0,0.02)",
   },
-  requiredFieldNote: {
-    fontSize: 13,
-    color: "#888",
-    marginBottom: 16,
-    fontStyle: "italic",
-    textAlign: "center",
-  },
-  formCompletionStatus: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.04)",
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-  },
-  formCompletionText: {
-    fontSize: 14,
-    color: "#555",
-    fontWeight: "500",
-    marginLeft: 8,
-  },
-  spacer: {
-    height: 100,
-  },
-  footer: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: COLORS.white,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 10,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-  },
-  searchButton: {
-    borderRadius: 50,
-    overflow: "hidden",
-  },
-  searchButtonTouchable: {
-    paddingVertical: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    flexDirection: "row",
-  },
-  searchButtonText: {
-    color: "#FFFFFF",
-    fontSize: 17,
-    fontWeight: "bold",
-    letterSpacing: 0.5,
-    marginRight: 8,
-  },
-  errorContainer: {
-    position: "absolute",
-    bottom: 100,
-    left: 20,
-    right: 20,
-    backgroundColor: "#FF3B30",
-    borderRadius: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    shadowColor: "#FF3B30",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  errorText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    marginLeft: 10,
-    flex: 1,
-    fontWeight: "500",
-  },
-  resultsContainer: {
-    flex: 1,
-    padding: 16,
-  },
-  resultsText: {
-    fontSize: 16,
-    color: "#333",
-    textAlign: "center",
-    marginVertical: 20,
-  },
-  editButton: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
+  sectionDescription: {
+    backgroundColor: COLORS.lightPrimary + "50",
+    padding: 12,
     borderRadius: 8,
-    alignSelf: "center",
+    marginBottom: 16,
   },
-  editButtonText: {
-    color: "#FFFFFF",
+  descriptionText: {
     fontSize: 14,
+    color: COLORS.primary,
+    fontWeight: "500",
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: COLORS.text,
+    marginBottom: 8,
+  },
+  ageRangeContainer: {
+    marginVertical: 16,
+  },
+  ageRangeDisplay: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: COLORS.primary,
+    textAlign: "center",
+    marginVertical: 10,
+  },
+  agePresets: {
+    marginBottom: 16,
+  },
+  agePresetButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    marginRight: 8,
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  activeAgePreset: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  agePresetText: {
+    fontSize: 14,
+    color: COLORS.text,
+  },
+  activeAgePresetText: {
+    color: COLORS.white,
     fontWeight: "600",
   },
-  // Progress indicator for form completion
-  progressBar: {
-    height: 5,
-    backgroundColor: "rgba(158, 8, 108, 0.1)",
-    borderRadius: 3,
+  toggleContainerWithLabel: {
     marginBottom: 16,
-    width: "100%",
   },
-  progressFill: {
-    height: "100%",
-    borderRadius: 3,
-    backgroundColor: COLORS.primary,
-  },
-  // Required field indicator
-  fieldRequired: {
-    color: COLORS.primary,
-    fontWeight: "bold",
-    marginLeft: 4,
-  },
-  fieldLabel: {
+  toggleLabelRow: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 8,
   },
-  fieldLabelText: {
-    fontSize: 15,
+  clearButton: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    backgroundColor: COLORS.background,
+    borderRadius: 12,
+  },
+  clearButtonText: {
+    color: COLORS.primary,
+    fontSize: 12,
     fontWeight: "500",
-    color: "#444",
   },
-  // Refreshed dropdown styles
-  dropdownButton: {
-    backgroundColor: COLORS.white,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: "rgba(0,0,0,0.08)",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+  toggleButtons: {
     flexDirection: "row",
+    backgroundColor: COLORS.background,
+    borderRadius: 8,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+  toggleButton: {
+    flex: 1,
+    paddingVertical: 12,
     alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 16,
   },
-  dropdownButtonSelected: {
-    borderColor: COLORS.primary,
-    backgroundColor: "rgba(158, 8, 108, 0.03)",
+  activeToggle: {
+    backgroundColor: COLORS.primary,
   },
-  // Toggle updated styles
-  toggleContainer: {
-    flexDirection: "row",
+  toggleText: {
+    fontWeight: "500",
+    color: COLORS.lightText,
+  },
+  activeToggleText: {
+    color: COLORS.white,
+  },
+  addPreferenceButton: {
+    backgroundColor: COLORS.background,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderStyle: "dashed",
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: COLORS.white,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: "rgba(0,0,0,0.08)",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+  },
+  addPreferenceText: {
+    color: COLORS.primary,
+    fontWeight: "500",
+  },
+  chipSelectorContainer: {
     marginBottom: 16,
   },
-  // Slider updated styles
-  sliderContainer: {
-    backgroundColor: COLORS.white,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: "rgba(0,0,0,0.08)",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    marginBottom: 16,
-  },
-  // Section completion indicator
-  sectionCompletionBadge: {
-    position: "absolute",
-    right: -5,
-    top: -5,
-    backgroundColor: "#34C759", // Success green
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+  completeSectionButton: {
+    backgroundColor: COLORS.success,
+    paddingVertical: 16,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 2,
-    borderColor: COLORS.white,
+    marginBottom: 20,
+  },
+  completeSectionButtonText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  searchButtonContainer: {
+    paddingHorizontal: 16,
+    marginTop: 10,
+    marginBottom: 16,
+  },
+  searchButton: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+  },
+  disabledSearchButton: {
+    backgroundColor: COLORS.primary + "80", // 50% opacity
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchButtonText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  viewResultsButton: {
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 12,
+  },
+  viewResultsText: {
+    color: COLORS.primary,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  resetFiltersButton: {
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 4,
+  },
+  resetFiltersText: {
+    color: COLORS.lightText,
+    fontSize: 14,
+  },
+  tipsContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 20,
+  },
+  tipCard: {
+    backgroundColor: COLORS.lightPrimary + "40",
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  tipIcon: {
+    marginRight: 12,
+  },
+  tipText: {
+    flex: 1,
+    fontSize: 14,
+    color: COLORS.text,
+    lineHeight: 20,
+  },
+  savedPreferencesCard: {
+    backgroundColor: COLORS.lightPrimary,
+    borderRadius: 16,
+    padding: 20,
+    marginHorizontal: 16,
+    marginBottom: 30,
+    borderLeftWidth: 4,
+    borderLeftColor: COLORS.primary,
+  },
+  savedPreferencesTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: COLORS.primary,
+    marginBottom: 8,
+  },
+  savedPreferencesText: {
+    fontSize: 14,
+    color: COLORS.text,
+    marginBottom: 8,
   },
 });
+
 export default SearchScreen;
