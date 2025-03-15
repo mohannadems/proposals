@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   },
   gridItemContainer: {
     flex: 1,
-    paddingHorizontal: 6,
+    paddingVertical: 10,
   },
 });
 

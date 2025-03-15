@@ -10,6 +10,8 @@ import { useFormContext } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
 import FeatherIcon from "react-native-vector-icons/Feather";
 import MaterialIcon from "react-native-vector-icons/MaterialIcons";
+import Ionicons from "react-native-vector-icons/Ionicons";
+
 // Import components
 import { AnimatedCard } from "./AnimatedBase";
 import { CardHeader } from "./CardHeader";
@@ -109,7 +111,22 @@ const LifestyleSection = () => {
     { id: 2, name: "Regular smoker" },
     { id: 3, name: "Social smoker" },
   ];
-
+  const smokingIcons = {
+    Cigarettes: "cafe", // Using 'cafe' as a placeholder
+    Cigarette: "cafe",
+    Shisha: "flame",
+    Hookah: "flame",
+    "E-cigarettes": "battery-charging",
+    Vape: "cloud",
+    Other: "help-circle", // Generic icon for 'Other'
+  };
+  const hobbyIcons = {
+    Photography: "camera",
+    Gardening: "leaf",
+    Painting: "color-palette",
+    Cycling: "bicycle",
+    Hiking: "walk",
+  };
   // Show loading state
   if (
     loading.personalAttributes ||
@@ -358,6 +375,14 @@ const LifestyleSection = () => {
                       isSelected && styles.preferenceItemSelected,
                     ]}
                   >
+                    {/* Render icon based on item name */}
+                    <Ionicons
+                      name={smokingIcons[item.name] || "alert-circle"} // Default icon if not found
+                      size={20}
+                      color={isSelected ? "white" : "#9e086c"}
+                      style={{ marginRight: 5 }}
+                    />
+
                     <Text
                       style={[
                         styles.preferenceText,
@@ -466,6 +491,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "transparent",
     minHeight: 48,
+
     ...Platform.select({
       ios: {
         shadowColor: "#000",
@@ -503,6 +529,7 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     textAlign: "left",
     paddingHorizontal: 8,
+    fontSize: 8,
   },
   preferenceTextSelected: {
     color: COLORS.white,

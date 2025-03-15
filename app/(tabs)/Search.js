@@ -17,6 +17,8 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { LinearGradient } from "expo-linear-gradient";
 import { authService } from "../../services/auth.service";
+import { useRouter } from "expo-router";
+
 import { searchService } from "../../services/searchService";
 import {
   getSavedPreferences,
@@ -44,7 +46,6 @@ import {
 import ModernDropdown from "../../components/search/ModernDropdown";
 import RangeSlider from "../../components/search/RangeSlider";
 import MultiSelectChips from "../../components/search/MultiSelectChips";
-import SearchResults from "../../components/search/SearchResults";
 // Age range presets for easier selection
 const AGE_RANGE_PRESETS = [
   { label: "18-25", min: 18, max: 25 },
@@ -58,6 +59,7 @@ const { width } = Dimensions.get("window");
 const TILE_SIZE = (width - 48) / 2; // 2 tiles per row with 16px padding on each side
 
 const SearchScreen = ({ navigation }) => {
+  const router = useRouter();
   const [preferencesUserId, setPreferencesUserId] = useState(null);
   const dispatch = useDispatch();
   const [isLoading, setIsLoading] = useState(true);
@@ -361,6 +363,9 @@ const SearchScreen = ({ navigation }) => {
       await dispatch(submitSearchPreferences(preferences)).unwrap();
       setHasSearched(true);
       setShowResults(true);
+
+      // Navigate to matches screen after successful search
+      router.push("/(tabs)/matches");
     } catch (error) {
       console.error("Error submitting search preferences:", error);
       Alert.alert(
@@ -471,888 +476,846 @@ const SearchScreen = ({ navigation }) => {
         )}
       </LinearGradient>
 
-      {showResults ? (
-        <SearchResults
-          results={searchResults}
-          onBack={() => setShowResults(false)}
-        />
-      ) : (
-        <Animated.ScrollView
-          ref={scrollViewRef}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          style={{ opacity: fadeAnim }}
-        >
-          {error && (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          )}
+      <Animated.ScrollView
+        ref={scrollViewRef}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        style={{ opacity: fadeAnim }}
+      >
+        {error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        )}
 
-          {/* Tiles View */}
-          {!activeSection && (
-            <View style={styles.tilesContainer}>
-              {/* Basic Information Tile */}
-              <TouchableOpacity
-                style={[
-                  styles.tile,
-                  sectionStatus.basic && styles.completeTile,
-                ]}
-                onPress={() => handleNavigateToSection("basic")}
-              >
-                <View style={styles.tileContent}>
-                  <View
-                    style={[
-                      styles.tileIconContainer,
-                      sectionStatus.basic && styles.completeTileIconContainer,
-                    ]}
-                  >
-                    <Ionicons
-                      name="person"
-                      size={32}
-                      color={
-                        sectionStatus.basic ? COLORS.white : COLORS.primary
-                      }
-                    />
-                  </View>
-                  <Text style={styles.tileTitle}>Basic Information</Text>
-                  <Text style={styles.tileSubtitle}>
-                    Nationality, location, age range
-                  </Text>
-                  {sectionStatus.basic && (
-                    <View style={styles.completeBadge}>
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={20}
-                        color={COLORS.success}
-                      />
-                      <Text style={styles.completeBadgeText}>Complete</Text>
-                    </View>
-                  )}
-                </View>
-              </TouchableOpacity>
-
-              {/* Education & Career Tile */}
-              <TouchableOpacity
-                style={[
-                  styles.tile,
-                  sectionStatus.education && styles.completeTile,
-                ]}
-                onPress={() => handleNavigateToSection("education")}
-              >
-                <View style={styles.tileContent}>
-                  <View
-                    style={[
-                      styles.tileIconContainer,
-                      sectionStatus.education &&
-                        styles.completeTileIconContainer,
-                    ]}
-                  >
-                    <Ionicons
-                      name="school"
-                      size={32}
-                      color={
-                        sectionStatus.education ? COLORS.white : COLORS.primary
-                      }
-                    />
-                  </View>
-                  <Text style={styles.tileTitle}>Education & Career</Text>
-                  <Text style={styles.tileSubtitle}>
-                    Education, job, financial status
-                  </Text>
-                  {sectionStatus.education && (
-                    <View style={styles.completeBadge}>
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={20}
-                        color={COLORS.success}
-                      />
-                      <Text style={styles.completeBadgeText}>Complete</Text>
-                    </View>
-                  )}
-                </View>
-              </TouchableOpacity>
-
-              {/* Personal Attributes Tile */}
-              <TouchableOpacity
-                style={[
-                  styles.tile,
-                  sectionStatus.personal && styles.completeTile,
-                ]}
-                onPress={() => handleNavigateToSection("personal")}
-              >
-                <View style={styles.tileContent}>
-                  <View
-                    style={[
-                      styles.tileIconContainer,
-                      sectionStatus.personal &&
-                        styles.completeTileIconContainer,
-                    ]}
-                  >
-                    <MaterialCommunityIcons
-                      name="human-male-height"
-                      size={32}
-                      color={
-                        sectionStatus.personal ? COLORS.white : COLORS.primary
-                      }
-                    />
-                  </View>
-                  <Text style={styles.tileTitle}>Personal Attributes</Text>
-                  <Text style={styles.tileSubtitle}>
-                    Height, weight, marital status
-                  </Text>
-                  {sectionStatus.personal && (
-                    <View style={styles.completeBadge}>
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={20}
-                        color={COLORS.success}
-                      />
-                      <Text style={styles.completeBadgeText}>Complete</Text>
-                    </View>
-                  )}
-                </View>
-              </TouchableOpacity>
-
-              {/* Lifestyle Tile */}
-              <TouchableOpacity
-                style={[
-                  styles.tile,
-                  sectionStatus.lifestyle && styles.completeTile,
-                ]}
-                onPress={() => handleNavigateToSection("lifestyle")}
-              >
-                <View style={styles.tileContent}>
-                  <View
-                    style={[
-                      styles.tileIconContainer,
-                      sectionStatus.lifestyle &&
-                        styles.completeTileIconContainer,
-                    ]}
-                  >
-                    <FontAwesome5
-                      name="coffee"
-                      size={28}
-                      color={
-                        sectionStatus.lifestyle ? COLORS.white : COLORS.primary
-                      }
-                    />
-                  </View>
-                  <Text style={styles.tileTitle}>Lifestyle</Text>
-                  <Text style={styles.tileSubtitle}>
-                    Habits, pets, religiosity
-                  </Text>
-                  {sectionStatus.lifestyle && (
-                    <View style={styles.completeBadge}>
-                      <Ionicons
-                        name="checkmark-circle"
-                        size={20}
-                        color={COLORS.success}
-                      />
-                      <Text style={styles.completeBadgeText}>Complete</Text>
-                    </View>
-                  )}
-                </View>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* Section Content - Only Show When Section Is Selected */}
-          {activeSection && (
-            <Animated.View
-              style={[
-                styles.formContainer,
-                { transform: [{ translateY: cardOffset }] },
-              ]}
+        {/* Tiles View */}
+        {!activeSection && (
+          <View style={styles.tilesContainer}>
+            {/* Basic Information Tile */}
+            <TouchableOpacity
+              style={[styles.tile, sectionStatus.basic && styles.completeTile]}
+              onPress={() => handleNavigateToSection("basic")}
             >
-              {/* Basic Information Section */}
-              {activeSection === "basic" && (
-                <View style={styles.sectionCard}>
-                  <View style={styles.sectionDescription}>
-                    <Text style={styles.descriptionText}>
-                      Tell us about the basic attributes you're looking for in a
-                      partner
-                    </Text>
-                  </View>
-
-                  <ModernDropdown
-                    label="Nationality"
-                    value={preferences.preferred_nationality_id}
-                    items={geographic.nationalities.map((item) => ({
-                      label: item.name,
-                      value: item.id,
-                    }))}
-                    onValueChange={(value) =>
-                      handlePreferenceChange("preferred_nationality_id", value)
-                    }
-                    placeholder="Select nationality (optional)"
+              <View style={styles.tileContent}>
+                <View
+                  style={[
+                    styles.tileIconContainer,
+                    sectionStatus.basic && styles.completeTileIconContainer,
+                  ]}
+                >
+                  <Ionicons
+                    name="person"
+                    size={32}
+                    color={sectionStatus.basic ? COLORS.white : COLORS.primary}
                   />
-
-                  <ModernDropdown
-                    label="Origin"
-                    value={preferences.preferred_origin_id}
-                    items={personalAttributes.origins.map((item) => ({
-                      label: item.name,
-                      value: item.id,
-                    }))}
-                    onValueChange={(value) =>
-                      handlePreferenceChange("preferred_origin_id", value)
-                    }
-                    placeholder="Select origin (optional)"
-                  />
-
-                  <ModernDropdown
-                    label="Country"
-                    value={preferences.preferred_country_id}
-                    items={geographic.countries.map((item) => ({
-                      label: item.name,
-                      value: item.id,
-                    }))}
-                    onValueChange={(value) =>
-                      handlePreferenceChange("preferred_country_id", value)
-                    }
-                    placeholder="Select country (optional)"
-                  />
-
-                  {selectedCountryId && (
-                    <ModernDropdown
-                      label="City"
-                      value={preferences.preferred_city_id}
-                      items={cities.map((item) => ({
-                        label: item.name,
-                        value: item.id,
-                      }))}
-                      onValueChange={(value) =>
-                        handlePreferenceChange("preferred_city_id", value)
-                      }
-                      placeholder="Select city (optional)"
+                </View>
+                <Text style={styles.tileTitle}>Basic Information</Text>
+                <Text style={styles.tileSubtitle}>
+                  Nationality, location, age range
+                </Text>
+                {sectionStatus.basic && (
+                  <View style={styles.completeBadge}>
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={20}
+                      color={COLORS.success}
                     />
-                  )}
+                    <Text style={styles.completeBadgeText}>Complete</Text>
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
 
-                  <View style={styles.ageRangeContainer}>
-                    <Text style={styles.inputLabel}>Age Range</Text>
-                    <Text style={styles.ageRangeDisplay}>
-                      {preferences.preferred_age_min} -{" "}
-                      {preferences.preferred_age_max} years
-                    </Text>
+            {/* Education & Career Tile */}
+            <TouchableOpacity
+              style={[
+                styles.tile,
+                sectionStatus.education && styles.completeTile,
+              ]}
+              onPress={() => handleNavigateToSection("education")}
+            >
+              <View style={styles.tileContent}>
+                <View
+                  style={[
+                    styles.tileIconContainer,
+                    sectionStatus.education && styles.completeTileIconContainer,
+                  ]}
+                >
+                  <Ionicons
+                    name="school"
+                    size={32}
+                    color={
+                      sectionStatus.education ? COLORS.white : COLORS.primary
+                    }
+                  />
+                </View>
+                <Text style={styles.tileTitle}>Education & Career</Text>
+                <Text style={styles.tileSubtitle}>
+                  Education, job, financial status
+                </Text>
+                {sectionStatus.education && (
+                  <View style={styles.completeBadge}>
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={20}
+                      color={COLORS.success}
+                    />
+                    <Text style={styles.completeBadgeText}>Complete</Text>
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
 
-                    {/* Age Range Presets */}
-                    <View style={styles.agePresets}>
-                      <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                      >
-                        {AGE_RANGE_PRESETS.map((preset, index) => (
-                          <TouchableOpacity
-                            key={index}
+            {/* Personal Attributes Tile */}
+            <TouchableOpacity
+              style={[
+                styles.tile,
+                sectionStatus.personal && styles.completeTile,
+              ]}
+              onPress={() => handleNavigateToSection("personal")}
+            >
+              <View style={styles.tileContent}>
+                <View
+                  style={[
+                    styles.tileIconContainer,
+                    sectionStatus.personal && styles.completeTileIconContainer,
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name="human-male-height"
+                    size={32}
+                    color={
+                      sectionStatus.personal ? COLORS.white : COLORS.primary
+                    }
+                  />
+                </View>
+                <Text style={styles.tileTitle}>Personal Attributes</Text>
+                <Text style={styles.tileSubtitle}>
+                  Height, weight, marital status
+                </Text>
+                {sectionStatus.personal && (
+                  <View style={styles.completeBadge}>
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={20}
+                      color={COLORS.success}
+                    />
+                    <Text style={styles.completeBadgeText}>Complete</Text>
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
+
+            {/* Lifestyle Tile */}
+            <TouchableOpacity
+              style={[
+                styles.tile,
+                sectionStatus.lifestyle && styles.completeTile,
+              ]}
+              onPress={() => handleNavigateToSection("lifestyle")}
+            >
+              <View style={styles.tileContent}>
+                <View
+                  style={[
+                    styles.tileIconContainer,
+                    sectionStatus.lifestyle && styles.completeTileIconContainer,
+                  ]}
+                >
+                  <FontAwesome5
+                    name="coffee"
+                    size={28}
+                    color={
+                      sectionStatus.lifestyle ? COLORS.white : COLORS.primary
+                    }
+                  />
+                </View>
+                <Text style={styles.tileTitle}>Lifestyle</Text>
+                <Text style={styles.tileSubtitle}>
+                  Habits, pets, religiosity
+                </Text>
+                {sectionStatus.lifestyle && (
+                  <View style={styles.completeBadge}>
+                    <Ionicons
+                      name="checkmark-circle"
+                      size={20}
+                      color={COLORS.success}
+                    />
+                    <Text style={styles.completeBadgeText}>Complete</Text>
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Section Content - Only Show When Section Is Selected */}
+        {activeSection && (
+          <Animated.View
+            style={[
+              styles.formContainer,
+              { transform: [{ translateY: cardOffset }] },
+            ]}
+          >
+            {/* Basic Information Section */}
+            {activeSection === "basic" && (
+              <View style={styles.sectionCard}>
+                <View style={styles.sectionDescription}>
+                  <Text style={styles.descriptionText}>
+                    Tell us about the basic attributes you're looking for in a
+                    partner
+                  </Text>
+                </View>
+
+                <ModernDropdown
+                  label="Nationality"
+                  value={preferences.preferred_nationality_id}
+                  items={geographic.nationalities.map((item) => ({
+                    label: item.name,
+                    value: item.id,
+                  }))}
+                  onValueChange={(value) =>
+                    handlePreferenceChange("preferred_nationality_id", value)
+                  }
+                  placeholder="Select nationality (optional)"
+                />
+
+                <ModernDropdown
+                  label="Origin"
+                  value={preferences.preferred_origin_id}
+                  items={personalAttributes.origins.map((item) => ({
+                    label: item.name,
+                    value: item.id,
+                  }))}
+                  onValueChange={(value) =>
+                    handlePreferenceChange("preferred_origin_id", value)
+                  }
+                  placeholder="Select origin (optional)"
+                />
+
+                <ModernDropdown
+                  label="Country"
+                  value={preferences.preferred_country_id}
+                  items={geographic.countries.map((item) => ({
+                    label: item.name,
+                    value: item.id,
+                  }))}
+                  onValueChange={(value) =>
+                    handlePreferenceChange("preferred_country_id", value)
+                  }
+                  placeholder="Select country (optional)"
+                />
+
+                {selectedCountryId && (
+                  <ModernDropdown
+                    label="City"
+                    value={preferences.preferred_city_id}
+                    items={cities.map((item) => ({
+                      label: item.name,
+                      value: item.id,
+                    }))}
+                    onValueChange={(value) =>
+                      handlePreferenceChange("preferred_city_id", value)
+                    }
+                    placeholder="Select city (optional)"
+                  />
+                )}
+
+                <View style={styles.ageRangeContainer}>
+                  <Text style={styles.inputLabel}>Age Range</Text>
+                  <Text style={styles.ageRangeDisplay}>
+                    {preferences.preferred_age_min} -{" "}
+                    {preferences.preferred_age_max} years
+                  </Text>
+
+                  {/* Age Range Presets */}
+                  <View style={styles.agePresets}>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                    >
+                      {AGE_RANGE_PRESETS.map((preset, index) => (
+                        <TouchableOpacity
+                          key={index}
+                          style={[
+                            styles.agePresetButton,
+                            preferences.preferred_age_min === preset.min &&
+                              preferences.preferred_age_max === preset.max &&
+                              styles.activeAgePreset,
+                          ]}
+                          onPress={() =>
+                            handleAgeRangePreset(preset.min, preset.max)
+                          }
+                        >
+                          <Text
                             style={[
-                              styles.agePresetButton,
+                              styles.agePresetText,
                               preferences.preferred_age_min === preset.min &&
                                 preferences.preferred_age_max === preset.max &&
-                                styles.activeAgePreset,
+                                styles.activeAgePresetText,
                             ]}
-                            onPress={() =>
-                              handleAgeRangePreset(preset.min, preset.max)
-                            }
                           >
-                            <Text
-                              style={[
-                                styles.agePresetText,
-                                preferences.preferred_age_min === preset.min &&
-                                  preferences.preferred_age_max ===
-                                    preset.max &&
-                                  styles.activeAgePresetText,
-                              ]}
-                            >
-                              {preset.label}
-                            </Text>
-                          </TouchableOpacity>
-                        ))}
-                      </ScrollView>
-                    </View>
-
-                    <RangeSlider
-                      minValue={18}
-                      maxValue={70}
-                      initialLowValue={preferences.preferred_age_min}
-                      initialHighValue={preferences.preferred_age_max}
-                      onValueChange={(low, high) => {
-                        handlePreferenceChange("preferred_age_min", low);
-                        handlePreferenceChange("preferred_age_max", high);
-                      }}
-                    />
+                            {preset.label}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
                   </View>
+
+                  <RangeSlider
+                    minValue={18}
+                    maxValue={70}
+                    initialLowValue={preferences.preferred_age_min}
+                    initialHighValue={preferences.preferred_age_max}
+                    onValueChange={(low, high) => {
+                      handlePreferenceChange("preferred_age_min", low);
+                      handlePreferenceChange("preferred_age_max", high);
+                    }}
+                  />
                 </View>
-              )}
+              </View>
+            )}
 
-              {/* Education & Career Section */}
-              {activeSection === "education" && (
-                <View style={styles.sectionCard}>
-                  <View style={styles.sectionDescription}>
-                    <Text style={styles.descriptionText}>
-                      Specify educational and career preferences for your ideal
-                      match
-                    </Text>
+            {/* Education & Career Section */}
+            {activeSection === "education" && (
+              <View style={styles.sectionCard}>
+                <View style={styles.sectionDescription}>
+                  <Text style={styles.descriptionText}>
+                    Specify educational and career preferences for your ideal
+                    match
+                  </Text>
+                </View>
+
+                <ModernDropdown
+                  label="Educational Level"
+                  value={preferences.preferred_educational_level_id}
+                  items={professionalEducational.educationalLevels.map(
+                    (item) => ({
+                      label: item.name,
+                      value: item.id,
+                    })
+                  )}
+                  onValueChange={(value) =>
+                    handlePreferenceChange(
+                      "preferred_educational_level_id",
+                      value
+                    )
+                  }
+                  placeholder="Select educational level (optional)"
+                />
+
+                <ModernDropdown
+                  label="Specialization"
+                  value={preferences.preferred_specialization_id}
+                  items={professionalEducational.specializations.map(
+                    (item) => ({
+                      label: item.name,
+                      value: item.id,
+                    })
+                  )}
+                  onValueChange={(value) =>
+                    handlePreferenceChange("preferred_specialization_id", value)
+                  }
+                  placeholder="Select specialization (optional)"
+                />
+
+                <View style={styles.toggleContainerWithLabel}>
+                  <View style={styles.toggleLabelRow}>
+                    <Text style={styles.inputLabel}>Employment Status</Text>
+                    <TouchableOpacity
+                      onPress={() =>
+                        handlePreferenceChange(
+                          "preferred_employment_status",
+                          null
+                        )
+                      }
+                      style={styles.clearButton}
+                    >
+                      <Text style={styles.clearButtonText}>Clear</Text>
+                    </TouchableOpacity>
                   </View>
 
-                  <ModernDropdown
-                    label="Educational Level"
-                    value={preferences.preferred_educational_level_id}
-                    items={professionalEducational.educationalLevels.map(
-                      (item) => ({
-                        label: item.name,
-                        value: item.id,
-                      })
-                    )}
-                    onValueChange={(value) =>
-                      handlePreferenceChange(
-                        "preferred_educational_level_id",
-                        value
-                      )
-                    }
-                    placeholder="Select educational level (optional)"
-                  />
-
-                  <ModernDropdown
-                    label="Specialization"
-                    value={preferences.preferred_specialization_id}
-                    items={professionalEducational.specializations.map(
-                      (item) => ({
-                        label: item.name,
-                        value: item.id,
-                      })
-                    )}
-                    onValueChange={(value) =>
-                      handlePreferenceChange(
-                        "preferred_specialization_id",
-                        value
-                      )
-                    }
-                    placeholder="Select specialization (optional)"
-                  />
-
-                  <View style={styles.toggleContainerWithLabel}>
-                    <View style={styles.toggleLabelRow}>
-                      <Text style={styles.inputLabel}>Employment Status</Text>
+                  {preferences.preferred_employment_status !== null ? (
+                    <View style={styles.toggleButtons}>
                       <TouchableOpacity
+                        style={[
+                          styles.toggleButton,
+                          preferences.preferred_employment_status === true &&
+                            styles.activeToggle,
+                        ]}
                         onPress={() =>
                           handlePreferenceChange(
                             "preferred_employment_status",
-                            null
+                            true
                           )
                         }
-                        style={styles.clearButton}
                       >
-                        <Text style={styles.clearButtonText}>Clear</Text>
-                      </TouchableOpacity>
-                    </View>
-
-                    {preferences.preferred_employment_status !== null ? (
-                      <View style={styles.toggleButtons}>
-                        <TouchableOpacity
+                        <Text
                           style={[
-                            styles.toggleButton,
+                            styles.toggleText,
                             preferences.preferred_employment_status === true &&
-                              styles.activeToggle,
+                              styles.activeToggleText,
                           ]}
-                          onPress={() =>
-                            handlePreferenceChange(
-                              "preferred_employment_status",
-                              true
-                            )
-                          }
                         >
-                          <Text
-                            style={[
-                              styles.toggleText,
-                              preferences.preferred_employment_status ===
-                                true && styles.activeToggleText,
-                            ]}
-                          >
-                            Employed
-                          </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={[
-                            styles.toggleButton,
-                            preferences.preferred_employment_status === false &&
-                              styles.activeToggle,
-                          ]}
-                          onPress={() =>
-                            handlePreferenceChange(
-                              "preferred_employment_status",
-                              false
-                            )
-                          }
-                        >
-                          <Text
-                            style={[
-                              styles.toggleText,
-                              preferences.preferred_employment_status ===
-                                false && styles.activeToggleText,
-                            ]}
-                          >
-                            Unemployed
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                    ) : (
+                          Employed
+                        </Text>
+                      </TouchableOpacity>
                       <TouchableOpacity
-                        style={styles.addPreferenceButton}
+                        style={[
+                          styles.toggleButton,
+                          preferences.preferred_employment_status === false &&
+                            styles.activeToggle,
+                        ]}
                         onPress={() =>
                           handlePreferenceChange(
                             "preferred_employment_status",
-                            true
+                            false
                           )
                         }
                       >
-                        <Text style={styles.addPreferenceText}>
-                          Add employment preference
+                        <Text
+                          style={[
+                            styles.toggleText,
+                            preferences.preferred_employment_status === false &&
+                              styles.activeToggleText,
+                          ]}
+                        >
+                          Unemployed
                         </Text>
                       </TouchableOpacity>
-                    )}
-                  </View>
-
-                  {/* Only show job title if employment status is true (employed) or null */}
-                  {preferences.preferred_employment_status !== false && (
-                    <ModernDropdown
-                      label="Job Title"
-                      value={preferences.preferred_job_title_id}
-                      items={
-                        professionalEducational.jobTitles
-                          ? professionalEducational.jobTitles.map((item) => ({
-                              label: item.name,
-                              value: item.id,
-                            }))
-                          : []
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.addPreferenceButton}
+                      onPress={() =>
+                        handlePreferenceChange(
+                          "preferred_employment_status",
+                          true
+                        )
                       }
-                      onValueChange={(value) =>
-                        handlePreferenceChange("preferred_job_title_id", value)
-                      }
-                      placeholder="Select job title (optional)"
-                    />
+                    >
+                      <Text style={styles.addPreferenceText}>
+                        Add employment preference
+                      </Text>
+                    </TouchableOpacity>
                   )}
-
-                  <ModernDropdown
-                    label="Financial Status"
-                    value={preferences.preferred_financial_status_id}
-                    items={geographic.financialStatuses.map((item) => ({
-                      label: item.name,
-                      value: item.id,
-                    }))}
-                    onValueChange={(value) =>
-                      handlePreferenceChange(
-                        "preferred_financial_status_id",
-                        value
-                      )
-                    }
-                    placeholder="Select financial status (optional)"
-                  />
-
-                  <ModernDropdown
-                    label="Marriage Budget"
-                    value={preferences.preferred_marriage_budget_id}
-                    items={professionalEducational.marriageBudget.map(
-                      (item) => ({
-                        label: item.name,
-                        value: item.id,
-                      })
-                    )}
-                    onValueChange={(value) =>
-                      handlePreferenceChange(
-                        "preferred_marriage_budget_id",
-                        value
-                      )
-                    }
-                    placeholder="Select marriage budget (optional)"
-                  />
                 </View>
-              )}
 
-              {/* Personal Attributes Section */}
-              {activeSection === "personal" && (
-                <View style={styles.sectionCard}>
-                  <View style={styles.sectionDescription}>
-                    <Text style={styles.descriptionText}>
-                      Set preferences for physical and personal attributes
-                    </Text>
-                  </View>
-
+                {/* Only show job title if employment status is true (employed) or null */}
+                {preferences.preferred_employment_status !== false && (
                   <ModernDropdown
-                    label="Height"
-                    value={preferences.preferred_height_id}
-                    items={personalAttributes.heights.map((item) => ({
-                      label: item.name,
-                      value: item.id,
-                    }))}
-                    onValueChange={(value) =>
-                      handlePreferenceChange("preferred_height_id", value)
-                    }
-                    placeholder="Select height (optional)"
-                  />
-
-                  <ModernDropdown
-                    label="Weight"
-                    value={preferences.preferred_weight_id}
-                    items={personalAttributes.weights.map((item) => ({
-                      label: item.name,
-                      value: item.id,
-                    }))}
-                    onValueChange={(value) =>
-                      handlePreferenceChange("preferred_weight_id", value)
-                    }
-                    placeholder="Select weight (optional)"
-                  />
-
-                  <ModernDropdown
-                    label="Marital Status"
-                    value={preferences.preferred_marital_status_id}
-                    items={personalAttributes.maritalStatuses.map((item) => ({
-                      label: item.name,
-                      value: item.id,
-                    }))}
-                    onValueChange={(value) =>
-                      handlePreferenceChange(
-                        "preferred_marital_status_id",
-                        value
-                      )
-                    }
-                    placeholder="Select marital status (optional)"
-                  />
-
-                  <ModernDropdown
-                    label="Social Media Presence"
-                    value={preferences.preferred_social_media_presence_id}
-                    items={[
-                      { label: "Active on social media", value: 1 },
-                      { label: "Moderate social media use", value: 2 },
-                      { label: "Limited social media use", value: 3 },
-                      { label: "No social media presence", value: 4 },
-                    ]}
-                    onValueChange={(value) =>
-                      handlePreferenceChange(
-                        "preferred_social_media_presence_id",
-                        value
-                      )
-                    }
-                    placeholder="Select social media presence (optional)"
-                  />
-                </View>
-              )}
-
-              {/* Lifestyle Section */}
-              {activeSection === "lifestyle" && (
-                <View style={styles.sectionCard}>
-                  <View style={styles.sectionDescription}>
-                    <Text style={styles.descriptionText}>
-                      Set preferences for lifestyle habits and preferences
-                    </Text>
-                  </View>
-
-                  <View style={styles.toggleContainerWithLabel}>
-                    <View style={styles.toggleLabelRow}>
-                      <Text style={styles.inputLabel}>Smoking Status</Text>
-                      <TouchableOpacity
-                        onPress={() => {
-                          handlePreferenceChange(
-                            "preferred_smoking_status",
-                            null
-                          );
-                          handlePreferenceChange("preferred_smoking_tools", []);
-                        }}
-                        style={styles.clearButton}
-                      >
-                        <Text style={styles.clearButtonText}>Clear</Text>
-                      </TouchableOpacity>
-                    </View>
-
-                    {preferences.preferred_smoking_status !== null ? (
-                      <View style={styles.toggleButtons}>
-                        <TouchableOpacity
-                          style={[
-                            styles.toggleButton,
-                            preferences.preferred_smoking_status === true &&
-                              styles.activeToggle,
-                          ]}
-                          onPress={() => {
-                            handlePreferenceChange(
-                              "preferred_smoking_status",
-                              true
-                            );
-                          }}
-                        >
-                          <Text
-                            style={[
-                              styles.toggleText,
-                              preferences.preferred_smoking_status === true &&
-                                styles.activeToggleText,
-                            ]}
-                          >
-                            Smoker
-                          </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          style={[
-                            styles.toggleButton,
-                            preferences.preferred_smoking_status === false &&
-                              styles.activeToggle,
-                          ]}
-                          onPress={() => {
-                            handlePreferenceChange(
-                              "preferred_smoking_status",
-                              false
-                            );
-                            handlePreferenceChange(
-                              "preferred_smoking_tools",
-                              []
-                            );
-                          }}
-                        >
-                          <Text
-                            style={[
-                              styles.toggleText,
-                              preferences.preferred_smoking_status === false &&
-                                styles.activeToggleText,
-                            ]}
-                          >
-                            Non-smoker
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                    ) : (
-                      <TouchableOpacity
-                        style={styles.addPreferenceButton}
-                        onPress={() =>
-                          handlePreferenceChange(
-                            "preferred_smoking_status",
-                            true
-                          )
-                        }
-                      >
-                        <Text style={styles.addPreferenceText}>
-                          Add smoking preference
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-
-                  {/* Only show smoking tools if preferred_smoking_status is true (smoker) */}
-                  {preferences.preferred_smoking_status === true && (
-                    <View style={styles.chipSelectorContainer}>
-                      <Text style={styles.inputLabel}>Smoking Tools</Text>
-                      <MultiSelectChips
-                        items={lifestyleInterests.smokingTools.map((item) => ({
-                          id: item.id,
-                          name: item.name,
-                        }))}
-                        selectedItems={preferences.preferred_smoking_tools}
-                        onSelectItem={(items) =>
-                          handlePreferenceChange(
-                            "preferred_smoking_tools",
-                            items
-                          )
-                        }
-                      />
-                    </View>
-                  )}
-
-                  <ModernDropdown
-                    label="Drinking Status"
-                    value={preferences.preferred_drinking_status_id}
-                    items={lifestyleInterests.drinkingStatuses.map((item) => ({
-                      label: item.name,
-                      value: item.id,
-                    }))}
-                    onValueChange={(value) =>
-                      handlePreferenceChange(
-                        "preferred_drinking_status_id",
-                        value
-                      )
-                    }
-                    placeholder="Select drinking status (optional)"
-                  />
-
-                  <ModernDropdown
-                    label="Sports Activity"
-                    value={preferences.preferred_sports_activity_id}
-                    items={lifestyleInterests.sportsActivities.map((item) => ({
-                      label: item.name,
-                      value: item.id,
-                    }))}
-                    onValueChange={(value) =>
-                      handlePreferenceChange(
-                        "preferred_sports_activity_id",
-                        value
-                      )
-                    }
-                    placeholder="Select sports activity (optional)"
-                  />
-
-                  <ModernDropdown
-                    label="Sleep Habit"
-                    value={preferences.preferred_sleep_habit_id}
-                    items={personalAttributes.sleepHabits.map((item) => ({
-                      label: item.name,
-                      value: item.id,
-                    }))}
-                    onValueChange={(value) =>
-                      handlePreferenceChange("preferred_sleep_habit_id", value)
-                    }
-                    placeholder="Select sleep habit (optional)"
-                  />
-
-                  <View style={styles.chipSelectorContainer}>
-                    <View style={styles.toggleLabelRow}>
-                      <Text style={styles.inputLabel}>Pets</Text>
-                      {preferences.preferred_pets_id?.length > 0 && (
-                        <TouchableOpacity
-                          onPress={() =>
-                            handlePreferenceChange("preferred_pets_id", [])
-                          }
-                          style={styles.clearButton}
-                        >
-                          <Text style={styles.clearButtonText}>Clear</Text>
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                    <MultiSelectChips
-                      items={lifestyleInterests.pets.map((item) => ({
-                        id: item.id,
-                        name: item.name,
-                      }))}
-                      selectedItems={preferences.preferred_pets_id}
-                      onSelectItem={(items) =>
-                        handlePreferenceChange("preferred_pets_id", items)
-                      }
-                    />
-                  </View>
-
-                  <ModernDropdown
-                    label="Religiosity Level"
-                    value={preferences.preferred_religiosity_level_id}
+                    label="Job Title"
+                    value={preferences.preferred_job_title_id}
                     items={
-                      lifestyleInterests.religiosityLevels
-                        ? lifestyleInterests.religiosityLevels.map((item) => ({
+                      professionalEducational.jobTitles
+                        ? professionalEducational.jobTitles.map((item) => ({
                             label: item.name,
                             value: item.id,
                           }))
                         : []
                     }
                     onValueChange={(value) =>
-                      handlePreferenceChange(
-                        "preferred_religiosity_level_id",
-                        value
-                      )
+                      handlePreferenceChange("preferred_job_title_id", value)
                     }
-                    placeholder="Select religiosity level (optional)"
+                    placeholder="Select job title (optional)"
                   />
-                </View>
-              )}
-
-              {/* Complete Section Button */}
-              <TouchableOpacity
-                style={styles.completeSectionButton}
-                onPress={handleCompleteSection}
-              >
-                <Text style={styles.completeSectionButtonText}>
-                  Save & Complete This Section
-                </Text>
-              </TouchableOpacity>
-            </Animated.View>
-          )}
-
-          {/* Show the search button only on the main tiles screen */}
-          {!activeSection && (
-            <View style={styles.searchButtonContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.searchButton,
-                  !Object.values(sectionStatus).some((value) => value) &&
-                    styles.disabledSearchButton,
-                ]}
-                onPress={handleSearch}
-                disabled={
-                  !Object.values(sectionStatus).some((value) => value) ||
-                  loading
-                }
-              >
-                {loading ? (
-                  <ActivityIndicator size="small" color={COLORS.white} />
-                ) : (
-                  <>
-                    <Ionicons
-                      name="search"
-                      size={20}
-                      color={COLORS.white}
-                      style={styles.searchIcon}
-                    />
-                    <Text style={styles.searchButtonText}>
-                      Find Matches (
-                      {
-                        Object.values(sectionStatus).filter((value) => value)
-                          .length
-                      }
-                      /4 completed)
-                    </Text>
-                  </>
                 )}
-              </TouchableOpacity>
 
-              {hasSearched && (
-                <TouchableOpacity
-                  style={styles.viewResultsButton}
-                  onPress={() => setShowResults(true)}
-                >
-                  <Text style={styles.viewResultsText}>
-                    View Previous Results
-                  </Text>
-                </TouchableOpacity>
-              )}
+                <ModernDropdown
+                  label="Financial Status"
+                  value={preferences.preferred_financial_status_id}
+                  items={geographic.financialStatuses.map((item) => ({
+                    label: item.name,
+                    value: item.id,
+                  }))}
+                  onValueChange={(value) =>
+                    handlePreferenceChange(
+                      "preferred_financial_status_id",
+                      value
+                    )
+                  }
+                  placeholder="Select financial status (optional)"
+                />
 
-              {Object.values(sectionStatus).some((value) => value) && (
-                <TouchableOpacity
-                  style={styles.resetFiltersButton}
-                  onPress={handleReset}
-                >
-                  <Text style={styles.resetFiltersText}>Reset All Filters</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
-
-          {/* Show a tip at the bottom of the main screen */}
-          {!activeSection &&
-            !Object.values(sectionStatus).every((value) => value) && (
-              <View style={styles.tipsContainer}>
-                <View style={styles.tipCard}>
-                  <Ionicons
-                    name="bulb-outline"
-                    size={24}
-                    color={COLORS.primary}
-                    style={styles.tipIcon}
-                  />
-                  <Text style={styles.tipText}>
-                    {Object.values(sectionStatus).some((value) => value)
-                      ? "Complete all sections to find your perfect match! You can search with partially completed preferences."
-                      : "Tap on a section to start setting your preferences. You don't need to complete all sections to search."}
-                  </Text>
-                </View>
+                <ModernDropdown
+                  label="Marriage Budget"
+                  value={preferences.preferred_marriage_budget_id}
+                  items={professionalEducational.marriageBudget.map((item) => ({
+                    label: item.name,
+                    value: item.id,
+                  }))}
+                  onValueChange={(value) =>
+                    handlePreferenceChange(
+                      "preferred_marriage_budget_id",
+                      value
+                    )
+                  }
+                  placeholder="Select marriage budget (optional)"
+                />
               </View>
             )}
 
-          {hasSearched && !activeSection && (
-            <View style={styles.savedPreferencesCard}>
-              <Text style={styles.savedPreferencesTitle}>
-                Your filters are saved!
+            {/* Personal Attributes Section */}
+            {activeSection === "personal" && (
+              <View style={styles.sectionCard}>
+                <View style={styles.sectionDescription}>
+                  <Text style={styles.descriptionText}>
+                    Set preferences for physical and personal attributes
+                  </Text>
+                </View>
+
+                <ModernDropdown
+                  label="Height"
+                  value={preferences.preferred_height_id}
+                  items={personalAttributes.heights.map((item) => ({
+                    label: item.name,
+                    value: item.id,
+                  }))}
+                  onValueChange={(value) =>
+                    handlePreferenceChange("preferred_height_id", value)
+                  }
+                  placeholder="Select height (optional)"
+                />
+
+                <ModernDropdown
+                  label="Weight"
+                  value={preferences.preferred_weight_id}
+                  items={personalAttributes.weights.map((item) => ({
+                    label: item.name,
+                    value: item.id,
+                  }))}
+                  onValueChange={(value) =>
+                    handlePreferenceChange("preferred_weight_id", value)
+                  }
+                  placeholder="Select weight (optional)"
+                />
+
+                <ModernDropdown
+                  label="Marital Status"
+                  value={preferences.preferred_marital_status_id}
+                  items={personalAttributes.maritalStatuses.map((item) => ({
+                    label: item.name,
+                    value: item.id,
+                  }))}
+                  onValueChange={(value) =>
+                    handlePreferenceChange("preferred_marital_status_id", value)
+                  }
+                  placeholder="Select marital status (optional)"
+                />
+
+                <ModernDropdown
+                  label="Social Media Presence"
+                  value={preferences.preferred_social_media_presence_id}
+                  items={[
+                    { label: "Active on social media", value: 1 },
+                    { label: "Moderate social media use", value: 2 },
+                    { label: "Limited social media use", value: 3 },
+                    { label: "No social media presence", value: 4 },
+                  ]}
+                  onValueChange={(value) =>
+                    handlePreferenceChange(
+                      "preferred_social_media_presence_id",
+                      value
+                    )
+                  }
+                  placeholder="Select social media presence (optional)"
+                />
+              </View>
+            )}
+
+            {/* Lifestyle Section */}
+            {activeSection === "lifestyle" && (
+              <View style={styles.sectionCard}>
+                <View style={styles.sectionDescription}>
+                  <Text style={styles.descriptionText}>
+                    Set preferences for lifestyle habits and preferences
+                  </Text>
+                </View>
+
+                <View style={styles.toggleContainerWithLabel}>
+                  <View style={styles.toggleLabelRow}>
+                    <Text style={styles.inputLabel}>Smoking Status</Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        handlePreferenceChange(
+                          "preferred_smoking_status",
+                          null
+                        );
+                        handlePreferenceChange("preferred_smoking_tools", []);
+                      }}
+                      style={styles.clearButton}
+                    >
+                      <Text style={styles.clearButtonText}>Clear</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {preferences.preferred_smoking_status !== null ? (
+                    <View style={styles.toggleButtons}>
+                      <TouchableOpacity
+                        style={[
+                          styles.toggleButton,
+                          preferences.preferred_smoking_status === true &&
+                            styles.activeToggle,
+                        ]}
+                        onPress={() => {
+                          handlePreferenceChange(
+                            "preferred_smoking_status",
+                            true
+                          );
+                        }}
+                      >
+                        <Text
+                          style={[
+                            styles.toggleText,
+                            preferences.preferred_smoking_status === true &&
+                              styles.activeToggleText,
+                          ]}
+                        >
+                          Smoker
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.addPreferenceButton}
+                      onPress={() => {
+                        handlePreferenceChange(
+                          "preferred_smoking_status",
+                          true
+                        );
+
+                        // Check if no smoking tool is selected and set a default one
+                        if (!preferences.preferred_smoking_tools?.length) {
+                          const defaultTool =
+                            lifestyleInterests.smokingTools.find(
+                              (tool) => tool.name === "Cigarettes"
+                            );
+                          if (defaultTool) {
+                            handlePreferenceChange("preferred_smoking_tools", [
+                              defaultTool.id,
+                            ]);
+                          }
+                        }
+                      }}
+                    >
+                      <Text style={styles.addPreferenceText}>
+                        Add smoking preference
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                {/* Only show smoking tools if preferred_smoking_status is true (smoker) */}
+                {preferences.preferred_smoking_status === true && (
+                  <View style={styles.chipSelectorContainer}>
+                    <Text style={styles.inputLabel}>Smoking Tools</Text>
+                    <MultiSelectChips
+                      items={lifestyleInterests.smokingTools.map((item) => ({
+                        id: item.id,
+                        name: item.name,
+                      }))}
+                      selectedItems={preferences.preferred_smoking_tools}
+                      onSelectItem={(items) =>
+                        handlePreferenceChange("preferred_smoking_tools", items)
+                      }
+                    />
+                  </View>
+                )}
+
+                <ModernDropdown
+                  label="Drinking Status"
+                  value={preferences.preferred_drinking_status_id}
+                  items={lifestyleInterests.drinkingStatuses.map((item) => ({
+                    label: item.name,
+                    value: item.id,
+                  }))}
+                  onValueChange={(value) =>
+                    handlePreferenceChange(
+                      "preferred_drinking_status_id",
+                      value
+                    )
+                  }
+                  placeholder="Select drinking status (optional)"
+                />
+
+                <ModernDropdown
+                  label="Sports Activity"
+                  value={preferences.preferred_sports_activity_id}
+                  items={lifestyleInterests.sportsActivities.map((item) => ({
+                    label: item.name,
+                    value: item.id,
+                  }))}
+                  onValueChange={(value) =>
+                    handlePreferenceChange(
+                      "preferred_sports_activity_id",
+                      value
+                    )
+                  }
+                  placeholder="Select sports activity (optional)"
+                />
+
+                <ModernDropdown
+                  label="Sleep Habit"
+                  value={preferences.preferred_sleep_habit_id}
+                  items={personalAttributes.sleepHabits.map((item) => ({
+                    label: item.name,
+                    value: item.id,
+                  }))}
+                  onValueChange={(value) =>
+                    handlePreferenceChange("preferred_sleep_habit_id", value)
+                  }
+                  placeholder="Select sleep habit (optional)"
+                />
+
+                <View style={styles.chipSelectorContainer}>
+                  <View style={styles.toggleLabelRow}>
+                    <Text style={styles.inputLabel}>Pets</Text>
+                    {preferences.preferred_pets_id?.length > 0 && (
+                      <TouchableOpacity
+                        onPress={() =>
+                          handlePreferenceChange("preferred_pets_id", [])
+                        }
+                        style={styles.clearButton}
+                      >
+                        <Text style={styles.clearButtonText}>Clear</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  <MultiSelectChips
+                    items={lifestyleInterests.pets.map((item) => ({
+                      id: item.id,
+                      name: item.name,
+                    }))}
+                    selectedItems={preferences.preferred_pets_id}
+                    onSelectItem={(items) =>
+                      handlePreferenceChange("preferred_pets_id", items)
+                    }
+                  />
+                </View>
+
+                <ModernDropdown
+                  label="Religiosity Level"
+                  value={preferences.preferred_religiosity_level_id}
+                  items={
+                    lifestyleInterests.religiosityLevels
+                      ? lifestyleInterests.religiosityLevels.map((item) => ({
+                          label: item.name,
+                          value: item.id,
+                        }))
+                      : []
+                  }
+                  onValueChange={(value) =>
+                    handlePreferenceChange(
+                      "preferred_religiosity_level_id",
+                      value
+                    )
+                  }
+                  placeholder="Select religiosity level (optional)"
+                />
+              </View>
+            )}
+
+            {/* Complete Section Button */}
+            <TouchableOpacity
+              style={styles.completeSectionButton}
+              onPress={handleCompleteSection}
+            >
+              <Text style={styles.completeSectionButtonText}>
+                Save & Complete This Section
               </Text>
-              <Text style={styles.savedPreferencesText}>
-                These preferences will be automatically applied each time you
-                return to the search screen.
-              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+        )}
+
+        {/* Show the search button only on the main tiles screen */}
+        {!activeSection && (
+          <View style={styles.searchButtonContainer}>
+            <TouchableOpacity
+              style={[
+                styles.searchButton,
+                !Object.values(sectionStatus).some((value) => value) &&
+                  styles.disabledSearchButton,
+              ]}
+              onPress={handleSearch}
+              disabled={
+                !Object.values(sectionStatus).some((value) => value) || loading
+              }
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color={COLORS.white} />
+              ) : (
+                <>
+                  <Ionicons
+                    name="search"
+                    size={20}
+                    color={COLORS.white}
+                    style={styles.searchIcon}
+                  />
+                  <Text style={styles.searchButtonText}>
+                    Find Matches (
+                    {
+                      Object.values(sectionStatus).filter((value) => value)
+                        .length
+                    }
+                    /4 completed)
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            {hasSearched && (
+              <TouchableOpacity
+                style={styles.viewResultsButton}
+                onPress={() => setShowResults(true)}
+              >
+                <Text style={styles.viewResultsText}>
+                  View Previous Results
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {Object.values(sectionStatus).some((value) => value) && (
+              <TouchableOpacity
+                style={styles.resetFiltersButton}
+                onPress={handleReset}
+              >
+                <Text style={styles.resetFiltersText}>Reset All Filters</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        {/* Show a tip at the bottom of the main screen */}
+        {!activeSection &&
+          !Object.values(sectionStatus).every((value) => value) && (
+            <View style={styles.tipsContainer}>
+              <View style={styles.tipCard}>
+                <Ionicons
+                  name="bulb-outline"
+                  size={24}
+                  color={COLORS.primary}
+                  style={styles.tipIcon}
+                />
+                <Text style={styles.tipText}>
+                  {Object.values(sectionStatus).some((value) => value)
+                    ? "Complete all sections to find your perfect match! You can search with partially completed preferences."
+                    : "Tap on a section to start setting your preferences. You don't need to complete all sections to search."}
+                </Text>
+              </View>
             </View>
           )}
-        </Animated.ScrollView>
-      )}
+
+        {hasSearched && !activeSection && (
+          <View style={styles.savedPreferencesCard}>
+            <Text style={styles.savedPreferencesTitle}>
+              Your filters are saved!
+            </Text>
+            <Text style={styles.savedPreferencesText}>
+              These preferences will be automatically applied each time you
+              return to the search screen.
+            </Text>
+          </View>
+        )}
+      </Animated.ScrollView>
     </KeyboardAvoidingView>
   );
 };

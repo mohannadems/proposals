@@ -7,7 +7,8 @@ import profileReducer from "./slices/profile.slice";
 import profileCompletionReducer from "./slices/profileCompletionSlice";
 import profileAttributesReducer from "./slices/profileAttributesSlice";
 import searchReducer from "./slices/searchSlice";
-
+import userMatchesReducer from "./slices/userMatchesSlice";
+import persistedUserProfileReducer from "./slices/userProfileSlice";
 // First create the persist configs
 const profilePersistConfig = {
   key: "profile",
@@ -25,19 +26,35 @@ const searchPersistConfig = {
   storage: AsyncStorage,
 };
 
+// Add persistence for user matches
+const userMatchesPersistConfig = {
+  key: "userMatches",
+  storage: AsyncStorage,
+  // Only persist certain parts of the userMatches state
+  whitelist: ["spotlightUsers", "quickMatchUsers", "activeFilters"],
+};
+
 // Create persisted reducers for those you want to persist
 const persistedProfileReducer = persistReducer(
   profilePersistConfig,
   profileReducer
 );
+
 const persistedProfileCompletionReducer = persistReducer(
   profileCompletionPersistConfig,
   profileCompletionReducer
 );
+
 // Add the persisted search reducer
 const persistedSearchReducer = persistReducer(
   searchPersistConfig,
   searchReducer
+);
+
+// Add the persisted user matches reducer
+const persistedUserMatchesReducer = persistReducer(
+  userMatchesPersistConfig,
+  userMatchesReducer
 );
 
 // Define all reducers
@@ -47,6 +64,8 @@ const appReducer = combineReducers({
   profileCompletion: persistedProfileCompletionReducer,
   profileAttributes: profileAttributesReducer,
   search: persistedSearchReducer, // Use the persisted version
+  userMatches: persistedUserMatchesReducer, // Use the persisted version
+  userProfile: persistedUserProfileReducer,
 });
 
 // Create the root reducer that handles logout

@@ -1,4 +1,5 @@
 export const BASE_URL = "https://proposals.world/api";
+
 export const ENDPOINTS = {
   LOGIN: "/login",
   REGISTER: "/register",
@@ -16,4 +17,8 @@ export const ENDPOINTS = {
   JOB_TITLES: "/job-titles",
   USER_PREFERENCES: "/user-preferences",
   GET_USER_PREFERENCES: "/show-user-preferences",
+  GET_USER_PREFERENCES_AND_SUGGESTIONS: "/users/filter",
+  USER_PROFILE: "/user-profile",
+  LIKE_USER: "/like",
+  DISLIKE_USER: "/dislike",
 };

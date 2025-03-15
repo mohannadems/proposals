@@ -379,7 +379,9 @@ const ProfileScreen = () => {
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.logoutButtonn}
-            onPress={() => router.push("../(subscription)/subscriptionScreen")}
+            onPress={() =>
+              router.push("../(subscription)/subscriptionScreenNN")
+            }
           >
             <MaterialIcons name="settings" size={24} color={COLORS.white} />
           </TouchableOpacity>
