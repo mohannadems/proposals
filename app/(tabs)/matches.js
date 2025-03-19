@@ -1046,4 +1046,4 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
-export default MatchesScreen;
+export default withProfileCompletion(MatchesScreen);

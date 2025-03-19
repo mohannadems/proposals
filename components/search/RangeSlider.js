@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { View, StyleSheet, Text } from "react-native";
-import Slider from "@react-native-community/slider"; // Make sure to install this package
+import MultiSlider from "@ptomasroos/react-native-multi-slider"; // Make sure to install this package
 import { COLORS } from "../../constants/colors";
 
 const RangeSlider = ({
@@ -10,27 +10,34 @@ const RangeSlider = ({
   initialHighValue,
   onValueChange,
 }) => {
-  const [lowValue, setLowValue] = useState(initialLowValue || minValue);
-  const [highValue, setHighValue] = useState(initialHighValue || maxValue);
+  const [values, setValues] = useState([
+    initialLowValue || minValue,
+    initialHighValue || maxValue,
+  ]);
 
   useEffect(() => {
-    // Update the slider state if the props change from outside
-    if (initialLowValue !== undefined) setLowValue(initialLowValue);
-    if (initialHighValue !== undefined) setHighValue(initialHighValue);
+    // Update values if props change from outside
+    const newValues = [...values];
+    let changed = false;
+
+    if (initialLowValue !== undefined && initialLowValue !== values[0]) {
+      newValues[0] = initialLowValue;
+      changed = true;
+    }
+
+    if (initialHighValue !== undefined && initialHighValue !== values[1]) {
+      newValues[1] = initialHighValue;
+      changed = true;
+    }
+
+    if (changed) {
+      setValues(newValues);
+    }
   }, [initialLowValue, initialHighValue]);
 
-  const handleLowValueChange = (value) => {
-    // Ensure low doesn't exceed high
-    const newLowValue = Math.min(Math.round(value), highValue - 1);
-    setLowValue(newLowValue);
-    onValueChange(newLowValue, highValue);
-  };
-
-  const handleHighValueChange = (value) => {
-    // Ensure high doesn't go below low
-    const newHighValue = Math.max(Math.round(value), lowValue + 1);
-    setHighValue(newHighValue);
-    onValueChange(lowValue, newHighValue);
+  const handleValuesChange = (newValues) => {
+    setValues(newValues);
+    onValueChange(newValues[0], newValues[1]);
   };
 
   // Calculate the percentage of the range for visual representation
@@ -54,7 +61,7 @@ const RangeSlider = ({
           <Text style={styles.valueIndicatorLabel}>Min</Text>
           <View style={styles.valueIndicatorBubble}>
             <Text style={styles.valueIndicatorText}>
-              {Math.round(lowValue)}
+              {Math.round(values[0])}
             </Text>
           </View>
         </View>
@@ -63,7 +70,7 @@ const RangeSlider = ({
           <Text style={styles.valueIndicatorLabel}>Max</Text>
           <View style={styles.valueIndicatorBubble}>
             <Text style={styles.valueIndicatorText}>
-              {Math.round(highValue)}
+              {Math.round(values[1])}
             </Text>
           </View>
         </View>
@@ -78,34 +85,31 @@ const RangeSlider = ({
         ))}
       </View>
 
-      <View style={styles.slidersContainer}>
-        <View style={styles.sliderContainer}>
-          <Slider
-            style={styles.slider}
-            minimumValue={minValue}
-            maximumValue={maxValue}
-            step={1}
-            value={lowValue}
-            onValueChange={handleLowValueChange}
-            minimumTrackTintColor={COLORS.divider}
-            maximumTrackTintColor={COLORS.primary}
-            thumbTintColor={COLORS.primary}
-          />
-        </View>
-
-        <View style={styles.sliderContainer}>
-          <Slider
-            style={styles.slider}
-            minimumValue={minValue}
-            maximumValue={maxValue}
-            step={1}
-            value={highValue}
-            onValueChange={handleHighValueChange}
-            minimumTrackTintColor={COLORS.primary}
-            maximumTrackTintColor={COLORS.divider}
-            thumbTintColor={COLORS.primary}
-          />
-        </View>
+      <View style={styles.sliderContainer}>
+        <MultiSlider
+          values={values}
+          min={minValue}
+          max={maxValue}
+          step={1}
+          allowOverlap={false}
+          snapped
+          minMarkerOverlapDistance={10}
+          onValuesChange={handleValuesChange}
+          selectedStyle={{ backgroundColor: COLORS.primary }}
+          unselectedStyle={{ backgroundColor: COLORS.divider }}
+          markerStyle={{
+            backgroundColor: COLORS.primary,
+            height: 30,
+            width: 30,
+            borderRadius: 15,
+          }}
+          trackStyle={{
+            height: 4,
+          }}
+          containerStyle={{
+            height: 40,
+          }}
+        />
       </View>
     </View>
   );
@@ -141,15 +145,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-  slidersContainer: {
-    marginTop: 10,
-  },
   sliderContainer: {
-    marginVertical: 5,
-  },
-  slider: {
-    width: "100%",
-    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: 15,
   },
   trackMarksContainer: {
     flexDirection: "row",
@@ -174,10 +173,3 @@ const styles = StyleSheet.create({
 });
 
 export default RangeSlider;
-
-/* Note: 
-   You'll need to install the slider package:
-   npm install @react-native-community/slider
-   or
-   yarn add @react-native-community/slider
-*/

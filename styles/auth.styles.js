@@ -16,10 +16,11 @@ export const loginStyles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 24,
-    justifyContent: "center",
+    paddingVertical: 200,
   },
   logoContainer: {
     alignItems: "center",
+
     marginBottom: 40,
   },
   welcomeText: {

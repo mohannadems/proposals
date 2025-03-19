@@ -44,21 +44,21 @@ export default StyleSheet.create({
   },
   stepIndicator: {
     marginVertical: 16,
-    paddingHorizontal: 16,
+    // Removed padding to allow full width
   },
   content: {
     flex: 1,
-    paddingHorizontal: 16,
+    // Removed horizontal padding to allow content to take full width
   },
   scrollViewContent: {
     paddingBottom: 16,
   },
   stepContainer: {
     backgroundColor: "white",
-    borderRadius: 16,
+    // Removed border radius on the sides
+    borderRadius: 0,
     padding: 16,
     shadowColor: "#000",
-    backgroundColor: "#fff",
     shadowOffset: {
       width: 0,
       height: 2,
@@ -66,6 +66,9 @@ export default StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    // Making sure it stretches to the edges
+    marginHorizontal: 0,
+    width: "100%",
   },
   stepHeader: {
     flexDirection: "row",
@@ -102,6 +105,8 @@ export default StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     gap: 12,
+    // Making sure it takes full width
+    width: "100%",
   },
   button: {
     flex: 1,

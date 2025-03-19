@@ -7,6 +7,7 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
+  ScrollView,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { router } from "expo-router";
@@ -81,7 +82,7 @@ export default function LoginScreen() {
           />
         </View>
 
-        <View style={loginStyles.content}>
+        <ScrollView style={loginStyles.content}>
           <View style={loginStyles.logoContainer}>
             <Text style={loginStyles.welcomeText}>
               {AUTH_MESSAGES.WELCOME_TITLE}
@@ -110,7 +111,7 @@ export default function LoginScreen() {
               </Text>
             </Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
   );

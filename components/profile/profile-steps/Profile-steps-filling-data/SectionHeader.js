@@ -13,7 +13,7 @@ export const SectionHeader = () => {
       <Text style={styles.sectionEmoji}>✨</Text>
       <Text style={styles.sectionTitle}>Your Lifestyle Journey</Text>
       <Text style={styles.sectionSubtitle}>
-        Craft a vibrant portrait of your unique self 🌈
+        Craft a vibrant portrait of your unique self
       </Text>
     </LayoutAnimatedView>
   );

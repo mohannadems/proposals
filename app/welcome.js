@@ -66,7 +66,7 @@ export default function WelcomeScreen() {
               onPress={() => router.push("/(auth)/login")}
             >
               <MaterialIcons name="favorite" size={24} color="#fff" />
-              <Text style={styles.buttonText}>Find Love Today</Text>
+              <Text style={styles.buttonText}>Login</Text>
             </TouchableOpacity>
 
             <TouchableOpacity

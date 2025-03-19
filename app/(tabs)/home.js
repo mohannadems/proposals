@@ -14,6 +14,7 @@ import { useDispatch } from "react-redux";
 import { fetchProfile } from "../../store/slices/profile.slice";
 import i18n from "../i18n";
 import { I18nManager } from "react-native";
+import { router } from "expo-router";
 
 const { width } = Dimensions.get("window");
 
@@ -112,7 +113,12 @@ const LandingPage = () => {
               <Text style={styles.heroSubtitle}>
                 {i18n.t("Where Meaningful Connections Begin")}
               </Text>
-              <TouchableOpacity style={styles.heroButton}>
+              <TouchableOpacity
+                style={styles.heroButton}
+                onPress={() => {
+                  router.push("/(profile)/fillProfileData");
+                }}
+              >
                 <View style={styles.buttonBlur}>
                   <Text style={styles.heroButtonText}>
                     {i18n.t("Get Started")}
@@ -163,7 +169,7 @@ const LandingPage = () => {
                   },
                 ]}
               >
-                <View style={styles.featureCard}>
+                <View style={[styles.featureCard, { height: feature.height }]}>
                   <LinearGradient
                     colors={[COLORS.white, "#F8F9FA"]}
                     style={styles.featureGradient}
@@ -171,11 +177,9 @@ const LandingPage = () => {
                     <View style={styles.featureIcon}>
                       <feature.icon />
                     </View>
-                    <Text style={styles.featureTitle}>
-                      {i18n.t(feature.title)}
-                    </Text>
+                    <Text style={styles.featureTitle}>{feature.title}</Text>
                     <Text style={styles.featureDescription}>
-                      {i18n.t(feature.description)}
+                      {feature.description}
                     </Text>
                   </LinearGradient>
                 </View>
@@ -216,9 +220,7 @@ const LandingPage = () => {
                       style={styles.testimonialImageStyle}
                     />
                   </View>
-                  <Text style={styles.testimonialText}>
-                    {i18n.t(testimonial.text)}
-                  </Text>
+                  <Text style={styles.testimonialText}>{testimonial.text}</Text>
                   <Text style={styles.testimonialName}>{testimonial.name}</Text>
                   <Text style={styles.testimonialLocation}>
                     {testimonial.location}
@@ -291,14 +293,13 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.white,
     shadowOffset: {
       width: 0,
-      height: 10, // Height of the shadow
+      height: 10,
     },
-    shadowOpacity: 0.2, // Opacity of the shadow
-    shadowRadius: 15, // Spread of the shadow
-    elevation: 12, // Required for Android shadows
-    shadowColor: COLORS.text, // Color of the shadow
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
+    elevation: 12,
+    shadowColor: COLORS.text,
   },
-
   buttonBlur: {
     flex: 1,
     alignItems: "center",
@@ -368,26 +369,32 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     justifyContent: "space-between",
     marginHorizontal: -8,
+    alignItems: "flex-start", // Ensure cards align at the top
   },
-  featureCard: {
+  featureCardContainer: {
     width: (width - 56) / 2,
     marginHorizontal: 8,
     marginBottom: 16,
+  },
+  featureCard: {
     borderRadius: 20,
     overflow: "hidden",
     backgroundColor: COLORS.white,
     shadowColor: COLORS.text,
     shadowOffset: {
       width: 0,
-      height: 8,
+      height: 10,
     },
-    shadowOpacity: 0.15,
+    shadowOpacity: 0.2,
     shadowRadius: 15,
-    elevation: 10,
+    elevation: 12,
+    // Height will be set dynamically in the component
   },
   featureGradient: {
     padding: 20,
     alignItems: "center",
+    height: "100%",
+    justifyContent: "space-between",
   },
   featureIcon: {
     width: 48,
@@ -410,6 +417,7 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     opacity: 0.6,
     textAlign: "center",
+    paddingHorizontal: 5,
   },
   testimonialScroll: {
     marginHorizontal: -20,
@@ -430,57 +438,8 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 5,
   },
-  testimonialImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginBottom: 16,
-    alignSelf: "center",
-  },
-  testimonialText: {
-    fontSize: 16,
-    color: COLORS.text,
-    lineHeight: 24,
-    marginBottom: 16,
-    textAlign: "center",
-  },
-  testimonialName: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: COLORS.text,
-    textAlign: "center",
-    marginBottom: 4,
-  },
-  testimonialLocation: {
-    fontSize: 14,
-    color: COLORS.text,
-    opacity: 0.6,
-    textAlign: "center",
-  },
-  featureCardContainer: {
-    width: (width - 56) / 2,
-    marginHorizontal: 8,
-    marginBottom: 16,
-  },
-  featureCard: {
-    borderRadius: 20,
-    overflow: "hidden",
-    backgroundColor: COLORS.white,
-    shadowColor: COLORS.text,
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 15,
-    elevation: 12,
-  },
-  featureGradient: {
-    padding: 20,
-    alignItems: "center",
-  },
   testimonialContentView: {
-    alignItems: "center", // Center content horizontally
+    alignItems: "center",
     padding: 20,
   },
   testimonialImageWrapper: {
@@ -512,18 +471,18 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     backgroundColor: COLORS.primary,
-    borderRadius: 25, // Circular shape
+    borderRadius: 25,
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    elevation: 3, // Shadow for Android
+    elevation: 3,
   },
   featureIconText: {
     fontSize: 24,
-    color: "#ffffff", // Text color
+    color: "#ffffff",
     fontWeight: "bold",
   },
   languageButtons: {
@@ -539,7 +498,7 @@ const styles = StyleSheet.create({
   },
 });
 
-// Mock data for features
+// Mock data for features with Islamic partner search content
 const FeatureIcon = ({ name }) => (
   <View style={styles.featureIconContainer}>
     <Text style={styles.featureIconText}>{name[0].toUpperCase()}</Text>
@@ -548,45 +507,49 @@ const FeatureIcon = ({ name }) => (
 
 const features = [
   {
-    icon: () => <FeatureIcon name="Smart" />,
-    title: "Smart Matching",
-    description: "AI-powered algorithm finds your perfect match",
+    icon: () => <FeatureIcon name="Values" />,
+    title: "Values-Based Matching",
+    description: "Find partners who share your Islamic values",
+    height: 200, // Set all heights equal for each row
   },
   {
-    icon: () => <FeatureIcon name="Video" />,
-    title: "Video Chat",
-    description: "Connect face-to-face before meeting",
+    icon: () => <FeatureIcon name="Privacy" />,
+    title: "Privacy Protection",
+    description: "Maintain modesty with privacy features",
+    height: 200, // Same height as first card
   },
   {
-    icon: () => <FeatureIcon name="Verified" />,
-    title: "Verified Profiles",
-    description: "100% real people, verified through AI",
+    icon: () => <FeatureIcon name="Guardian" />,
+    title: "Guardian Involvement",
+    description: "Include your wali in the process",
+    height: 180, // Same height as fourth card
   },
   {
-    icon: () => <FeatureIcon name="Events" />,
-    title: "Events",
-    description: "Join local events and meetups",
+    icon: () => <FeatureIcon name="Compatibility" />,
+    title: "Compatibility Quiz",
+    description: "Questions on deen, family and lifestyle",
+    height: 180, // Same height as third card
   },
 ];
 
 const testimonials = [
   {
     image: require("../../assets/images/11.jpg"),
-    text: "I found my soulmate through this app! The smart matching really works.",
-    name: "Sarah Johnson",
-    location: "New York, NY",
+    text: "This app helped me find someone who truly shares my Islamic values. The guardian feature was especially helpful for my family.",
+    name: "Aisha Rahman",
+    location: "London, UK",
   },
   {
     image: require("../../assets/images/222.jpg"),
-    text: "The video chat feature helped me feel safe and comfortable before meeting in person.",
-    name: "Michael Chen",
-    location: "San Francisco, CA",
+    text: "I appreciated how the app let me filter by prayer habits and other important religious practices. I found my husband here!",
+    name: "Muhammad Qasim",
+    location: "Dubai, UAE",
   },
   {
     image: require("../../assets/images/5555.jpg"),
-    text: "The local events feature helped me meet amazing people in my area.",
-    name: "Emma Williams",
-    location: "London, UK",
+    text: "The values-based matching helped me connect with sisters who share my commitment to the deen. Alhamdulillah!",
+    name: "Fatima Hassan",
+    location: "Toronto, Canada",
   },
 ];
 

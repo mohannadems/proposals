@@ -35,10 +35,7 @@ import { fetchUserMatches } from "../../store/slices/userMatchesSlice";
 
 const { width, height } = Dimensions.get("window");
 const HEADER_HEIGHT = Platform.OS === "ios" ? 520 : 280;
-// Dislike confirmation component - shown at the top of the screen
-// Dislike confirmation component with blurry background and timeout
-// Dislike confirmation component with blurry background and loading state
-// Dislike confirmation component with blurry background and loading state
+
 const DislikeConfirmationBanner = ({
   visible,
   onConfirm,
@@ -429,6 +426,7 @@ const MatchProfileScreen = () => {
     if (userProfile && !isDisliked) {
       setShowDislikeModal(true);
     }
+    dispatch(fetchUserMatches());
   }, [userProfile, isDisliked]);
 
   const handleDislikeConfirm = useCallback(async () => {
@@ -669,13 +667,7 @@ const MatchProfileScreen = () => {
             ) : (
               // Show "Liked" button if already liked
               <View style={styles.alreadyLikedButton}>
-                <LinearGradient
-                  colors={COLORS.primaryGradient}
-                  style={StyleSheet.absoluteFill}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                />
-                <Feather name="check" size={24} color={COLORS.white} />
+                <Feather name="check" size={24} color="#9E9E9E" />
                 <Text style={styles.alreadyLikedText}>Liked</Text>
               </View>
             )}
@@ -1018,13 +1010,13 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 16,
     gap: 8,
-    backgroundColor: COLORS.primary,
+    backgroundColor: "#E0E0E0", // Light gray background instead of primary color
     overflow: "hidden",
   },
   alreadyLikedText: {
     fontSize: 16,
     fontWeight: "600",
-    color: COLORS.white,
+    color: "#9E9E9E", // Muted text color instead of white
   },
   // Already disliked button
   alreadyDislikedButton: {

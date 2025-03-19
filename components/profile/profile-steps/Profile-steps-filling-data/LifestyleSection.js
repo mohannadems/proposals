@@ -45,35 +45,46 @@ import SelectableGrid from "./SelectableGrid";
 
 const LifestyleSection = () => {
   const dispatch = useDispatch();
-  const { control, watch } = useFormContext();
+  const { control, watch, setValue } = useFormContext();
   const smoking_status = watch("smoking_status");
   const country_of_residence_id = watch("country_of_residence_id");
 
-  // Get data from Redux store
   const personalAttributes = useSelector(selectPersonalAttributes);
   const lifestyleInterests = useSelector(selectLifestyleInterests);
   const professionalEducational = useSelector(selectProfessionalEducational);
   const geographic = useSelector(selectGeographic);
   const loading = useSelector(selectLoadingStates);
 
-  // Get cities for the selected country
   const cities = useSelector((state) =>
     selectCitiesByCountry(state, country_of_residence_id)
   );
 
-  // Fetch all profile data on component mount
   useEffect(() => {
     dispatch(fetchAllProfileData());
   }, [dispatch]);
 
-  // Fetch cities when country changes
   useEffect(() => {
     if (country_of_residence_id) {
       dispatch(fetchCitiesByCountry(country_of_residence_id));
     }
   }, [dispatch, country_of_residence_id]);
 
-  // Extract needed data from Redux state
+  useEffect(() => {
+    if (smoking_status === 2 || smoking_status === 3) {
+      const currentTools = watch("smoking_tools") || [];
+
+      if (currentTools.length === 0) {
+        const cigaretteOption = lifestyleInterests.smokingTools.find(
+          (tool) => tool.name === "Cigarettes" || tool.name === "Cigarette"
+        );
+
+        if (cigaretteOption) {
+          setValue("smoking_tools", [cigaretteOption.id]);
+        }
+      }
+    }
+  }, [smoking_status, lifestyleInterests.smokingTools, setValue, watch]);
+
   const {
     hairColors = [],
     heights = [],
@@ -97,7 +108,6 @@ const LifestyleSection = () => {
 
   const { countries = [], religions = [], nationalities = [] } = geographic;
 
-  // Define child numbers and smoking statuses (not in API)
   const childNumbers = [
     { id: 1, name: "No Children 🚫" },
     { id: 2, name: "1 Child 👶" },
@@ -112,13 +122,13 @@ const LifestyleSection = () => {
     { id: 3, name: "Social smoker" },
   ];
   const smokingIcons = {
-    Cigarettes: "cafe", // Using 'cafe' as a placeholder
+    Cigarettes: "cafe",
     Cigarette: "cafe",
     Shisha: "flame",
     Hookah: "flame",
     "E-cigarettes": "battery-charging",
     Vape: "cloud",
-    Other: "help-circle", // Generic icon for 'Other'
+    Other: "help-circle",
   };
   const hobbyIcons = {
     Photography: "camera",
@@ -127,7 +137,6 @@ const LifestyleSection = () => {
     Cycling: "bicycle",
     Hiking: "walk",
   };
-  // Show loading state
   if (
     loading.personalAttributes ||
     loading.lifestyleInterests ||
@@ -149,14 +158,13 @@ const LifestyleSection = () => {
       contentContainerStyle={styles.scrollContent}
     >
       <SectionHeader />
-      {/* Origin & Residence */}
       <AnimatedCard delay={100}>
         <CardHeader {...cardConfigs.origin} />
         <AnimatedFormContainer>
           <AnimatedDropdown
             control={control}
             name="nationality_id"
-            label="Nationality 🌎"
+            label="Nationality"
             items={nationalities}
             leftIcon={
               <FeatherIcon name="flag" size={20} color={COLORS.primary} />
@@ -166,7 +174,7 @@ const LifestyleSection = () => {
           <AnimatedDropdown
             control={control}
             name="country_of_residence_id"
-            label="Country of Residence 📍"
+            label="Country of Residence "
             items={countries}
             leftIcon={
               <FeatherIcon name="map-pin" size={20} color={COLORS.primary} />
@@ -176,7 +184,7 @@ const LifestyleSection = () => {
           <AnimatedDropdown
             control={control}
             name="city_id"
-            label="City 🏙️"
+            label="City"
             items={cities}
             isLoading={loading.cities}
             leftIcon={
@@ -187,7 +195,7 @@ const LifestyleSection = () => {
           <AnimatedDropdown
             control={control}
             name="origin_id"
-            label="Origin 🏠"
+            label="Origin "
             items={origins}
             leftIcon={
               <FeatherIcon name="home" size={20} color={COLORS.primary} />
@@ -204,7 +212,7 @@ const LifestyleSection = () => {
             <AnimatedDropdown
               control={control}
               name="marital_status_id"
-              label="Marital Status 💑"
+              label="Marital Status "
               items={maritalStatuses}
               leftIcon={
                 <MaterialIcon name="people" size={20} color={COLORS.primary} />
@@ -215,7 +223,7 @@ const LifestyleSection = () => {
               required
               control={control}
               name="number_of_children"
-              label="Children 👶"
+              label="Children "
               items={childNumbers}
               leftIcon={
                 <MaterialIcon
@@ -236,7 +244,7 @@ const LifestyleSection = () => {
             <AnimatedDropdown
               control={control}
               name="height"
-              label="Height 📏"
+              label="Height "
               items={heights}
               leftIcon={
                 <FeatherIcon name="arrow-up" size={20} color={COLORS.primary} />
@@ -246,7 +254,7 @@ const LifestyleSection = () => {
             <AnimatedDropdown
               control={control}
               name="weight"
-              label="Weight ⚖️"
+              label="Weight "
               items={weights}
               leftIcon={
                 <MaterialIcon
@@ -262,7 +270,7 @@ const LifestyleSection = () => {
             <AnimatedDropdown
               control={control}
               name="hair_color_id"
-              label="Hair Color 💁‍♂️"
+              label="Hair Color "
               items={hairColors}
               leftIcon={
                 <MaterialIcon
@@ -277,7 +285,7 @@ const LifestyleSection = () => {
               required
               control={control}
               name="skin_color_id"
-              label="Skin Color 🎨"
+              label="Skin Color "
               items={skinColors}
               leftIcon={
                 <MaterialIcon name="palette" size={20} color={COLORS.primary} />
@@ -293,7 +301,7 @@ const LifestyleSection = () => {
           <AnimatedDropdown
             control={control}
             name="marriage_budget_id"
-            label="Marriage Budget 💍"
+            label="Marriage Budget "
             items={marriageBudget}
             leftIcon={
               <MaterialIcon
@@ -307,7 +315,7 @@ const LifestyleSection = () => {
           <AnimatedDropdown
             control={control}
             name="religiosity_level_id"
-            label="Religiosity Level 🕌"
+            label="Religiosity Level "
             items={religiosityLevels}
             leftIcon={
               <MaterialIcon
@@ -321,7 +329,7 @@ const LifestyleSection = () => {
           <AnimatedDropdown
             control={control}
             name="sleep_habit_id"
-            label="Sleep Habits 😴"
+            label="Sleep Habits "
             items={sleepHabits}
             leftIcon={
               <MaterialIcon
@@ -336,7 +344,7 @@ const LifestyleSection = () => {
             required
             control={control}
             name="sports_activity_id"
-            label="Sports Activity 🏃‍♂️"
+            label="Sports Activity "
             items={sportsActivities}
             leftIcon={
               <MaterialIcon name="sports" size={20} color={COLORS.primary} />
@@ -351,7 +359,7 @@ const LifestyleSection = () => {
           <AnimatedDropdown
             control={control}
             name="smoking_status"
-            label="Smoking Status 🚭"
+            label="Smoking Status "
             items={smokingStatuses}
             leftIcon={
               <FeatherIcon name="wind" size={20} color={COLORS.primary} />
@@ -363,11 +371,25 @@ const LifestyleSection = () => {
           {smoking_status > 1 && (
             <PreferencesContainer>
               <SelectableGrid
+                placeholder="Smoking Tools"
                 control={control}
                 name="smoking_tools"
                 items={smokingTools}
-                label="Smoking Preferences"
+                label="Smoking Preferences (Required)"
                 multiple
+                required
+                rules={{
+                  validate: (value) => {
+                    // Check if smoking status requires tools but none are selected
+                    if (
+                      (smoking_status === 2 || smoking_status === 3) &&
+                      (!value || value.length === 0)
+                    ) {
+                      return "Please select at least one smoking tool";
+                    }
+                    return true;
+                  },
+                }}
                 renderItem={(item, isSelected) => (
                   <View
                     style={[
@@ -401,7 +423,7 @@ const LifestyleSection = () => {
           <AnimatedDropdown
             control={control}
             name="drinking_status_id"
-            label="Drinking Status ☕"
+            label="Drinking Status "
             items={drinkingStatuses}
             leftIcon={
               <FeatherIcon name="coffee" size={20} color={COLORS.primary} />
@@ -447,7 +469,7 @@ const LifestyleSection = () => {
           <AnimatedDropdown
             control={control}
             name="religion_id"
-            label="Religion 🕊️"
+            label="Religion "
             items={religions}
             leftIcon={
               <FeatherIcon name="moon" size={20} color={COLORS.primary} />
