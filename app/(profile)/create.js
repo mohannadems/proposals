@@ -19,13 +19,11 @@ export default function CreateProfileScreen() {
 
   const handleSaveProfile = () => {
     // Save profile logic here
-    console.log("Profile saved:", { name, bio, profilePicture });
     router.back(); // Navigate back to the previous screen
   };
 
   const handleUploadPicture = () => {
     // Logic to upload a profile picture
-    console.log("Upload profile picture");
   };
 
   return (

@@ -1,5 +1,6 @@
 // store/profileAttributesSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSelector } from "reselect"; // Add this import
 import { profileService } from "../../services/profileService";
 
 // Async thunks for fetching data
@@ -219,7 +220,6 @@ const profileAttributesSlice = createSlice({
         state.positionLevels = action.payload.position_levels || [];
         state.educationalLevels = action.payload.educational_levels || [];
         state.marriageBudget = action.payload.marriage_budget || [];
-        console.log("Personal Attributes Data:", action.payload);
       })
       .addCase(fetchProfessionalEducational.rejected, (state, action) => {
         state.loading.professionalEducational = false;
@@ -270,45 +270,156 @@ const profileAttributesSlice = createSlice({
 export const { resetProfileAttributes } = profileAttributesSlice.actions;
 export default profileAttributesSlice.reducer;
 
-// Selectors
-export const selectPersonalAttributes = (state) => ({
-  hairColors: state.profileAttributes.hairColors,
-  heights: state.profileAttributes.heights,
-  weights: state.profileAttributes.weights,
-  origins: state.profileAttributes.origins,
-  maritalStatuses: state.profileAttributes.maritalStatuses,
-  skinColors: state.profileAttributes.skinColors,
-  zodiacSigns: state.profileAttributes.zodiacSigns,
-  sleepHabits: state.profileAttributes.sleepHabits,
-});
+// Base selectors for individual state slices
+const selectHairColors = (state) => state.profileAttributes.hairColors;
+const selectHeights = (state) => state.profileAttributes.heights;
+const selectWeights = (state) => state.profileAttributes.weights;
+const selectOrigins = (state) => state.profileAttributes.origins;
+const selectMaritalStatuses = (state) =>
+  state.profileAttributes.maritalStatuses;
+const selectSkinColors = (state) => state.profileAttributes.skinColors;
+const selectZodiacSigns = (state) => state.profileAttributes.zodiacSigns;
+const selectSleepHabits = (state) => state.profileAttributes.sleepHabits;
 
-export const selectLifestyleInterests = (state) => ({
-  hobbies: state.profileAttributes.hobbies,
-  pets: state.profileAttributes.pets,
-  sportsActivities: state.profileAttributes.sportsActivities,
-  smokingTools: state.profileAttributes.smokingTools,
-  drinkingStatuses: state.profileAttributes.drinkingStatuses,
-  religiosityLevels: state.profileAttributes.religiosityLevels,
-});
+const selectHobbies = (state) => state.profileAttributes.hobbies;
+const selectPets = (state) => state.profileAttributes.pets;
+const selectSportsActivities = (state) =>
+  state.profileAttributes.sportsActivities;
+const selectSmokingTools = (state) => state.profileAttributes.smokingTools;
+const selectDrinkingStatuses = (state) =>
+  state.profileAttributes.drinkingStatuses;
+const selectReligiosityLevels = (state) =>
+  state.profileAttributes.religiosityLevels;
 
-export const selectProfessionalEducational = (state) => ({
-  specializations: state.profileAttributes.specializations,
-  positionLevels: state.profileAttributes.positionLevels,
-  educationalLevels: state.profileAttributes.educationalLevels,
-  marriageBudget: state.profileAttributes.marriageBudget,
-  jobTitles: state.profileAttributes.jobTitles,
-});
+const selectSpecializations = (state) =>
+  state.profileAttributes.specializations;
+const selectPositionLevels = (state) => state.profileAttributes.positionLevels;
+const selectEducationalLevels = (state) =>
+  state.profileAttributes.educationalLevels;
+const selectMarriageBudget = (state) => state.profileAttributes.marriageBudget;
+const selectJobTitles = (state) => state.profileAttributes.jobTitles;
 
-export const selectGeographic = (state) => ({
-  countries: state.profileAttributes.countries,
-  religions: state.profileAttributes.religions,
-  nationalities: state.profileAttributes.nationalities,
-  housingStatuses: state.profileAttributes.housingStatuses,
-  financialStatuses: state.profileAttributes.financialStatuses,
-});
+const selectCountries = (state) => state.profileAttributes.countries;
+const selectReligions = (state) => state.profileAttributes.religions;
+const selectNationalities = (state) => state.profileAttributes.nationalities;
+const selectHousingStatuses = (state) =>
+  state.profileAttributes.housingStatuses;
+const selectFinancialStatuses = (state) =>
+  state.profileAttributes.financialStatuses;
 
-export const selectCitiesByCountry = (state, countryId) =>
-  state.profileAttributes.citiesByCountry[countryId] || [];
+// Memoized selectors that combine multiple state slices
+export const selectPersonalAttributes = createSelector(
+  [
+    selectHairColors,
+    selectHeights,
+    selectWeights,
+    selectOrigins,
+    selectMaritalStatuses,
+    selectSkinColors,
+    selectZodiacSigns,
+    selectSleepHabits,
+  ],
+  (
+    hairColors,
+    heights,
+    weights,
+    origins,
+    maritalStatuses,
+    skinColors,
+    zodiacSigns,
+    sleepHabits
+  ) => ({
+    hairColors,
+    heights,
+    weights,
+    origins,
+    maritalStatuses,
+    skinColors,
+    zodiacSigns,
+    sleepHabits,
+  })
+);
 
+export const selectLifestyleInterests = createSelector(
+  [
+    selectHobbies,
+    selectPets,
+    selectSportsActivities,
+    selectSmokingTools,
+    selectDrinkingStatuses,
+    selectReligiosityLevels,
+  ],
+  (
+    hobbies,
+    pets,
+    sportsActivities,
+    smokingTools,
+    drinkingStatuses,
+    religiosityLevels
+  ) => ({
+    hobbies,
+    pets,
+    sportsActivities,
+    smokingTools,
+    drinkingStatuses,
+    religiosityLevels,
+  })
+);
+
+export const selectProfessionalEducational = createSelector(
+  [
+    selectSpecializations,
+    selectPositionLevels,
+    selectEducationalLevels,
+    selectMarriageBudget,
+    selectJobTitles,
+  ],
+  (
+    specializations,
+    positionLevels,
+    educationalLevels,
+    marriageBudget,
+    jobTitles
+  ) => ({
+    specializations,
+    positionLevels,
+    educationalLevels,
+    marriageBudget,
+    jobTitles,
+  })
+);
+
+export const selectGeographic = createSelector(
+  [
+    selectCountries,
+    selectReligions,
+    selectNationalities,
+    selectHousingStatuses,
+    selectFinancialStatuses,
+  ],
+  (
+    countries,
+    religions,
+    nationalities,
+    housingStatuses,
+    financialStatuses
+  ) => ({
+    countries,
+    religions,
+    nationalities,
+    housingStatuses,
+    financialStatuses,
+  })
+);
+
+const selectCitiesByCountryMap = (state) =>
+  state.profileAttributes.citiesByCountry;
+
+export const selectCitiesByCountry = createSelector(
+  [selectCitiesByCountryMap, (_, countryId) => countryId],
+  (citiesByCountry, countryId) => {
+    return citiesByCountry[countryId] || [];
+  }
+);
 export const selectLoadingStates = (state) => state.profileAttributes.loading;
 export const selectErrorStates = (state) => state.profileAttributes.errors;

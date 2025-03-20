@@ -13,7 +13,6 @@ export const setAuthToken = (token) => {
     // Add the "Bearer" prefix and ensure proper spacing
     api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
     // For debugging
-    console.log("Setting auth token:", ` Bearer ${token})`);
   } else {
     delete api.defaults.headers.common["Authorization"];
   }
@@ -21,7 +20,6 @@ export const setAuthToken = (token) => {
 api.interceptors.request.use(
   (config) => {
     // Log the headers for debugging
-    console.log("Request headers:", config.headers);
     return config;
   },
   (error) => {
@@ -33,7 +31,6 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      console.log("Unauthorized request:", error.config.url);
     }
     return Promise.reject(error);
   }

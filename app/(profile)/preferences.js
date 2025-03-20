@@ -21,14 +21,6 @@ export default function PreferencesScreen() {
   const [isDrinkingOk, setIsDrinkingOk] = useState(false);
 
   const handleSavePreferences = () => {
-    // Save preferences logic here
-    console.log("Preferences saved:", {
-      ageRange,
-      location,
-      interests,
-      isSmokingOk,
-      isDrinkingOk,
-    });
     router.back(); // Navigate back to the previous screen
   };
 

@@ -153,7 +153,6 @@ const ProfileScreen = () => {
 
   const [refreshing, setRefreshing] = useState(false);
   const progressAnimation = useMemo(() => new Animated.Value(0), []);
-  console.log(fetchProfile(), "asdfsadfsadf");
   useEffect(() => {
     dispatch(fetchProfile(), updateProfilePhoto());
   }, [dispatch]);
@@ -169,16 +168,12 @@ const ProfileScreen = () => {
           updatedProfile?.data?.profile?.photo_url;
 
         if (photoUrl) {
-          console.log("Updated profile photo URL:", photoUrl);
         }
 
         setRefreshing(false);
       } catch (error) {
         console.error("Profile refresh error:", error);
         if (retries > 0) {
-          console.log(
-            `Retrying profile refresh. Attempts left: ${retries - 1}`
-          );
           setTimeout(() => onRefresh(retries - 1), 1000);
         } else {
           setRefreshing(false);
@@ -330,16 +325,13 @@ const ProfileScreen = () => {
 
     try {
       const response = await dispatch(updateProfilePhoto(formData)).unwrap();
-      console.log("Photo update response:", JSON.stringify(response, null, 2));
 
       if (
         response &&
         (response.success || response.message === "Image updated successfully.")
       ) {
-        console.log("Photo update successful, refreshing profile");
         onRefresh();
       } else {
-        console.log("Photo update failed with response:", response);
         throw new Error(response.message || "Failed to update profile photo");
       }
     } catch (error) {

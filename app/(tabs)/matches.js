@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import {
   View,
@@ -14,13 +12,18 @@ import {
   Platform,
   ActivityIndicator,
   TextInput,
+  RefreshControl,
 } from "react-native";
+import { useRoute } from "expo-router";
+import { setActiveTab } from "../../store/slices/userMatchesSlice";
+
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { SharedElement } from "react-navigation-shared-element";
 import MaskedView from "@react-native-masked-view/masked-view";
+import { useLocalSearchParams } from "expo-router";
 import { COLORS } from "../../constants/colors";
 import { Link, useRouter } from "expo-router";
 import withProfileCompletion from "../../components/profile/withProfileCompletion";
@@ -29,7 +32,9 @@ import { fetchProfileCompletionData } from "../../store/slices/profileCompletion
 import {
   fetchUserMatches,
   fetchFilteredMatches,
+  fetchUserLikes,
   setActiveFilters,
+  setLikedFilter,
   clearFilters,
 } from "../../store/slices/userMatchesSlice";
 
@@ -39,21 +44,37 @@ const CARD_HEIGHT = height * 0.7;
 
 // Empty state component for when no matches are found
 const EmptyStateCard = ({ type }) => {
+  const messages = {
+    preferences: {
+      title: "No Preference Matches",
+      description:
+        "We couldn't find exact matches for your preferences. Try adjusting your search criteria.",
+    },
+    suggested: {
+      title: "No Suggested Matches",
+      description:
+        "No suggested matches at the moment. Check back later or modify your filters.",
+    },
+    liked: {
+      title: "No Liked Profiles",
+      description:
+        "You haven't liked anyone yet. Browse matches and tap the heart icon to see them here.",
+    },
+  };
+
+  const content = messages[type] || messages.suggested;
+
   return (
     <View style={styles.emptyStateContainer}>
       <View style={styles.emptyStateIconContainer}>
-        <Feather name="search" size={40} color={COLORS.primary} />
+        <Feather
+          name={type === "liked" ? "heart" : "search"}
+          size={40}
+          color={COLORS.primary}
+        />
       </View>
-      <Text style={styles.emptyStateTitle}>
-        {type === "preferences"
-          ? "No Preference Matches"
-          : "No Suggested Matches"}
-      </Text>
-      <Text style={styles.emptyStateDescription}>
-        {type === "preferences"
-          ? "We couldn't find exact matches for your preferences. Try adjusting your search criteria."
-          : "No suggested matches at the moment. Check back later or modify your filters."}
-      </Text>
+      <Text style={styles.emptyStateTitle}>{content.title}</Text>
+      <Text style={styles.emptyStateDescription}>{content.description}</Text>
     </View>
   );
 };
@@ -119,9 +140,9 @@ const MatchCard = ({ user, onPress }) => {
                   </View>
                 )}
               </View>
-              <Text style={styles.spotlightLocation}>
+              {/* <Text style={styles.spotlightLocation}>
                 {user.location || user.city || "Unknown location"}
-              </Text>
+              </Text> */}
             </View>
             <View style={styles.matchPercentageContainer}>
               <MaskedView
@@ -262,67 +283,91 @@ const FilterChip = ({ label, icon, active, onPress }) => (
 );
 
 const MatchesScreen = () => {
-  const [activeFilter, setActiveFilter] = useState("nearby");
+  const [activeFilter, setActiveFilter] = useState("All");
   const [scrollY] = useState(new Animated.Value(0));
   const [showFilters, setShowFilters] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const dispatch = useDispatch();
   const router = useRouter();
-
+  const params = useLocalSearchParams();
   // Get data from Redux state
   const {
     preferenceMatches,
     suggestedMatches,
+    likedUsers,
     suggestionPercentage,
     loading,
     error,
     activeFilters,
+    activeTab,
   } = useSelector((state) => state.userMatches);
 
-  // On component mount, fetch profile data and matches
+  // On component mount, fetch profile data, matches, and liked users
   useEffect(() => {
     dispatch(fetchProfileCompletionData());
 
-    // Fetch initial matches without filter flag
+    // Set "All" as default and fetch initial matches without filter flag
+    setActiveFilter("All");
+    dispatch(clearFilters());
     dispatch(fetchUserMatches());
+
+    // Also fetch liked users so they're available when filter is changed
+    dispatch(fetchUserLikes());
   }, [dispatch]);
+
+  useEffect(() => {
+    // If activeTab is set to "Liked" in Redux, or we have a parameter to show liked
+    // This handles navigation from other screens after liking
+    if (activeTab === "Liked" || params.showLiked === "true") {
+      setActiveFilter("Liked");
+
+      // Delay the filter change slightly to ensure animations work properly
+      setTimeout(() => {
+        handleFilterChange("Liked");
+
+        // Reset the activeTab in Redux after using it
+        dispatch(setActiveTab("All"));
+      }, 200);
+    }
+  }, [activeTab, params, dispatch]);
 
   // Handle filter chip clicks
   const handleFilterChange = (filter) => {
+    // Don't do anything if the filter is already active
+    if (activeFilter === filter) return;
+
     setActiveFilter(filter);
 
-    let filterParams = { isFilter: true };
+    if (filter === "All") {
+      // For "All", reset filters and show regular matches
+      dispatch(clearFilters());
+      dispatch(fetchUserMatches());
+    } else if (filter === "Liked") {
+      // For "Liked", set the liked filter flag to true
+      dispatch(setLikedFilter(true));
 
-    // Set filter parameters based on selected filter
-    switch (filter) {
-      case "nearby":
-        // No additional parameters needed for nearby
-        break;
-      case "online":
-        filterParams.is_online = true;
-        break;
-      case "new":
-        filterParams.sort_by = "newest";
-        break;
-      case "popular":
-        filterParams.sort_by = "popular";
-        break;
-      default:
-        break;
+      // Refresh liked users data (in case there are new likes)
+      dispatch(fetchUserLikes());
+    } else {
+      // For other filters (like "nearby"), handle accordingly
+      dispatch(clearFilters());
+      dispatch(setActiveFilters({ isFilter: true }));
+      dispatch(fetchFilteredMatches({ isFilter: true }));
     }
-
-    // Preserve age range if set
-    if (activeFilters.age_min) {
-      filterParams.age_min = activeFilters.age_min;
-    }
-    if (activeFilters.age_max) {
-      filterParams.age_max = activeFilters.age_max;
-    }
-
-    // Update active filters in Redux
-    dispatch(setActiveFilters(filterParams));
-    // Fetch filtered matches with the parameters
-    dispatch(fetchFilteredMatches(filterParams));
   };
+
+  // Handle refresh based on active filter
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+
+    if (activeFilter === "Liked") {
+      // Refresh liked users
+      dispatch(fetchUserLikes()).finally(() => setRefreshing(false));
+    } else {
+      // Refresh regular matches
+      dispatch(fetchUserMatches()).finally(() => setRefreshing(false));
+    }
+  }, [dispatch, activeFilter]);
 
   const headerHeight = scrollY.interpolate({
     inputRange: [0, 100],
@@ -489,6 +534,7 @@ const MatchesScreen = () => {
                 // Reset by fetching without isFilter parameter
                 dispatch(fetchUserMatches());
                 setShowFilters(false);
+                setActiveFilter("All");
               }}
             >
               <Text style={styles.resetButtonText}>Reset Filters</Text>
@@ -505,6 +551,14 @@ const MatchesScreen = () => {
           scrollY.setValue(offsetY);
         }}
         scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[COLORS.primary]}
+            tintColor={COLORS.primary}
+          />
+        }
       >
         <View style={styles.content}>
           <View style={styles.filterContainer}>
@@ -514,28 +568,16 @@ const MatchesScreen = () => {
               contentContainerStyle={styles.filterScroll}
             >
               <FilterChip
-                label="Nearby"
+                label="All"
                 icon="map-pin"
-                active={activeFilter === "nearby"}
-                onPress={() => handleFilterChange("nearby")}
+                active={activeFilter === "All"}
+                onPress={() => handleFilterChange("All")}
               />
               <FilterChip
-                label="Online"
-                icon="wifi"
-                active={activeFilter === "online"}
-                onPress={() => handleFilterChange("online")}
-              />
-              <FilterChip
-                label="New"
-                icon="star"
-                active={activeFilter === "new"}
-                onPress={() => handleFilterChange("new")}
-              />
-              <FilterChip
-                label="Popular"
-                icon="trending-up"
-                active={activeFilter === "popular"}
-                onPress={() => handleFilterChange("popular")}
+                label="Liked"
+                icon="heart"
+                active={activeFilter === "Liked"}
+                onPress={() => handleFilterChange("Liked")}
               />
             </ScrollView>
           </View>
@@ -543,15 +585,43 @@ const MatchesScreen = () => {
           {/* Preference Matches Section (formerly Spotlight) */}
           <View style={styles.spotlightSection}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Preference Matches</Text>
+              <Text style={styles.sectionTitle}>
+                {activeFilter === "Liked"
+                  ? "Profiles You Liked"
+                  : "Preference Matches"}
+              </Text>
               <TouchableOpacity>
-                <Link href="../(profile)/matchProfile">
+                <Link href="../(profile)/match-screen">
                   <Text style={styles.seeAllButton}>See All</Text>
                 </Link>
               </TouchableOpacity>
             </View>
 
-            {loading.preferences ? (
+            {activeFilter === "Liked" ? (
+              // Liked filter selected
+              loading.likes ? (
+                <View style={styles.loaderContainer}>
+                  <ActivityIndicator size="large" color={COLORS.primary} />
+                </View>
+              ) : likedUsers.length === 0 ? (
+                <EmptyStateCard type="liked" />
+              ) : (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.spotlightScroll}
+                >
+                  {likedUsers.map((user, index) => (
+                    <MatchCard
+                      key={user.id ? `user-${user.id}` : `liked-${index}`}
+                      user={user}
+                      onPress={handleMatchPress}
+                    />
+                  ))}
+                </ScrollView>
+              )
+            ) : // All or other filter selected
+            loading.preferences ? (
               <View style={styles.loaderContainer}>
                 <ActivityIndicator size="large" color={COLORS.primary} />
               </View>
@@ -577,9 +647,13 @@ const MatchesScreen = () => {
           {/* Suggested Matches Section (formerly Quick Matches) */}
           <View style={styles.quickMatchSection}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Suggested Matches</Text>
+              <Text style={styles.sectionTitle}>
+                {activeFilter === "Liked"
+                  ? "More Profiles may Liked"
+                  : "Suggested Matches"}
+              </Text>
               <View style={styles.sectionHeaderRight}>
-                {suggestionPercentage > 0 && (
+                {activeFilter !== "Liked" && suggestionPercentage > 0 && (
                   <View style={styles.percentageContainer}>
                     <Text style={styles.percentageText}>
                       {suggestionPercentage}% match
@@ -592,7 +666,27 @@ const MatchesScreen = () => {
               </View>
             </View>
 
-            {loading.suggested ? (
+            {activeFilter === "Liked" ? (
+              // Liked filter selected for bottom section
+              loading.likes ? (
+                <View style={styles.loaderContainer}>
+                  <ActivityIndicator size="large" color={COLORS.primary} />
+                </View>
+              ) : likedUsers.length === 0 ? (
+                <EmptyStateCard type="liked" />
+              ) : (
+                <View style={styles.quickMatchGrid}>
+                  {likedUsers.map((user) => (
+                    <QuickMatch
+                      key={user.id}
+                      user={user}
+                      onPress={handleMatchPress}
+                    />
+                  ))}
+                </View>
+              )
+            ) : // All or other filter selected for bottom section
+            loading.suggested ? (
               <View style={styles.loaderContainer}>
                 <ActivityIndicator size="large" color={COLORS.primary} />
               </View>
@@ -1046,4 +1140,5 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
+
 export default withProfileCompletion(MatchesScreen);

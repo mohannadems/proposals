@@ -16,13 +16,10 @@ export default function VerificationScreen() {
 
   const handleUploadDocument = () => {
     // Logic to upload a verification document
-    console.log("Upload verification document");
   };
 
   const handleSubmitVerification = () => {
-    // Submit verification logic here
-    console.log("Verification submitted:", { document });
-    router.back(); // Navigate back to the previous screen
+    router.back();
   };
 
   return (

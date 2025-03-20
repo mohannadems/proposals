@@ -14,11 +14,9 @@ const getUserSpecificKey = async () => {
 
     if (userId) {
       const key = `${SEARCH_PREFERENCES_KEY}_${userId}`;
-      console.log(`Using preference storage key: ${key}`);
       return key;
     }
 
-    console.log("No user ID found, using guest preferences key");
     return `${SEARCH_PREFERENCES_KEY}_guest`;
   } catch (error) {
     console.error("Error creating preferences key:", error.message);
@@ -35,7 +33,6 @@ export const searchService = {
       // Save preferences with user-specific key
       const storageKey = await getUserSpecificKey();
       await AsyncStorage.setItem(storageKey, JSON.stringify(preferences));
-      console.log(`Preferences saved with key: ${storageKey}`);
 
       // Also save a flag that user has submitted preferences at least once
       await AsyncStorage.setItem(HAS_SUBMITTED_PREFERENCES, "true");
@@ -55,38 +52,26 @@ export const searchService = {
     try {
       // First try API if we're online
       try {
-        console.log("Attempting to get preferences from API...");
         const response = await api.get(ENDPOINTS.GET_USER_PREFERENCES);
-        console.log("API Response:", response.data);
 
         if (response.data?.data) {
           // API returned preferences, save them locally
           const apiData = response.data.data;
           const storageKey = await getUserSpecificKey();
           await AsyncStorage.setItem(storageKey, JSON.stringify(apiData));
-          console.log(`Saved API preferences to ${storageKey}`);
           return { data: apiData };
         } else {
-          console.log("API returned no preferences data");
         }
-      } catch (apiError) {
-        console.log(
-          "API fetch failed, trying local storage:",
-          apiError.message
-        );
-      }
+      } catch (apiError) {}
 
       // If API fails or returns no data, try local storage
       const storageKey = await getUserSpecificKey();
-      console.log(`Looking for local preferences with key: ${storageKey}`);
       const localPreferences = await AsyncStorage.getItem(storageKey);
 
       if (localPreferences) {
-        console.log("Found local preferences");
         return { data: JSON.parse(localPreferences) };
       }
 
-      console.log("No preferences found in local storage");
       return { data: null };
     } catch (error) {
       console.error("Error getting saved preferences:", error);

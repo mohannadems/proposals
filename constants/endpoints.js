@@ -21,4 +21,6 @@ export const ENDPOINTS = {
   USER_PROFILE: "/user-profile",
   LIKE_USER: "/like",
   DISLIKE_USER: "/dislike",
+  MATCHES: "/matches",
+  GET_LIKES: "/getlikes",
 };

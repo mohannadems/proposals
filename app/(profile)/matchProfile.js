@@ -26,6 +26,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { showMessage } from "react-native-flash-message";
 import { FadeInDown } from "react-native-reanimated";
 import {
+  setActiveTab,
+  fetchUserLikes,
+} from "../../store/slices/userMatchesSlice";
+
+import {
   fetchUserProfile,
   likeUser,
   dislikeUser,
@@ -362,6 +367,7 @@ const StatItem = ({ label, value, icon }) => (
 
 const MatchProfileScreen = () => {
   const [dislikeLoading, setDislikeLoading] = useState(false);
+  const [likeLoading, setLikeLoading] = useState(false);
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showLikeModal, setShowLikeModal] = useState(false);
@@ -408,13 +414,70 @@ const MatchProfileScreen = () => {
     extrapolate: "clamp",
   });
 
-  const handleLikeConfirm = useCallback(() => {
+  const handleLikeConfirm = useCallback(async () => {
     if (userProfile && !isLiked) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      dispatch(likeUser(userProfile.id));
+      try {
+        // Set loading state to true
+        setLikeLoading(true);
+
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+        // Like the user and get the response
+        const likeResponse = await dispatch(likeUser(userProfile.id)).unwrap();
+
+        // Short delay to ensure the like is processed
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        // Close the modal
+        setShowLikeModal(false);
+
+        // Check if it's a match (in your API response)
+        const isMatch = likeResponse?.is_match === true;
+
+        if (isMatch) {
+          // If it's a match, navigate to the match screen with the matched user ID
+          router.push({
+            pathname: `/match-screen`,
+            params: { matchedUserId: userProfile.id },
+          });
+        } else {
+          // If not a match, show a success message
+          showMessage({
+            message: "Success",
+            description: `You liked ${userProfile.first_name}!`,
+            type: "success",
+          });
+
+          // Set Redux state to show "Liked" tab when returning to matches screen
+          dispatch(setActiveTab("Liked"));
+
+          // Prefetch the liked users so they're ready when navigating
+          dispatch(fetchUserLikes());
+
+          // Navigate back to the matches screen (tab)
+          // For expo-router, use string params
+          router.push({
+            pathname: "/(tabs)/matches",
+            params: { showLiked: "true" },
+          });
+        }
+
+        // Reset loading state
+        setLikeLoading(false);
+      } catch (error) {
+        console.error("Error liking user:", error);
+        showMessage({
+          message: "Error",
+          description: "There was a problem liking this profile",
+          type: "danger",
+        });
+        setShowLikeModal(false);
+        setLikeLoading(false);
+      }
+    } else {
       setShowLikeModal(false);
     }
-  }, [dispatch, userProfile, isLiked]);
+  }, [dispatch, userProfile, isLiked, router]);
 
   const handleLike = useCallback(() => {
     if (userProfile && !isLiked) {

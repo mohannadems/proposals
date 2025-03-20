@@ -40,6 +40,13 @@ export default function ProfileLayout() {
           title: "fillProfileData",
         }}
       />
+      <Stack.Screen
+        name="match-screen"
+        options={{
+          headerShown: false,
+          title: "match-screen",
+        }}
+      />
     </Stack>
   );
 }

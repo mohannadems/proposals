@@ -18,7 +18,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { LinearGradient } from "expo-linear-gradient";
 import { authService } from "../../services/auth.service";
 import { useRouter } from "expo-router";
-
+import withProfileCompletion from "../../components/profile/withProfileCompletion";
 import { searchService } from "../../services/searchService";
 import {
   getSavedPreferences,
@@ -98,7 +98,6 @@ const SearchScreen = ({ navigation }) => {
   const debugSearchPreferences = async () => {
     try {
       const debugInfo = await searchService.debugPreferences();
-      console.log("Debug Info:", debugInfo);
       Alert.alert("Preferences Debug Info", JSON.stringify(debugInfo, null, 2));
     } catch (error) {
       console.error("Debug error:", error);
@@ -112,38 +111,23 @@ const SearchScreen = ({ navigation }) => {
     setIsLoading(true);
 
     try {
-      console.log("Initializing search screen...");
-
       // First, ensure we have a valid user ID for preferences
       const userId = await authService.getUserId();
       setPreferencesUserId(userId);
-      console.log(`Using user ID for preferences: ${userId || "none"}`);
 
       // Fetch all profile attributes data first
       await dispatch(fetchAllProfileData()).unwrap();
-      console.log("Fetched profile attributes data");
 
       // Get user preferences with detailed logging
-      console.log("Getting saved preferences...");
       try {
         const preferencesResult = await dispatch(
           getSavedPreferences()
         ).unwrap();
 
-        console.log(
-          "Loaded preferences:",
-          preferencesResult
-            ? `Found ${Object.keys(preferencesResult).length} preference keys`
-            : "No preferences found"
-        );
-
         // If a country is selected, fetch its cities
         if (preferencesResult?.preferred_country_id) {
           dispatch(
             fetchCitiesByCountry(preferencesResult.preferred_country_id)
-          );
-          console.log(
-            `Fetching cities for country ID: ${preferencesResult.preferred_country_id}`
           );
         }
 
@@ -151,7 +135,6 @@ const SearchScreen = ({ navigation }) => {
         setTimeout(() => {
           if (isMounted) {
             updateSectionStatus();
-            console.log("Section status updated after preferences loaded");
           }
         }, 200);
       } catch (prefsError) {
@@ -203,32 +186,19 @@ const SearchScreen = ({ navigation }) => {
   useEffect(() => {
     if (!isMounted || isLoading) return;
 
-    console.log("Auth state changed - checking if preferences need refreshing");
-
     // When auth state changes, check if we need to refresh
     authService
       .getUserId()
       .then(async (newUserId) => {
-        console.log(
-          `Current user ID: ${preferencesUserId}, New user ID: ${newUserId}`
-        );
-
         if (newUserId !== preferencesUserId) {
-          console.log("User ID changed, refreshing preferences");
           setPreferencesUserId(newUserId);
 
           // Force-debug to see what's happening with preferences
           const debugInfo = await searchService.debugPreferences();
-          console.log("Preferences debug info:", debugInfo);
 
           // Full refresh
           initializeScreen();
         } else if (authState.isAuthenticated) {
-          // Same user but ensure preferences are loaded
-          console.log(
-            "Auth state changed but same user ID, checking preferences"
-          );
-
           const preferencesExist = Object.keys(preferences).some(
             (key) =>
               preferences[key] !== null &&
@@ -239,24 +209,19 @@ const SearchScreen = ({ navigation }) => {
           );
 
           if (!preferencesExist) {
-            console.log("No preferences found, reloading");
             initializeScreen();
           } else {
-            console.log("Preferences exist, updating section status");
             updateSectionStatus();
           }
         }
       })
-      .catch((error) => {
-        console.error("Error checking user ID:", error);
-      });
+      .catch((error) => {});
   }, [authState, isLoading]);
 
   // Update section status when preferences change
   useEffect(() => {
     // This will run whenever preferences change
     if (!isLoading && isMounted) {
-      console.log("Preferences changed, updating section status");
       updateSectionStatus();
     }
   }, [preferences, isLoading]);
@@ -273,13 +238,6 @@ const SearchScreen = ({ navigation }) => {
     if (!isMounted) return;
 
     try {
-      console.log(
-        "Updating section status with current preferences:",
-        Object.keys(preferences).filter(
-          (key) => preferences[key] !== null && preferences[key] !== undefined
-        )
-      );
-
       const newStatus = {
         basic: isBasicSectionComplete(),
         education: isEducationSectionComplete(),
@@ -287,7 +245,6 @@ const SearchScreen = ({ navigation }) => {
         lifestyle: isLifestyleSectionComplete(),
       };
 
-      console.log("New section status:", newStatus);
       setSectionStatus(newStatus);
     } catch (error) {
       console.error("Error updating section status:", error);
@@ -1693,4 +1650,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SearchScreen;
+export default withProfileCompletion(SearchScreen);

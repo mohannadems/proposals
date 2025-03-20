@@ -60,7 +60,6 @@ export default function VerifyOTPScreen() {
       const result = await dispatch(
         verifyOTP({ email: tempEmail, otp })
       ).unwrap();
-      console.log("Verification result:", result);
 
       if (result.success) {
         router.replace("/(tabs)/home");
@@ -68,7 +67,6 @@ export default function VerifyOTPScreen() {
         setValidationError(result.message || "Verification failed");
       }
     } catch (error) {
-      console.log("Verification error:", error);
       setValidationError(error.message || "Verification failed");
     }
   };

@@ -60,6 +60,8 @@
     "react-dom": "18.3.1",
     "react-hook-form": "^7.54.2",
     "react-native": "0.76.6",
+    "react-native-confetti": "^0.1.0",
+    "react-native-confetti-cannon": "^1.5.2",
     "react-native-dropdown-picker": "^5.4.6",
     "react-native-feather": "^1.1.2",
     "react-native-flash-message": "^0.4.2",

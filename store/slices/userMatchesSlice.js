@@ -1,7 +1,10 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk, createAction } from "@reduxjs/toolkit";
 import { showMessage } from "react-native-flash-message";
 import api from "../../services/api";
 import { ENDPOINTS } from "../../constants/endpoints";
+
+// Create action for setting active tab
+export const setActiveTab = createAction("userMatches/setActiveTab");
 
 // Async thunk for fetching user matches
 export const fetchUserMatches = createAsyncThunk(
@@ -65,23 +68,60 @@ export const fetchFilteredMatches = createAsyncThunk(
   }
 );
 
+// New async thunk for fetching user likes
+export const fetchUserLikes = createAsyncThunk(
+  "userMatches/fetchUserLikes",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get(ENDPOINTS.GET_LIKES);
+      return response.data;
+    } catch (error) {
+      showMessage({
+        message: error.response?.data?.message || "Failed to fetch liked users",
+        type: "danger",
+      });
+      return rejectWithValue(
+        error.response?.data || { message: "Failed to fetch liked users" }
+      );
+    }
+  }
+);
+
+// Helper function to ensure unique list items
+const ensureUniqueUsers = (users) => {
+  // Use Map to track unique users by ID
+  const uniqueUsers = new Map();
+
+  users.forEach((user) => {
+    if (!uniqueUsers.has(user.id)) {
+      uniqueUsers.set(user.id, user);
+    }
+  });
+
+  return Array.from(uniqueUsers.values());
+};
+
 const initialState = {
-  // Renamed to match the API response
+  activeTab: "All",
   preferenceMatches: [],
   suggestedMatches: [],
   suggestionPercentage: 0,
+  likedUsers: [], // New state for liked users
   loading: {
     preferences: false,
     suggested: false,
+    likes: false, // New loading state for likes
   },
   error: {
     preferences: null,
     suggested: null,
+    likes: null, // New error state for likes
   },
   activeFilters: {
     isFilter: false,
     age_min: null,
     age_max: null,
+    isLikedFilter: false, // New filter flag for likes
   },
 };
 
@@ -101,11 +141,23 @@ const userMatchesSlice = createSlice({
         isFilter: false,
         age_min: null,
         age_max: null,
+        isLikedFilter: false,
       };
+    },
+    setLikedFilter: (state, action) => {
+      state.activeFilters.isLikedFilter = action.payload;
+    },
+    setActiveTabReducer: (state, action) => {
+      state.activeTab = action.payload;
     },
   },
   extraReducers: (builder) => {
     builder
+      // Handle the setActiveTab action
+      .addCase(setActiveTab, (state, action) => {
+        state.activeTab = action.payload;
+      })
+
       // Fetch User Matches
       .addCase(fetchUserMatches.pending, (state) => {
         state.loading.preferences = true;
@@ -118,12 +170,18 @@ const userMatchesSlice = createSlice({
         if (action.payload) {
           // Handle exact matches (preference matches)
           if (action.payload.exact_matches) {
-            state.preferenceMatches = action.payload.exact_matches;
+            // Ensure unique users
+            state.preferenceMatches = ensureUniqueUsers(
+              action.payload.exact_matches
+            );
           }
 
           // Handle suggested users
           if (action.payload.suggested_users) {
-            state.suggestedMatches = action.payload.suggested_users;
+            // Ensure unique users
+            state.suggestedMatches = ensureUniqueUsers(
+              action.payload.suggested_users
+            );
           }
 
           // Store suggestion percentage if available
@@ -147,14 +205,20 @@ const userMatchesSlice = createSlice({
 
         // For filtered matches, we primarily update the suggested matches
         if (action.payload && action.payload.suggested_users) {
-          state.suggestedMatches = action.payload.suggested_users;
+          // Ensure unique users
+          state.suggestedMatches = ensureUniqueUsers(
+            action.payload.suggested_users
+          );
         } else {
           state.suggestedMatches = [];
         }
 
         // Also update exact matches if they're in the response
         if (action.payload && action.payload.exact_matches) {
-          state.preferenceMatches = action.payload.exact_matches;
+          // Ensure unique users
+          state.preferenceMatches = ensureUniqueUsers(
+            action.payload.exact_matches
+          );
         }
 
         // Store suggestion percentage if available
@@ -165,10 +229,66 @@ const userMatchesSlice = createSlice({
       .addCase(fetchFilteredMatches.rejected, (state, action) => {
         state.loading.suggested = false;
         state.error.suggested = action.payload;
+      })
+
+      // Fetch User Likes
+      .addCase(fetchUserLikes.pending, (state) => {
+        state.loading.likes = true;
+        state.error.likes = null;
+      })
+      .addCase(fetchUserLikes.fulfilled, (state, action) => {
+        state.loading.likes = false;
+
+        // Extract and format liked users from the response
+        if (action.payload && action.payload.likes) {
+          // Map the likes array to the format expected by the UI components
+          const formattedLikes = action.payload.likes.map((like) => {
+            const user = like.user;
+
+            // Get the photo URL from the first photo if available
+            const mainPhoto =
+              user.photos && user.photos.length > 0
+                ? { photo_url: user.photos[0].url }
+                : null;
+
+            return {
+              id: user.id,
+              first_name: user.first_name,
+              last_name: user.last_name,
+              email: user?.user?.email,
+              photos: user?.user?.photos
+                ? user.photos.map((photo) => ({
+                    id: photo.id,
+                    photo_url: photo.url,
+                  }))
+                : [],
+              // Add additional fields that might be needed by the UI
+              match_percentage: 100, // Liked users can be considered 100% match
+              verified: false, // Default values for required fields
+              premium: false,
+              last_active: "Recently",
+              likeId: like.id, // Store the like ID to ensure uniqueness
+            };
+          });
+
+          // Ensure unique users in liked list
+          state.likedUsers = ensureUniqueUsers(formattedLikes);
+        } else {
+          state.likedUsers = [];
+        }
+      })
+      .addCase(fetchUserLikes.rejected, (state, action) => {
+        state.loading.likes = false;
+        state.error.likes = action.payload;
       });
   },
 });
 
-export const { setActiveFilters, clearFilters } = userMatchesSlice.actions;
+export const {
+  setActiveFilters,
+  clearFilters,
+  setLikedFilter,
+  setActiveTabReducer,
+} = userMatchesSlice.actions;
 
 export default userMatchesSlice.reducer;

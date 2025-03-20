@@ -31,7 +31,6 @@ export const authService = {
         if (tokenParts.length > 0) {
           const tokenIdentifier = tokenParts[0];
           await AsyncStorage.setItem(USER_ID_KEY, tokenIdentifier);
-          console.log(`Saved token-based user ID: ${tokenIdentifier}`);
         }
 
         // Try to fetch user profile to get a better user ID
@@ -53,17 +52,9 @@ export const authService = {
                 USER_ID_KEY,
                 userProfile.id.toString()
               );
-              console.log(
-                `Updated to profile-based user ID: ${userProfile.id}`
-              );
             }
           }
-        } catch (profileError) {
-          console.log(
-            "Profile fetch failed, using token-based ID:",
-            profileError.message
-          );
-        }
+        } catch (profileError) {}
       }
 
       return response.data;
@@ -116,9 +107,7 @@ export const authService = {
               );
             }
           }
-        } catch (profileError) {
-          console.log("Profile fetch after OTP failed:", profileError.message);
-        }
+        } catch (profileError) {}
       }
 
       return {
@@ -143,12 +132,9 @@ export const authService = {
       // Call logout API if needed
       try {
         await api.post(ENDPOINTS.LOGOUT);
-      } catch (logoutError) {
-        console.log("API logout error (continuing):", logoutError.message);
-      }
+      } catch (logoutError) {}
 
       // DO NOT remove USER_ID_KEY - critical for preference persistence
-      console.log("Keeping user ID for preferences during logout");
 
       // Remove token and profile
       await AsyncStorage.removeItem(USER_TOKEN_KEY);
@@ -182,9 +168,7 @@ export const authService = {
             await AsyncStorage.setItem(USER_ID_KEY, profile.id.toString());
             return profile.id.toString();
           }
-        } catch (e) {
-          console.log("Error parsing profile:", e.message);
-        }
+        } catch (e) {}
       }
 
       // Last resort: try to extract from token

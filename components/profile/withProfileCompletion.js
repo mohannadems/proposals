@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "expo-router";
 import { MaterialIcons, Feather } from "@expo/vector-icons";
@@ -15,6 +15,7 @@ import {
   Platform,
   StatusBar,
   Dimensions,
+  RefreshControl,
 } from "react-native";
 import Animated, {
   withSpring,
@@ -28,7 +29,7 @@ import { LinearGradient as ExpoLinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { calculateProfileProgress } from "../../utils/profileProgress";
 import ProfileCompletionAlert from "./ProfileCompletionAlert";
-import { fetchProfile } from "../../store/slices/profile.slice";
+import { fetchProfileCompletionData } from "../../store/slices/profileCompletionSlice";
 
 const { width } = Dimensions.get("window");
 const scale = width / 375;
@@ -155,57 +156,70 @@ const withProfileCompletion = (WrappedComponent) => {
     // All hooks inside the component function
     const dispatch = useDispatch();
     const { data } = useSelector((state) => state.profile);
-    console.log(data);
     const userId = useSelector((state) => state.profile.data?.id);
     const router = useRouter();
     const insets = useSafeAreaInsets();
 
     const [savedProgress, setSavedProgress] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const [progressInfo, setProgressInfo] = useState({
       progress: 0,
       missingFields: [],
     });
     const fadeAnim = useSharedValue(0);
 
+    // Load profile data function
+    const loadProfileData = useCallback(async () => {
+      try {
+        if (!userId) {
+          setProgressInfo(calculateProfileProgress(data));
+          return;
+        }
+
+        const storageKey = `profile_form_data_${userId}`;
+        const savedData = await AsyncStorage.getItem(storageKey);
+
+        if (savedData) {
+          const parsed = JSON.parse(savedData);
+          setSavedProgress(parsed);
+          setProgressInfo(calculateProfileProgress(data, parsed));
+        } else {
+          setProgressInfo(calculateProfileProgress(data));
+        }
+      } catch (error) {
+        console.error("Error loading saved progress:", error);
+        setProgressInfo(calculateProfileProgress(data));
+      }
+    }, [userId, data]);
+
     // Fetch profile data
     useEffect(() => {
-      dispatch(fetchProfile());
+      dispatch(fetchProfileCompletionData());
     }, [dispatch]);
 
     useEffect(() => {
       fadeAnim.value = withTiming(1, { duration: 800 });
     }, []);
 
+    // Load saved progress
     useEffect(() => {
-      const loadSavedProgress = async () => {
-        try {
-          setIsLoading(true);
-          if (!userId) {
-            setProgressInfo(calculateProfileProgress(data));
-            return;
-          }
-
-          const storageKey = `profile_form_data_${userId}`;
-          const savedData = await AsyncStorage.getItem(storageKey);
-
-          if (savedData) {
-            const parsed = JSON.parse(savedData);
-            setSavedProgress(parsed);
-            setProgressInfo(calculateProfileProgress(data, parsed));
-          } else {
-            setProgressInfo(calculateProfileProgress(data));
-          }
-        } catch (error) {
-          console.error("Error loading saved progress:", error);
-          setProgressInfo(calculateProfileProgress(data));
-        } finally {
-          setIsLoading(false);
-        }
+      const initializeData = async () => {
+        setIsLoading(true);
+        await loadProfileData();
+        setIsLoading(false);
       };
 
-      loadSavedProgress();
-    }, [userId, data]);
+      initializeData();
+    }, [userId, data, loadProfileData]);
+
+    // Refresh handler
+    const onRefresh = useCallback(async () => {
+      setRefreshing(true);
+      await dispatch(fetchProfileCompletionData());
+      await loadProfileData();
+      setRefreshing(false);
+    }, [dispatch, loadProfileData]);
 
     if (isLoading) {
       return (
@@ -228,6 +242,14 @@ const withProfileCompletion = (WrappedComponent) => {
               { paddingBottom: insets.bottom + 24 },
             ]}
             showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={[COLORS.primary]}
+                tintColor={COLORS.primary}
+              />
+            }
           >
             <Animated.View
               style={[styles.contentContainer, { opacity: fadeAnim }]}
@@ -275,22 +297,42 @@ const withProfileCompletion = (WrappedComponent) => {
                 ))}
               </View>
 
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={() => router.push("/(profile)/fillProfileData")}
-              >
-                <ExpoLinearGradient
-                  colors={[COLORS.primary, COLORS.secondary]}
-                  style={styles.buttonGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
+              <View style={styles.actionButtonsContainer}>
+                <TouchableOpacity
+                  style={styles.refreshButton}
+                  onPress={onRefresh}
+                  disabled={refreshing}
                 >
-                  <Text style={styles.buttonText}>
-                    {savedProgress ? "Continue Profile" : "Complete Profile"}
+                  <Feather
+                    name="refresh-cw"
+                    size={20}
+                    color={COLORS.primary}
+                    style={{
+                      ...(refreshing && { transform: [{ rotate: "45deg" }] }),
+                    }}
+                  />
+                  <Text style={styles.refreshButtonText}>
+                    {refreshing ? "Refreshing..." : "Refresh"}
                   </Text>
-                  <Feather name="arrow-right" size={20} color="#fff" />
-                </ExpoLinearGradient>
-              </TouchableOpacity>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={() => router.push("/(profile)/fillProfileData")}
+                >
+                  <ExpoLinearGradient
+                    colors={[COLORS.primary, COLORS.secondary]}
+                    style={styles.buttonGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                  >
+                    <Text style={styles.buttonText}>
+                      {savedProgress ? "Continue Profile" : "Complete Profile"}
+                    </Text>
+                    <Feather name="arrow-right" size={20} color="#fff" />
+                  </ExpoLinearGradient>
+                </TouchableOpacity>
+              </View>
             </Animated.View>
           </ScrollView>
         </View>
@@ -461,9 +503,11 @@ const styles = StyleSheet.create({
     color: "#666",
     marginTop: moderateScale(8),
   },
-  actionButton: {
+  actionButtonsContainer: {
     marginHorizontal: moderateScale(20),
     marginBottom: moderateScale(20),
+  },
+  actionButton: {
     ...Platform.select({
       ios: {
         shadowColor: COLORS.primary,
@@ -488,6 +532,34 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     marginRight: 8,
+  },
+  refreshButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: moderateScale(12),
+    marginBottom: moderateScale(16),
+    backgroundColor: "white",
+    borderRadius: moderateScale(12),
+    borderWidth: 1,
+    borderColor: `${COLORS.primary}30`,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  refreshButtonText: {
+    marginLeft: moderateScale(8),
+    fontSize: moderateScale(16),
+    fontWeight: "500",
+    color: COLORS.primary,
   },
 });
 

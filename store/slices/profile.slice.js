@@ -48,10 +48,6 @@ export const updateProfilePhoto = createAsyncThunk(
         actualFormData,
         onProgress
       );
-      console.log(
-        "Full server response in action:",
-        JSON.stringify(response, null, 2)
-      );
 
       if (response.success) {
         return response;
@@ -171,11 +167,6 @@ const profileSlice = createSlice({
         state.error = action.payload || "Failed to update profile";
       })
       .addCase(updateProfilePhoto.fulfilled, (state, action) => {
-        console.log(
-          "Action payload in reducer:",
-          JSON.stringify(action.payload, null, 2)
-        );
-
         state.loading = false;
         state.profilePhotoUpdated = true;
 
