@@ -13,20 +13,6 @@ export default function ProfileLayout() {
       }}
     >
       <Stack.Screen
-        name="create"
-        options={{
-          title: "Create Profile",
-          headerLeft: null,
-        }}
-      />
-
-      <Stack.Screen
-        name="edit"
-        options={{
-          title: "Edit Profile",
-        }}
-      />
-      <Stack.Screen
         name="matchProfile"
         options={{
           headerShown: false,

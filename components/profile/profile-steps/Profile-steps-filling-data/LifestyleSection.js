@@ -94,7 +94,7 @@ const LifestyleSection = () => {
     skinColors = [],
     sleepHabits = [],
   } = personalAttributes;
-  const { marriageBudget = [] } = professionalEducational;
+  const { marriageBudget = [] } = personalAttributes;
   console.log(marriageBudget, " marriage budget");
   const {
     hobbies = [],
@@ -399,9 +399,8 @@ const LifestyleSection = () => {
                       isSelected && styles.preferenceItemSelected,
                     ]}
                   >
-                    {/* Render icon based on item name */}
                     <Ionicons
-                      name={smokingIcons[item.name] || "alert-circle"} // Default icon if not found
+                      name={smokingIcons[item.name] || "alert-circle"}
                       size={20}
                       color={isSelected ? "white" : "#9e086c"}
                       style={{ marginRight: 5 }}

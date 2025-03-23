@@ -34,7 +34,6 @@ export default function VerifyOTPScreen() {
     }
   }, [route.params?.email, dispatch]);
 
-  // Automatically verify when OTP is complete
   useEffect(() => {
     if (otp.length === 6 && !loading) {
       handleVerify();

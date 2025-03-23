@@ -372,7 +372,7 @@ const ProfileScreen = () => {
             style={styles.logoutButtonn}
             onPress={() =>
               router.push({
-                pathname: "../(profile)/seeMyProfile",
+                pathname: "../(profile)/seeMyProfilee",
                 params: { userId: profile.id },
               })
             }

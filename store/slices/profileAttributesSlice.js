@@ -180,6 +180,7 @@ const profileAttributesSlice = createSlice({
         state.skinColors = action.payload.skin_colors || [];
         state.zodiacSigns = action.payload.zodiac_signs || [];
         state.sleepHabits = action.payload.sleep_habits || [];
+        state.marriageBudget = action.payload.marriage_budget || [];
       })
       .addCase(fetchPersonalAttributes.rejected, (state, action) => {
         state.loading.personalAttributes = false;
@@ -219,7 +220,6 @@ const profileAttributesSlice = createSlice({
         state.specializations = action.payload.specializations || [];
         state.positionLevels = action.payload.position_levels || [];
         state.educationalLevels = action.payload.educational_levels || [];
-        state.marriageBudget = action.payload.marriage_budget || [];
       })
       .addCase(fetchProfessionalEducational.rejected, (state, action) => {
         state.loading.professionalEducational = false;
@@ -307,7 +307,6 @@ const selectHousingStatuses = (state) =>
 const selectFinancialStatuses = (state) =>
   state.profileAttributes.financialStatuses;
 
-// Memoized selectors that combine multiple state slices
 export const selectPersonalAttributes = createSelector(
   [
     selectHairColors,
@@ -318,6 +317,7 @@ export const selectPersonalAttributes = createSelector(
     selectSkinColors,
     selectZodiacSigns,
     selectSleepHabits,
+    selectMarriageBudget,
   ],
   (
     hairColors,
@@ -327,7 +327,8 @@ export const selectPersonalAttributes = createSelector(
     maritalStatuses,
     skinColors,
     zodiacSigns,
-    sleepHabits
+    sleepHabits,
+    marriageBudget // Add this parameter
   ) => ({
     hairColors,
     heights,
@@ -337,9 +338,9 @@ export const selectPersonalAttributes = createSelector(
     skinColors,
     zodiacSigns,
     sleepHabits,
+    marriageBudget, // Add this to the returned object
   })
 );
-
 export const selectLifestyleInterests = createSelector(
   [
     selectHobbies,
@@ -371,20 +372,12 @@ export const selectProfessionalEducational = createSelector(
     selectSpecializations,
     selectPositionLevels,
     selectEducationalLevels,
-    selectMarriageBudget,
     selectJobTitles,
   ],
-  (
+  (specializations, positionLevels, educationalLevels, jobTitles) => ({
     specializations,
     positionLevels,
     educationalLevels,
-    marriageBudget,
-    jobTitles
-  ) => ({
-    specializations,
-    positionLevels,
-    educationalLevels,
-    marriageBudget,
     jobTitles,
   })
 );

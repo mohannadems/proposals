@@ -1,623 +1,73 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useSelector } from "react-redux";
-import { debounce } from "lodash";
-
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   ScrollView,
-  StyleSheet,
-  Alert,
   TouchableOpacity,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Text,
   Animated,
-  Dimensions,
-  Modal,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { setShowProfileAlert } from "../../store/slices/profile.slice";
-import { useForm, FormProvider } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import * as Yup from "yup";
+import { useNavigation } from "@react-navigation/native";
+import { useDispatch, useSelector } from "react-redux";
+import { FormProvider } from "react-hook-form";
+import Feather from "react-native-vector-icons/Feather";
+import ProgressSteps from "../../components/common/ProgressSteps";
 import PersonalInfoSection from "../../components/profile/profile-steps/Profile-steps-filling-data/PersonalInfoSection";
 import LifestyleSection from "../../components/profile/profile-steps/Profile-steps-filling-data/LifestyleSection";
 import EducationWorkSection from "../../components/profile/profile-steps/Profile-steps-filling-data/EducationWorkSection";
-import ProgressSteps from "../../components/common/ProgressSteps";
-import { COLORS } from "../../constants/colors";
-import { profileValidationSchema } from "../../utils/profile-validation";
-import { useNavigation } from "@react-navigation/native";
-import styles from "../../styles/fillProfileData";
-import { stepFields } from "../../utils/profile-validation";
-import Feather from "react-native-vector-icons/Feather";
-import { updateProfile } from "../../store/slices/profile.slice";
-import { fetchProfile } from "../../store/slices/profile.slice";
-import { useDispatch } from "react-redux";
-import { updateProfilePhoto } from "../../store/slices/profile.slice";
 import ProfileImageSection from "../../components/profile/profile-steps/Profile-steps-filling-data/ProfileImageSection";
-const { width, height } = Dimensions.get("window");
+import ErrorModal from "../../components/profile/profile-steps/Profile-steps-filling-data/ErrorModal";
+import { useProfileForm } from "../../components/profile/profile-steps/Profile-steps-filling-data/useProfileForm";
+import { FORM_STEPS } from "../../components/profile/profile-steps/Profile-steps-filling-data/form_steps";
+import styles from "../../styles/fillProfileData";
+import { COLORS } from "../../constants/colors";
 
-const FORM_STEPS = [
-  {
-    id: 1,
-    title: "Personal Details",
-    description: "Let's get to know you",
-    icon: "user",
-  },
-  {
-    id: 2,
-    title: "Lifestyle Insights",
-    description: "Your unique preferences",
-    icon: "activity",
-  },
-  {
-    id: 3,
-    title: "Professional Journey",
-    description: "Education and career path",
-    icon: "briefcase",
-  },
-  {
-    id: 4,
-    title: "Profile Picture",
-    description: "Choose your profile image",
-    icon: "camera",
-  },
-];
-// Part 2: Initial Form State & Error Modal
-const initialFormState = {
-  bio_en: "",
-  bio_ar: "",
-  gender: "",
-  date_of_birth: "",
-  height: null,
-  weight: null,
-  nationality_id: null,
-  country_of_residence_id: null,
-  city_id: null,
-  educational_level_id: null,
-  specialization_id: null,
-  employment_status: null,
-  smoking_status: null,
-  smoking_tools: [],
-  drinking_status_id: null,
-  sports_activity_id: null,
-  religion_id: null,
-  marital_status_id: null,
-  number_of_children: 0,
-  housing_status_id: null,
-  hobbies: [],
-  pets: [],
-  health_issues_en: "",
-  health_issues_ar: "",
-  guardian_contact: "",
-  financial_status_id: null,
-  hijab_status: null,
-  profile_image: [],
-};
-
-const ErrorModal = ({ visible, errors, onClose }) => {
-  return (
-    <Modal
-      transparent={true}
-      visible={visible}
-      animationType="fade"
-      onRequestClose={onClose}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.errorModalContent}>
-          <Feather name="alert-triangle" size={50} color="#FF6B6B" />
-          <Text style={styles.errorModalTitle}>Oops! Something's Missing</Text>
-          <Text style={styles.errorModalSubtitle}>
-            Please review the following:
-          </Text>
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            style={styles.errorScrollView}
-            contentContainerStyle={styles.errorScrollContent}
-          >
-            {errors.map((error, index) => (
-              <View key={index} style={styles.errorItem}>
-                <Feather name="x-circle" size={18} color="#FF6B6B" />
-                <Text style={styles.backButton}>{error}</Text>
-              </View>
-            ))}
-          </ScrollView>
-          <TouchableOpacity style={styles.errorModalButton} onPress={onClose}>
-            <Text style={styles.errorModalButtonText}>Got It</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  );
-};
-const getStorageKeys = (userId) => ({
-  FORM_DATA: `profile_form_data_${userId}`,
-  LAST_UPDATED: `profile_form_last_updated_${userId}`,
-});
-const saveFormProgress = async (userId, step, formData) => {
-  if (!userId) {
-    return;
-  }
-
-  try {
-    const storageKeys = getStorageKeys(userId);
-    const dataToSave = {
-      step,
-      formData: {
-        ...formData,
-        date_of_birth: formData.date_of_birth
-          ? formData.date_of_birth.toISOString()
-          : null,
-      },
-      lastUpdated: new Date().toISOString(),
-    };
-
-    await AsyncStorage.setItem(
-      storageKeys.FORM_DATA,
-      JSON.stringify(dataToSave)
-    );
-  } catch (error) {
-    console.error("Error saving form progress:", error);
-  }
-};
-
-const loadFormProgress = async (userId) => {
-  if (!userId) {
-    return null;
-  }
-
-  try {
-    const storageKeys = getStorageKeys(userId);
-    const savedData = await AsyncStorage.getItem(storageKeys.FORM_DATA);
-
-    if (savedData) {
-      const parsed = JSON.parse(savedData);
-      return {
-        ...parsed,
-        formData: {
-          ...parsed.formData,
-          date_of_birth: parsed.formData.date_of_birth
-            ? new Date(parsed.formData.date_of_birth)
-            : null,
-        },
-      };
-    }
-    return null;
-  } catch (error) {
-    console.error("Error loading form progress:", error);
-    return null;
-  }
-};
-const clearFormProgress = async (userId) => {
-  if (!userId) return;
-
-  try {
-    const storageKeys = getStorageKeys(userId);
-    await AsyncStorage.removeItem(storageKeys.FORM_DATA);
-  } catch (error) {
-    console.error("Error clearing form progress:", error);
-  }
-};
-const clearAllFormProgress = async () => {
-  try {
-    const keys = await AsyncStorage.getAllKeys();
-    const formDataKeys = keys.filter((key) =>
-      key.startsWith("profile_form_data_")
-    );
-    await AsyncStorage.multiRemove(formDataKeys);
-  } catch (error) {
-    console.error("Error clearing all form progress:", error);
-  }
-};
-// Part 3: Component Setup & Handlers
-const fillProfileData = () => {
+const ProfileFormScreen = () => {
   const userId = useSelector((state) => state.profile.data?.id);
-
   const scrollViewRef = useRef(null);
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const [currentStep, setCurrentStep] = useState(1);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [currentErrors, setCurrentErrors] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
 
-  const fadeAnim = useState(new Animated.Value(1))[0];
+  const {
+    methods,
+    currentStep,
+    setCurrentStep,
+    isSubmitting,
+    setIsSubmitting,
+    fadeAnim,
+    handleNext,
+    handlePrevious,
+    handleFormSubmit,
+    isLoading,
+  } = useProfileForm(
+    userId,
+    scrollViewRef,
+    setCurrentErrors,
+    setErrorModalVisible
+  );
 
-  const methods = useForm({
-    defaultValues: initialFormState,
-    resolver: yupResolver(profileValidationSchema),
-    mode: "onChange",
-  });
-  const handleNext = useCallback(async () => {
-    try {
-      const currentStepFields = stepFields[currentStep];
-      const formValues = methods.getValues();
-
-      // Only validate current step fields
-      const validationResult = await methods.trigger(currentStepFields);
-
-      const currentErrors = Object.entries(methods.formState.errors)
-        .filter(([key]) => currentStepFields.includes(key))
-        .map(([key, error]) => {
-          const fieldName = key.replace(/_/g, " ").toLowerCase();
-          return error.message || `Please fill in ${fieldName} correctly`;
-        });
-
-      if (validationResult && currentErrors.length === 0) {
-        // Check if we're on step 4 (Profile Picture)
-        if (currentStep === 4) {
-          // Validate all fields before submission
-          const isValid = await methods.trigger();
-
-          if (isValid) {
-            const formData = methods.getValues();
-
-            try {
-              await onSubmit(formData);
-              return;
-            } catch (submitError) {
-              console.error("Submission failed:", submitError);
-              throw submitError;
-            }
-          } else {
-            const allErrors = Object.entries(methods.formState.errors).map(
-              ([key, error]) => error.message
-            );
-            setCurrentErrors(allErrors);
-            setErrorModalVisible(true);
-            return;
-          }
-        }
-
-        // If not on last step, proceed to next step
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }).start(() => {
-          setCurrentStep((prev) => {
-            const newStep = Math.min(prev + 1, FORM_STEPS.length);
-            return newStep;
-          });
-
-          setTimeout(() => {
-            scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-          }, 100);
-
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 200,
-            useNativeDriver: true,
-          }).start();
-        });
-      } else {
-        let errorsToShow = currentErrors;
-
-        if (errorsToShow.length === 0) {
-          errorsToShow = ["Please fill in all required fields correctly"];
-        }
-
-        // Step-specific validations
-        if (currentStep === 1) {
-          const dateOfBirth = formValues.date_of_birth;
-          if (dateOfBirth) {
-            const age = calculateAge(dateOfBirth);
-            if (age < 18) {
-              errorsToShow.push("You must be at least 18 years old");
-            }
-          }
-
-          if (
-            formValues.gender === "female" &&
-            formValues.hijab_status === null
-          ) {
-            errorsToShow.push("Hijab status is required for female users");
-          }
-        }
-
-        setCurrentErrors(errorsToShow);
-        setErrorModalVisible(true);
-        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-      }
-    } catch (error) {
-      console.error("HandleNext error:", error);
-      Alert.alert(
-        "Error",
-        error.message || "There was a problem validating your information.",
-        [{ text: "OK", onPress: () => setIsSubmitting(false) }],
-        { cancelable: false }
-      );
-    }
-  }, [currentStep, methods, fadeAnim, onSubmit]);
-  useEffect(() => {
-    const loadSavedProgress = async () => {
-      try {
-        setIsLoading(true);
-
-        if (!userId) {
-          methods.reset(initialFormState);
-          return;
-        }
-
-        const savedProgress = await loadFormProgress(userId);
-
-        if (savedProgress) {
-          const { step, formData, lastUpdated } = savedProgress;
-
-          // Check if saved data is less than 24 hours old
-          const savedDate = new Date(lastUpdated);
-          const now = new Date();
-          const hoursDiff = (now - savedDate) / (1000 * 60 * 60);
-
-          if (hoursDiff < 24) {
-            setCurrentStep(step);
-            methods.reset(formData);
-          } else {
-            await clearFormProgress(userId);
-            methods.reset(initialFormState);
-          }
-        } else {
-          methods.reset(initialFormState);
-        }
-      } catch (error) {
-        console.error("Error loading saved progress:", error);
-        methods.reset(initialFormState);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadSavedProgress();
-  }, [userId]);
-  useEffect(() => {
-    const saveProgress = async () => {
-      if (userId) {
-        const formData = methods.getValues();
-        await saveFormProgress(userId, currentStep, formData);
-      }
-    };
-
-    saveProgress();
-  }, [currentStep, methods.watch(), userId]);
-  useEffect(() => {}, [currentStep]);
-
-  // Helper function to calculate age
-  const calculateAge = (birthDate) => {
-    const today = new Date();
-    const birth = new Date(birthDate);
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-
-    if (
-      monthDiff < 0 ||
-      (monthDiff === 0 && today.getDate() < birth.getDate())
-    ) {
-      age--;
-    }
-
-    return age;
-  };
-  const handlePrevious = useCallback(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: true,
-    }).start(() => {
-      setCurrentStep((prev) => Math.max(prev - 1, 1));
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
-    });
-  }, [fadeAnim]);
-  const { control, watch, setValue, handleSubmit } = useForm({
-    resolver: yupResolver(profileValidationSchema),
-  });
-
-  const employment_status = watch("employment_status");
-
-  useEffect(() => {
-    if (employment_status === false) {
-      setValue("job_title_id", null);
-      setValue("position_level_id", null);
-    }
-  }, [employment_status, setValue]);
-
-  const onSubmit = async (data) => {
-    try {
-      setIsSubmitting(true);
-
-      const formatDate = (date) => {
-        if (!date) return null;
-        const d = new Date(date);
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
-          2,
-          "0"
-        )}-${String(d.getDate()).padStart(2, "0")}`;
-      };
-
-      const submissionData = {
-        // Personal Information
-        bio_en: String(data.bio_en || ""),
-        bio_ar: String(data.bio_ar || ""),
-        date_of_birth: formatDate(data.date_of_birth),
-        guardian_contact: String(data.guardian_contact || ""),
-        gender: String(data.gender || ""),
-
-        // Location Information
-        nationality_id: Number(data.nationality_id) || null,
-        country_of_residence_id: Number(data.country_of_residence_id) || null,
-        city_id: Number(data.city_id) || null,
-        origin_id: Number(data.origin_id) || null,
-
-        // Physical Attributes
-        height: Number(data.height) || null,
-        weight: Number(data.weight) || null,
-        hair_color_id: Number(data.hair_color_id) || null,
-        skin_color_id: Number(data.skin_color_id) || null,
-
-        // Education and Work
-        educational_level_id: Number(data.educational_level_id) || null,
-        specialization_id: Number(data.specialization_id) || null,
-        employment_status: data.employment_status === true,
-        job_title_id:
-          data.employment_status === true
-            ? Number(data.job_title_id) || null
-            : null,
-        position_level_id:
-          data.employment_status === true
-            ? Number(data.position_level_id) || null
-            : null,
-
-        // Financial and Housing
-        financial_status_id: Number(data.financial_status_id) || null,
-        housing_status_id: Number(data.housing_status_id) || null,
-        car_ownership: Boolean(data.car_ownership) === true,
-        marriage_budget_id: Number(data.marriage_budget_id) || null,
-
-        // Marital and Family
-        marital_status_id: Number(data.marital_status_id) || null,
-        number_of_children: Number(data.number_of_children) || 0,
-
-        // Religious and Cultural
-        religion_id: Number(data.religion_id) || null,
-        religiosity_level_id: Number(data.religiosity_level_id) || null,
-
-        // Lifestyle
-        sleep_habit_id: Number(data.sleep_habit_id) || null,
-        sports_activity_id: Number(data.sports_activity_id) || null,
-        social_media_presence_id: Number(data.social_media_presence_id) || null,
-        drinking_status_id: Number(data.drinking_status_id) || null,
-
-        // Arrays
-        hobbies:
-          Array.isArray(data.hobbies) && data.hobbies.length > 0
-            ? data.hobbies.map((id) => parseInt(id, 10))
-            : [],
-        pets:
-          Array.isArray(data.pets) && data.pets.length > 0
-            ? data.pets.map((id) => parseInt(id, 10))
-            : [],
-
-        // Additional Information
-        health_issues_en: String(data.health_issues_en || ""),
-        health_issues_ar: String(data.health_issues_ar || ""),
-        zodiac_sign_id: Number(data.zodiac_sign_id) || null,
-
-        // Smoking status
-        smoking_status: Number(data.smoking_status) === 1 ? 0 : 1,
-      };
-
-      // Handle smoking tools
-      if (Number(data.smoking_status) > 1) {
-        submissionData.smoking_tools = Array.isArray(data.smoking_tools)
-          ? data.smoking_tools.map(Number)
-          : [];
-      }
-
-      // Handle female-specific fields
-      if (data.gender === "female") {
-        submissionData.hijab_status = Number(data.hijab_status) || 0;
-      }
-
-      // Keep null values in the submission
-      // Only remove undefined values
-      Object.keys(submissionData).forEach((key) => {
-        if (submissionData[key] === undefined) {
-          delete submissionData[key];
-        }
-      });
-
-      // First update profile
-      const resultAction = await dispatch(updateProfile(submissionData));
-
-      if (updateProfile.fulfilled.match(resultAction)) {
-        // Handle profile image if exists
-        if (data.profile_image && data.profile_image.base64) {
-          const imageData = {
-            base64: data.profile_image.base64,
-            type: data.profile_image.type || "image/jpeg",
-          };
-          await dispatch(updateProfilePhoto(imageData));
-        }
-        await clearFormProgress(userId);
-        // Fetch fresh profile data
-        await dispatch(fetchProfile());
-
-        Alert.alert(
-          "🎉 Success!",
-          "Your profile has been updated successfully!",
-          [
-            {
-              text: "Continue",
-              onPress: () => {
-                dispatch(setShowProfileAlert(false));
-                navigation.goBack();
-              },
-              style: "default",
-            },
-          ],
-          { cancelable: false }
-        );
-      } else {
-        throw new Error(resultAction.payload || "Failed to update profile");
-      }
-    } catch (error) {
-      console.error("Profile update failed:", error);
-
-      if (error.response?.status === 422) {
-        const validationErrors = error.response.data.errors;
-        const errorMessages = Object.entries(validationErrors)
-          .map(([field, messages]) => `• ${field}: ${messages[0]}`)
-          .join("\n");
-
-        Alert.alert(
-          "🚨 Validation Error",
-          `Please fix the following issues:\n\n${errorMessages}`,
-          [{ text: "OK", style: "cancel" }]
-        );
-      } else {
-        Alert.alert(
-          "❌ Error",
-          "Failed to update profile. Please check your connection and try again.",
-          [{ text: "OK", style: "cancel" }]
-        );
-      }
-    } finally {
-      setIsSubmitting(false);
+  const renderCurrentStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return <PersonalInfoSection />;
+      case 2:
+        return <LifestyleSection />;
+      case 3:
+        return <EducationWorkSection />;
+      case 4:
+        return <ProfileImageSection />;
+      default:
+        return null;
     }
   };
-  const handleFormSubmit = useCallback(async () => {
-    try {
-      // Validate all fields
-      const isValid = await methods.trigger();
 
-      if (isValid) {
-        // Get form data
-        const formData = methods.getValues();
-
-        // Call onSubmit
-        await onSubmit(formData);
-      } else {
-        const allErrors = Object.entries(methods.formState.errors).map(
-          ([_, error]) => error.message
-        );
-        setCurrentErrors(allErrors);
-        setErrorModalVisible(true);
-      }
-    } catch (error) {
-      console.error("Form submission error:", error);
-      Alert.alert(
-        "Error",
-        "There was a problem submitting your form. Please try again.",
-        [{ text: "OK" }]
-      );
-    }
-  }, [methods, onSubmit]);
   const renderCurrentStep = () => {
     const currentStepData = FORM_STEPS[currentStep - 1];
     return (
@@ -639,20 +89,15 @@ const fillProfileData = () => {
       </View>
     );
   };
-  const renderCurrentStepContent = () => {
-    switch (currentStep) {
-      case 1:
-        return <PersonalInfoSection />;
-      case 2:
-        return <LifestyleSection />;
-      case 3:
-        return <EducationWorkSection />;
-      case 4:
-        return <ProfileImageSection />;
-      default:
-        return null;
-    }
-  };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>Loading your profile...</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <FormProvider {...methods}>
@@ -744,6 +189,7 @@ const fillProfileData = () => {
                 )}
               </TouchableOpacity>
             </View>
+
             <ErrorModal
               visible={errorModalVisible}
               errors={currentErrors}
@@ -756,4 +202,4 @@ const fillProfileData = () => {
   );
 };
 
-export default fillProfileData;
+export default ProfileFormScreen;

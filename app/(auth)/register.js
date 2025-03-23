@@ -109,10 +109,8 @@ export default function RegisterScreen() {
     }
   };
 
-  // Also update the component's cleanup
   useEffect(() => {
     return () => {
-      // Cleanup when component unmounts
       setTermsVisible(false);
       setRegistrationData(null);
     };

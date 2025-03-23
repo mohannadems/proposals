@@ -174,11 +174,8 @@ export const profileValidationSchema = Yup.object().shape({
         .required("Hijab status is required for females"),
     otherwise: (schema) => schema.nullable(),
   }),
-
-  // Profile Image
 });
 
-// Define validation fields for each step
 export const stepFields = {
   1: ["bio_en", "bio_ar", "gender", "date_of_birth", "guardian_contact"],
   2: [
@@ -186,7 +183,7 @@ export const stepFields = {
     "country_of_residence_id", //
     "city_id", ///
     "origin_id", //
-    "hijab_status", // Include hijab_status for female users
+    "hijab_status", //
     "height", //
     "weight", //
     "hair_color_id", //
@@ -256,6 +253,37 @@ export const initialProfileState = {
   health_issues_en: "",
   health_issues_ar: "",
   zodiac_sign_id: null,
+  hijab_status: null,
+  profile_image: [],
+};
+
+export const initialFormState = {
+  bio_en: "",
+  bio_ar: "",
+  gender: "",
+  date_of_birth: "",
+  height: null,
+  weight: null,
+  nationality_id: null,
+  country_of_residence_id: null,
+  city_id: null,
+  educational_level_id: null,
+  specialization_id: null,
+  employment_status: null,
+  smoking_status: null,
+  smoking_tools: [],
+  drinking_status_id: null,
+  sports_activity_id: null,
+  religion_id: null,
+  marital_status_id: null,
+  number_of_children: 0,
+  housing_status_id: null,
+  hobbies: [],
+  pets: [],
+  health_issues_en: "",
+  health_issues_ar: "",
+  guardian_contact: "",
+  financial_status_id: null,
   hijab_status: null,
   profile_image: [],
 };

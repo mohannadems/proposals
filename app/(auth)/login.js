@@ -25,23 +25,22 @@ export default function LoginScreen() {
   const dispatch = useDispatch();
   const { loading } = useSelector((state) => state.auth);
   const form = useLoginForm();
-
   const handleLoginSuccess = async (credentials) => {
     try {
       const result = await dispatch(login(credentials)).unwrap();
       if (result) {
         await biometric.saveBiometricCredentials(credentials);
         router.replace("/(tabs)/home");
+
         await dispatch(fetchProfile());
       }
       return result;
     } catch (error) {
-      // Set the error message in the form
       form.setValidationErrors((prev) => ({
         ...prev,
         general: error.message || AUTH_MESSAGES.INVALID_CREDENTIALS,
       }));
-      throw error; // Re-throw to be handled by handleLogin
+      throw error;
     }
   };
 

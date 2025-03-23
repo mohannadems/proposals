@@ -8,7 +8,7 @@ import {
   Switch,
   TextInput,
 } from "react-native";
-import Slider from "@react-native-community/slider"; // Correct import
+import Slider from "@react-native-community/slider";
 import { MaterialIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { COLORS } from "../../constants/colors";
@@ -21,7 +21,7 @@ export default function PreferencesScreen() {
   const [isDrinkingOk, setIsDrinkingOk] = useState(false);
 
   const handleSavePreferences = () => {
-    router.back(); // Navigate back to the previous screen
+    router.back();
   };
 
   return (
@@ -34,7 +34,6 @@ export default function PreferencesScreen() {
       </View>
 
       <View style={styles.content}>
-        {/* Age Range */}
         <View style={styles.preferenceSection}>
           <Text style={styles.preferenceTitle}>Age Range</Text>
           <View style={styles.ageRangeContainer}>
@@ -54,7 +53,6 @@ export default function PreferencesScreen() {
           </View>
         </View>
 
-        {/* Location */}
         <View style={styles.preferenceSection}>
           <Text style={styles.preferenceTitle}>Location</Text>
           <TextInput
@@ -65,7 +63,6 @@ export default function PreferencesScreen() {
           />
         </View>
 
-        {/* Interests */}
         <View style={styles.preferenceSection}>
           <Text style={styles.preferenceTitle}>Interests</Text>
           <TextInput
@@ -76,7 +73,6 @@ export default function PreferencesScreen() {
           />
         </View>
 
-        {/* Lifestyle Preferences */}
         <View style={styles.preferenceSection}>
           <Text style={styles.preferenceTitle}>Lifestyle Preferences</Text>
           <View style={styles.switchContainer}>
@@ -99,7 +95,6 @@ export default function PreferencesScreen() {
           </View>
         </View>
 
-        {/* Save Button */}
         <TouchableOpacity
           style={styles.saveButton}
           onPress={handleSavePreferences}
