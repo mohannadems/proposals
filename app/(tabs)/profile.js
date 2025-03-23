@@ -347,7 +347,6 @@ const ProfileScreen = () => {
         style={styles.container}
         contentContainerStyle={{
           flexGrow: 1,
-          // Ensure RefreshControl works correctly on both iOS and Android
           paddingTop: Platform.OS === "ios" ? 0 : -50,
         }}
         refreshControl={
@@ -372,10 +371,17 @@ const ProfileScreen = () => {
           <TouchableOpacity
             style={styles.logoutButtonn}
             onPress={() =>
-              router.push("../(subscription)/subscriptionScreenNN")
+              router.push({
+                pathname: "../(profile)/seeMyProfile",
+                params: { userId: profile.id },
+              })
             }
           >
-            <MaterialIcons name="settings" size={24} color={COLORS.white} />
+            <MaterialIcons
+              name="remove-red-eye"
+              size={24}
+              color={COLORS.white}
+            />
           </TouchableOpacity>
           <View
             style={styles.profileHeader}

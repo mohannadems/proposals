@@ -94,7 +94,8 @@ const LifestyleSection = () => {
     skinColors = [],
     sleepHabits = [],
   } = personalAttributes;
-
+  const { marriageBudget = [] } = professionalEducational;
+  console.log(marriageBudget, " marriage budget");
   const {
     hobbies = [],
     pets = [],
@@ -103,8 +104,6 @@ const LifestyleSection = () => {
     drinkingStatuses = [],
     religiosityLevels = [],
   } = lifestyleInterests;
-
-  const { marriageBudget = [] } = professionalEducational;
 
   const { countries = [], religions = [], nationalities = [] } = geographic;
 
@@ -301,8 +300,11 @@ const LifestyleSection = () => {
           <AnimatedDropdown
             control={control}
             name="marriage_budget_id"
-            label="Marriage Budget "
-            items={marriageBudget}
+            label="Marriage Budget"
+            items={marriageBudget.map((item) => ({
+              id: item.id,
+              name: item.budget,
+            }))}
             leftIcon={
               <MaterialIcon
                 name="account-balance-wallet"

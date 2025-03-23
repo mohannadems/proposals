@@ -47,6 +47,13 @@ export default function ProfileLayout() {
           title: "match-screen",
         }}
       />
+      <Stack.Screen
+        name="seeMyProfile"
+        options={{
+          headerShown: false,
+          title: "seeMyProfile",
+        }}
+      />
     </Stack>
   );
 }

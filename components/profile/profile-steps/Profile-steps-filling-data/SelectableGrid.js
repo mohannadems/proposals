@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -43,8 +43,19 @@ const SelectableGrid = ({
   });
 
   const [isOpen, setIsOpen] = useState(false);
+  const [sortedItems, setSortedItems] = useState([]);
   const screenHeight = Dimensions.get("window").height;
   const dropdownHeight = Math.min(maxHeight, screenHeight * 0.5);
+
+  // Sort items alphabetically whenever items prop changes
+  useEffect(() => {
+    if (items && items.length > 0) {
+      const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name));
+      setSortedItems(sorted);
+    } else {
+      setSortedItems([]);
+    }
+  }, [items]);
 
   const toggleDropdown = () => {
     setIsOpen(!isOpen);
@@ -98,16 +109,22 @@ const SelectableGrid = ({
   const renderSelectedItemsPreview = () => {
     if (!multiple || !value || value.length === 0) return null;
 
+    // Sort selected items alphabetically for the preview
+    const selectedItemObjects = value
+      .map((itemId) => {
+        return items.find((i) => parseInt(i.id) === itemId);
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.name.localeCompare(b.name));
+
     return (
       <View style={styles.selectedItemsContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View style={styles.selectedItemsRow}>
-            {value.map((itemId) => {
-              const item = items.find((i) => parseInt(i.id) === itemId);
-              if (!item) return null;
+            {selectedItemObjects.map((item) => {
               return (
                 <View
-                  key={`selected-${itemId}`}
+                  key={`selected-${item.id}`}
                   style={styles.selectedItemChip}
                 >
                   {renderSelectedItem ? (
@@ -204,7 +221,7 @@ const SelectableGrid = ({
                 </View>
 
                 <ScrollView nestedScrollEnabled={true} style={styles.itemList}>
-                  {items.map((item) => (
+                  {sortedItems.map((item) => (
                     <TouchableOpacity
                       key={item.id}
                       style={[

@@ -422,40 +422,30 @@ const MatchProfileScreen = () => {
 
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-        // Like the user and get the response
         const likeResponse = await dispatch(likeUser(userProfile.id)).unwrap();
 
-        // Short delay to ensure the like is processed
         await new Promise((resolve) => setTimeout(resolve, 500));
 
-        // Close the modal
         setShowLikeModal(false);
 
-        // Check if it's a match (in your API response)
         const isMatch = likeResponse?.is_match === true;
 
         if (isMatch) {
-          // If it's a match, navigate to the match screen with the matched user ID
           router.push({
             pathname: `/match-screen`,
             params: { matchedUserId: userProfile.id },
           });
         } else {
-          // If not a match, show a success message
           showMessage({
             message: "Success",
             description: `You liked ${userProfile.first_name}!`,
             type: "success",
           });
 
-          // Set Redux state to show "Liked" tab when returning to matches screen
           dispatch(setActiveTab("Liked"));
 
-          // Prefetch the liked users so they're ready when navigating
           dispatch(fetchUserLikes());
 
-          // Navigate back to the matches screen (tab)
-          // For expo-router, use string params
           router.push({
             pathname: "/(tabs)/matches",
             params: { showLiked: "true" },
