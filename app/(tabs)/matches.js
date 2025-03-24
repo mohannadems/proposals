@@ -314,22 +314,30 @@ const MatchesScreen = () => {
     // Also fetch liked users so they're available when filter is changed
     dispatch(fetchUserLikes());
   }, [dispatch]);
-
   useEffect(() => {
     // If activeTab is set to "Liked" in Redux, or we have a parameter to show liked
-    // This handles navigation from other screens after liking
     if (activeTab === "Liked" || params.showLiked === "true") {
+      // Set the filter once without immediately dispatching the fetch
       setActiveFilter("Liked");
 
-      // Delay the filter change slightly to ensure animations work properly
-      setTimeout(() => {
-        handleFilterChange("Liked");
+      // Set the filter in Redux, but don't fetch yet
+      dispatch(setLikedFilter(true));
 
-        // Reset the activeTab in Redux after using it
-        dispatch(setActiveTab("All"));
-      }, 200);
+      // Reset the activeTab in Redux to prevent re-triggering this effect
+      dispatch(setActiveTab("All"));
     }
-  }, [activeTab, params, dispatch]);
+  }, [params.showLiked, activeTab, dispatch]);
+
+  // Add a separate effect that handles the actual data fetching
+  // This effect will only run when the active filter changes
+  useEffect(() => {
+    if (activeFilter === "Liked") {
+      // Only fetch if we're not already loading
+      if (!loading.likes) {
+        dispatch(fetchUserLikes());
+      }
+    }
+  }, [activeFilter, dispatch]);
 
   // Handle filter chip clicks
   const handleFilterChange = (filter) => {
@@ -346,8 +354,10 @@ const MatchesScreen = () => {
       // For "Liked", set the liked filter flag to true
       dispatch(setLikedFilter(true));
 
-      // Refresh liked users data (in case there are new likes)
-      dispatch(fetchUserLikes());
+      // Only fetch if we don't already have likes or if we need to refresh
+      if (likedUsers.length === 0 || !loading.likes) {
+        dispatch(fetchUserLikes());
+      }
     } else {
       // For other filters (like "nearby"), handle accordingly
       dispatch(clearFilters());

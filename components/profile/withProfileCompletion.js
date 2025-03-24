@@ -13,7 +13,6 @@ import {
   StyleSheet,
   ScrollView,
   Platform,
-  StatusBar,
   Dimensions,
   RefreshControl,
 } from "react-native";
@@ -34,6 +33,227 @@ import { fetchProfileCompletionData } from "../../store/slices/profileCompletion
 const { width } = Dimensions.get("window");
 const scale = width / 375;
 const moderateScale = (size) => size + (scale - 1) * 0.5;
+
+// Check if profile is complete directly from API data
+const isApiProfileComplete = (userData) => {
+  // Early check if userData or profile is undefined
+  if (!userData || !userData.data || !userData.data.profile) {
+    return false;
+  }
+
+  const { profile } = userData.data;
+
+  // Check if all critical fields are filled (API format)
+  const criticalFields = [
+    "nationality",
+    "language",
+    "religion",
+    "country_of_residence",
+    "city",
+    "date_of_birth",
+    "educational_level",
+    "marital_status",
+    "employment_status",
+    "job_title",
+    "financial_status",
+  ];
+
+  // Count filled critical fields
+  const filledCount = criticalFields.filter(
+    (field) =>
+      profile[field] !== null &&
+      profile[field] !== undefined &&
+      profile[field] !== ""
+  ).length;
+
+  // Check if profile has photos
+  const hasPhotos =
+    profile.photos &&
+    Array.isArray(profile.photos) &&
+    profile.photos.length > 0;
+
+  // If most critical fields are filled and there's a photo, consider it complete
+  const isComplete = filledCount >= criticalFields.length * 0.8 && hasPhotos;
+
+  return isComplete;
+};
+
+// Helper function to check if profile from API is mostly empty
+const isProfileEmpty = (userData) => {
+  // Guard against undefined userData
+  if (!userData) return true;
+
+  // Handle different data structures
+  const profile = userData.profile || (userData.data && userData.data.profile);
+
+  // If profile doesn't exist, consider it empty
+  if (!profile) return true;
+
+  const requiredFields = [
+    "nationality",
+    "religion",
+    "country_of_residence",
+    "city",
+    "date_of_birth",
+    "age",
+    "educational_level",
+    "marital_status",
+    "height",
+    "weight",
+  ];
+
+  // Check if most fields are null/empty
+  const emptyCount = requiredFields.filter(
+    (field) =>
+      profile[field] === null ||
+      profile[field] === undefined ||
+      profile[field] === ""
+  ).length;
+
+  // If most fields are empty, consider the profile empty
+  return emptyCount > requiredFields.length * 0.7;
+};
+
+// Utility function to check if profile is complete
+const checkProfileCompletion = (userData) => {
+  // Early check if userData or profile is undefined
+  if (!userData || !userData.data || !userData.data.profile) {
+    return {
+      isProfileComplete: false,
+      missingFields: ["profile data missing"],
+    };
+  }
+
+  const { profile } = userData.data;
+
+  // Define required fields
+  const requiredFields = [
+    "nationality",
+    "language",
+    "religion",
+    "country_of_residence",
+    "city",
+    "date_of_birth",
+    "age",
+    "educational_level",
+    "employment_status",
+    "marital_status",
+    "height",
+    "weight",
+  ];
+
+  // Array fields that must have at least one item
+  const requiredArrayFields = ["photos"];
+
+  // Track missing fields
+  const missingFields = [];
+
+  // Check each required field
+  requiredFields.forEach((field) => {
+    if (
+      profile[field] === null ||
+      profile[field] === undefined ||
+      profile[field] === ""
+    ) {
+      missingFields.push(field);
+    } else if (field === "employment_status" && profile[field] === 0) {
+      // Special case for employment_status which should not be 0
+      missingFields.push(field);
+    }
+  });
+
+  // Check each required array field
+  requiredArrayFields.forEach((field) => {
+    if (
+      !profile[field] ||
+      !Array.isArray(profile[field]) ||
+      profile[field].length === 0
+    ) {
+      missingFields.push(field);
+    }
+  });
+
+  return {
+    isProfileComplete: missingFields.length === 0,
+    missingFields: missingFields,
+  };
+};
+
+// Helper function to create a merged profile using local form data
+const createMergedProfileData = (userData, formData) => {
+  try {
+    // Create a safe base object
+    let mergedData = {
+      data: {
+        profile: {},
+      },
+    };
+
+    // Handle different possible input structures
+    if (userData) {
+      // If userData has a data property
+      if (userData.data) {
+        mergedData = JSON.parse(JSON.stringify(userData));
+      }
+      // If userData is a profile directly
+      else if (userData.profile) {
+        mergedData.data.profile = JSON.parse(JSON.stringify(userData.profile));
+      }
+      // If userData is just a plain object with profile fields
+      else {
+        mergedData.data.profile = JSON.parse(JSON.stringify(userData));
+      }
+    }
+
+    // Ensure profile exists
+    if (!mergedData.data.profile) {
+      mergedData.data.profile = {};
+    }
+
+    // Safely merge form data
+    if (formData) {
+      const fieldMapping = {
+        nationality_id: "nationality",
+        religion_id: "religion",
+        country_of_residence_id: "country_of_residence",
+        city_id: "city",
+        date_of_birth: "date_of_birth",
+        educational_level_id: "educational_level",
+        marital_status_id: "marital_status",
+        employment_status: "employment_status",
+      };
+
+      // Populate profile fields from form data
+      Object.entries(fieldMapping).forEach(([formField, profileField]) => {
+        if (formData[formField] !== undefined) {
+          mergedData.data.profile[profileField] = formData[formField];
+        }
+      });
+
+      // Special handling for specific fields
+      if (formData.height) mergedData.data.profile.height = formData.height;
+      if (formData.weight) mergedData.data.profile.weight = formData.weight;
+      if (formData.profile_image) {
+        mergedData.data.profile.photos = [formData.profile_image];
+      }
+    }
+
+    return mergedData;
+  } catch (error) {
+    console.error("Detailed error in createMergedProfileData:", {
+      error: error.message,
+      userData: userData ? Object.keys(userData) : "undefined",
+      formData: formData ? Object.keys(formData) : "undefined",
+    });
+
+    // Return a safe, empty structure if anything goes wrong
+    return {
+      data: {
+        profile: {},
+      },
+    };
+  }
+};
 
 const ProgressCircle = ({ progress }) => {
   const scale = useSharedValue(1);
@@ -149,14 +369,12 @@ const StepCard = ({ step, info, isActive }) => {
   );
 };
 
-// Fix 1: Corrected HOC implementation
 const withProfileCompletion = (WrappedComponent) => {
-  // Fix 2: Move hooks outside of the HOC factory function
   return (props) => {
-    // All hooks inside the component function
     const dispatch = useDispatch();
     const { data } = useSelector((state) => state.profile);
-    const userId = useSelector((state) => state.profile.data?.id);
+
+    const userId = useSelector((state) => state.profile?.id);
     const router = useRouter();
     const insets = useSafeAreaInsets();
 
@@ -166,41 +384,115 @@ const withProfileCompletion = (WrappedComponent) => {
     const [progressInfo, setProgressInfo] = useState({
       progress: 0,
       missingFields: [],
+      stepProgress: {},
     });
+
     const fadeAnim = useSharedValue(0);
 
-    // Load profile data function
-    const loadProfileData = useCallback(async () => {
-      try {
-        if (!userId) {
-          setProgressInfo(calculateProfileProgress(data));
-          return;
-        }
-
-        const storageKey = `profile_form_data_${userId}`;
-        const savedData = await AsyncStorage.getItem(storageKey);
-
-        if (savedData) {
-          const parsed = JSON.parse(savedData);
-          setSavedProgress(parsed);
-          setProgressInfo(calculateProfileProgress(data, parsed));
-        } else {
-          setProgressInfo(calculateProfileProgress(data));
-        }
-      } catch (error) {
-        console.error("Error loading saved progress:", error);
-        setProgressInfo(calculateProfileProgress(data));
-      }
-    }, [userId, data]);
-
-    // Fetch profile data
+    // Fetch profile data on component mount
     useEffect(() => {
       dispatch(fetchProfileCompletionData());
     }, [dispatch]);
 
-    useEffect(() => {
-      fadeAnim.value = withTiming(1, { duration: 800 });
-    }, []);
+    const loadProfileData = useCallback(async () => {
+      try {
+        if (!data) {
+          console.warn("No profile data available");
+          setProgressInfo({
+            progress: 0,
+            missingFields: [],
+            stepProgress: {},
+          });
+          return;
+        }
+
+        // Ensure we have a valid userId
+        const storageKey = userId
+          ? `profile_form_data_${userId}`
+          : "profile_form_data_default";
+
+        // Clear saved progress if the current user doesn't match the saved user
+        const savedUserKey = await AsyncStorage.getItem(
+          "last_logged_in_user_id"
+        );
+        if (savedUserKey && savedUserKey !== userId) {
+          await AsyncStorage.removeItem(storageKey);
+          await AsyncStorage.removeItem("last_logged_in_user_id");
+        }
+
+        // Update last logged-in user ID
+        if (userId) {
+          await AsyncStorage.setItem("last_logged_in_user_id", userId);
+        }
+
+        const savedData = await AsyncStorage.getItem(storageKey);
+
+        if (savedData) {
+          try {
+            const parsed = JSON.parse(savedData);
+
+            // Additional check: verify saved data is for the current user
+            if (parsed.userId && parsed.userId !== userId) {
+              await AsyncStorage.removeItem(storageKey);
+              const defaultProgressData = calculateProfileProgress(data);
+              setProgressInfo(defaultProgressData);
+              return;
+            }
+
+            setSavedProgress(parsed);
+
+            // Calculate progress with enhanced error handling
+            let progressData;
+            try {
+              // Attempt to create a merged profile or use existing data
+              const mergedData = createMergedProfileData(data, parsed.formData);
+              progressData = calculateProfileProgress(mergedData, parsed);
+            } catch (progressCalcError) {
+              console.error("Error calculating progress:", progressCalcError);
+              // Fallback to default progress calculation
+              progressData = calculateProfileProgress(data);
+            }
+
+            // Strict checks for progress
+            const apiComplete = isApiProfileComplete(data);
+            const serverProfileIsEmpty = isProfileEmpty(data);
+
+            if (serverProfileIsEmpty) {
+              progressData = calculateProfileProgress(data);
+            } else if (apiComplete) {
+              progressData.progress = 100;
+              Object.keys(progressData.stepProgress).forEach((step) => {
+                progressData.stepProgress[step].percentage = 100;
+                progressData.stepProgress[step].completed =
+                  progressData.stepProgress[step].total;
+              });
+            }
+
+            setProgressInfo(progressData);
+          } catch (parseError) {
+            console.error("Error parsing saved progress:", parseError);
+            // If parsing fails, reset saved progress and calculate from scratch
+            await AsyncStorage.removeItem(storageKey);
+            const defaultProgressData = calculateProfileProgress(data);
+            setProgressInfo(defaultProgressData);
+          }
+        } else {
+          const defaultProgressData = calculateProfileProgress(data);
+          setProgressInfo(defaultProgressData);
+        }
+      } catch (error) {
+        console.error("Comprehensive error in loadProfileData:", error);
+
+        // Provide a safe fallback
+        setProgressInfo({
+          progress: 0,
+          missingFields: [],
+          stepProgress: {},
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }, [userId, data]);
 
     // Load saved progress
     useEffect(() => {
@@ -213,6 +505,11 @@ const withProfileCompletion = (WrappedComponent) => {
       initializeData();
     }, [userId, data, loadProfileData]);
 
+    // Fade in animation
+    useEffect(() => {
+      fadeAnim.value = withTiming(1, { duration: 800 });
+    }, []);
+
     // Refresh handler
     const onRefresh = useCallback(async () => {
       setRefreshing(true);
@@ -221,125 +518,145 @@ const withProfileCompletion = (WrappedComponent) => {
       setRefreshing(false);
     }, [dispatch, loadProfileData]);
 
+    // Error boundary for rendering
     if (isLoading) {
       return (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
+          <Text style={styles.loadingText}>Loading profile...</Text>
         </View>
       );
     }
 
-    const { progress, stepProgress } = progressInfo;
+    // Get the fresh calculation
+    let { progress, stepProgress } = progressInfo;
 
-    if (progress < 100) {
-      return (
-        <View style={[styles.container, { paddingTop: insets.top }]}>
-          <ProfileCompletionAlert />
-          <ScrollView
-            style={styles.scrollView}
-            contentContainerStyle={[
-              styles.scrollContent,
-              { paddingBottom: insets.bottom + 24 },
-            ]}
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                colors={[COLORS.primary]}
-                tintColor={COLORS.primary}
-              />
-            }
+    // Check if API profile is complete - do additional check here
+    const apiComplete = isApiProfileComplete(data);
+    if (apiComplete && progress < 90) {
+      progress = 100;
+    }
+
+    const hasLocalSavedData =
+      savedProgress && savedProgress.formData && savedProgress.step > 1;
+    const apiProfileComplete = data
+      ? checkProfileCompletion(data).isProfileComplete
+      : false;
+
+    // If the server data is complete OR we have high calculated progress, show wrapped component
+    if (
+      apiComplete ||
+      progress >= 100 ||
+      (!apiProfileComplete && hasLocalSavedData && progress >= 80)
+    ) {
+      return <WrappedComponent {...props} />;
+    }
+
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <ProfileCompletionAlert />
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={[
+            styles.scrollContent,
+            { paddingBottom: insets.bottom + 24 },
+          ]}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[COLORS.primary]}
+              tintColor={COLORS.primary}
+            />
+          }
+        >
+          <Animated.View
+            style={[styles.contentContainer, { opacity: fadeAnim }]}
           >
-            <Animated.View
-              style={[styles.contentContainer, { opacity: fadeAnim }]}
-            >
-              <ProgressCircle progress={progress} />
+            <ProgressCircle progress={progress} />
 
-              <View style={styles.messageCard}>
-                <MaterialIcons
-                  name="psychology"
-                  size={28}
-                  color={COLORS.primary}
-                  style={styles.messageIcon}
-                />
-                <Text style={styles.messageTitle}>Profile in Progress</Text>
-                <Text style={styles.messageText}>
-                  Complete your profile to unlock personalized matches and begin
-                  your journey to meaningful connections.
+            <View style={styles.messageCard}>
+              <MaterialIcons
+                name="psychology"
+                size={28}
+                color={COLORS.primary}
+                style={styles.messageIcon}
+              />
+              <Text style={styles.messageTitle}>Profile in Progress</Text>
+              <Text style={styles.messageText}>
+                Complete your profile to unlock personalized matches and begin
+                your journey to meaningful connections.
+              </Text>
+            </View>
+
+            {savedProgress && (
+              <View style={styles.savedProgressCard}>
+                <Feather name="bookmark" size={24} color={COLORS.primary} />
+                <Text style={styles.savedProgressTitle}>
+                  Resume Your Progress
+                </Text>
+                <Text style={styles.savedProgressText}>
+                  Continue from step {savedProgress.step} of 4
+                </Text>
+                <Text style={styles.savedProgressDate}>
+                  Last updated:{" "}
+                  {new Date(savedProgress.lastUpdated).toLocaleString()}
                 </Text>
               </View>
+            )}
 
-              {savedProgress && (
-                <View style={styles.savedProgressCard}>
-                  <Feather name="bookmark" size={24} color={COLORS.primary} />
-                  <Text style={styles.savedProgressTitle}>
-                    Resume Your Progress
-                  </Text>
-                  <Text style={styles.savedProgressText}>
-                    Continue from step {savedProgress.step} of 4
-                  </Text>
-                  <Text style={styles.savedProgressDate}>
-                    Last updated:{" "}
-                    {new Date(savedProgress.lastUpdated).toLocaleString()}
-                  </Text>
-                </View>
-              )}
+            <View style={styles.stepsContainer}>
+              {Object.entries(stepProgress).map(([step, info]) => (
+                <StepCard
+                  key={step}
+                  step={step}
+                  info={info}
+                  isActive={savedProgress?.step === Number(step)}
+                />
+              ))}
+            </View>
 
-              <View style={styles.stepsContainer}>
-                {Object.entries(stepProgress).map(([step, info]) => (
-                  <StepCard
-                    key={step}
-                    step={step}
-                    info={info}
-                    isActive={savedProgress?.step === Number(step)}
-                  />
-                ))}
-              </View>
+            <View style={styles.actionButtonsContainer}>
+              <TouchableOpacity
+                style={styles.refreshButton}
+                onPress={onRefresh}
+                disabled={refreshing}
+              >
+                <Feather
+                  name="refresh-cw"
+                  size={20}
+                  color={COLORS.primary}
+                  style={{
+                    ...(refreshing && { transform: [{ rotate: "45deg" }] }),
+                  }}
+                />
+                <Text style={styles.refreshButtonText}>
+                  {refreshing ? "Refreshing..." : "Refresh"}
+                </Text>
+              </TouchableOpacity>
 
-              <View style={styles.actionButtonsContainer}>
-                <TouchableOpacity
-                  style={styles.refreshButton}
-                  onPress={onRefresh}
-                  disabled={refreshing}
+              <TouchableOpacity
+                style={styles.actionButton}
+                onPress={() => router.push("/(profile)/fillProfileData")}
+              >
+                <ExpoLinearGradient
+                  colors={[COLORS.primary, COLORS.secondary]}
+                  style={styles.buttonGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
                 >
-                  <Feather
-                    name="refresh-cw"
-                    size={20}
-                    color={COLORS.primary}
-                    style={{
-                      ...(refreshing && { transform: [{ rotate: "45deg" }] }),
-                    }}
-                  />
-                  <Text style={styles.refreshButtonText}>
-                    {refreshing ? "Refreshing..." : "Refresh"}
+                  <Text style={styles.buttonText}>
+                    {savedProgress ? "Continue Profile" : "Complete Profile"}
                   </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.actionButton}
-                  onPress={() => router.push("/(profile)/fillProfileData")}
-                >
-                  <ExpoLinearGradient
-                    colors={[COLORS.primary, COLORS.secondary]}
-                    style={styles.buttonGradient}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                  >
-                    <Text style={styles.buttonText}>
-                      {savedProgress ? "Continue Profile" : "Complete Profile"}
-                    </Text>
-                    <Feather name="arrow-right" size={20} color="#fff" />
-                  </ExpoLinearGradient>
-                </TouchableOpacity>
-              </View>
-            </Animated.View>
-          </ScrollView>
-        </View>
-      );
-    }
-
-    return <WrappedComponent {...props} />;
+                  <Feather name="arrow-right" size={20} color="#fff" />
+                </ExpoLinearGradient>
+              </TouchableOpacity>
+            </View>
+          </Animated.View>
+        </ScrollView>
+      </View>
+    );
   };
 };
 
@@ -353,6 +670,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#f8f9fa",
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: COLORS.primary,
   },
   scrollView: {
     flex: 1,
@@ -504,7 +826,6 @@ const styles = StyleSheet.create({
     marginTop: moderateScale(8),
   },
   actionButtonsContainer: {
-    marginHorizontal: moderateScale(20),
     marginBottom: moderateScale(20),
   },
   actionButton: {

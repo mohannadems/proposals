@@ -18,12 +18,9 @@ import Reanimated, {
   FadeIn,
   FadeInDown,
   FadeInUp,
-  Layout,
-  SlideInRight,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-  withTiming,
 } from "react-native-reanimated";
 
 const AnimatedView = Reanimated.createAnimatedComponent(View);
@@ -45,6 +42,7 @@ const CardHeader = ({ title, subtitle }) => (
     <Text style={styles.headerSubtitle}>{subtitle}</Text>
   </AnimatedView>
 );
+
 const ProfileImageSection = () => {
   const dispatch = useDispatch();
   const { setValue, watch } = useFormContext();
@@ -52,10 +50,13 @@ const ProfileImageSection = () => {
   const [imageError, setImageError] = useState("");
   const scale = useSharedValue(1);
 
-  const { loading, error } = useSelector((state) => state.profile);
-  const currentAvatar = useSelector(
-    (state) => state.profile.data.profile?.avatar_url
-  );
+  // Fixed: Safely access profile state properties with fallbacks
+  const profileState = useSelector((state) => state.profile) || {};
+  const loading = profileState.loading || false;
+  const error = profileState.error || null;
+
+  // Fixed: Safely access avatar_url with optional chaining
+  const currentAvatar = profileState.data?.profile?.avatar_url || null;
 
   const animatedImageStyle = useAnimatedStyle(() => ({
     transform: [{ scale: withSpring(scale.value, SPRING_CONFIG) }],
@@ -86,9 +87,8 @@ const ProfileImageSection = () => {
         name: "profile_photo.jpg",
       });
 
-      // THIS IS THE FIX: Pass formData as an object with the expected structure
       const response = await dispatch(
-        updateProfilePhoto({ formData }) // Wrapped in an object to match the thunk parameter structure
+        updateProfilePhoto({ formData })
       ).unwrap();
 
       if (response.error) {
@@ -96,7 +96,6 @@ const ProfileImageSection = () => {
       }
       setImageError("");
 
-      // Add scale animation for feedback
       scale.value = withSpring(1.1, SPRING_CONFIG, () => {
         scale.value = withSpring(1, SPRING_CONFIG);
       });
@@ -165,16 +164,10 @@ const ProfileImageSection = () => {
       setImageError("");
 
       const formData = new FormData();
-      // You might need to adjust this based on your API expectations
-      // Option 1: Add a special flag for removal
       formData.append("remove_profile_photo", "true");
 
-      // Or Option 2: Send an empty string (depends on your API)
-      // formData.append("profile_photo", "");
-
-      // THIS IS THE FIX: Pass formData as an object with the expected structure
       const response = await dispatch(
-        updateProfilePhoto({ formData }) // Wrapped in an object
+        updateProfilePhoto({ formData })
       ).unwrap();
 
       if (response.error) {
@@ -193,6 +186,7 @@ const ProfileImageSection = () => {
       );
     }
   };
+
   return (
     <AnimatedView
       entering={FadeInUp.duration(600).springify()}
@@ -271,6 +265,22 @@ const ProfileImageSection = () => {
             <Text style={styles.actionButtonText}>Choose from Gallery</Text>
           </AnimatedTouchableOpacity>
         </View>
+
+        {profileImage || currentAvatar ? (
+          <AnimatedTouchableOpacity
+            entering={FadeInUp.delay(600).duration(600)}
+            style={[
+              styles.actionButton,
+              styles.removeButton,
+              loading && styles.disabledButton,
+            ]}
+            onPress={removeImage}
+            disabled={loading}
+          >
+            <Feather name="trash-2" size={20} color={COLORS.white} />
+            <Text style={styles.actionButtonText}>Remove Photo</Text>
+          </AnimatedTouchableOpacity>
+        ) : null}
       </AnimatedView>
     </AnimatedView>
   );
@@ -377,26 +387,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
   },
-  removeImageButton: {
-    position: "absolute",
-    bottom: 10,
-    right: 10,
-    backgroundColor: COLORS.error,
-    borderRadius: 20,
-    padding: 8,
-    zIndex: 2,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
-  },
   placeholderContainer: {
     width: "100%",
     height: "100%",
@@ -449,6 +439,11 @@ const styles = StyleSheet.create({
   galleryButton: {
     backgroundColor: COLORS.secondary,
   },
+  removeButton: {
+    backgroundColor: COLORS.error,
+    marginTop: 16,
+    width: "100%",
+  },
   actionButtonText: {
     color: COLORS.white,
     marginLeft: 12,
@@ -482,27 +477,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 100,
   },
-  // Touch feedback styles
-  touchableContent: {
-    opacity: 1,
-  },
-  touchableContentPressed: {
-    opacity: 0.7,
-  },
-  // Platform-specific hover effects
-  ...Platform.select({
-    web: {
-      imagePreviewContainer: {
-        ":hover .imageOverlay": {
-          opacity: 1,
-        },
-      },
-      actionButton: {
-        ":hover": {
-          opacity: 0.9,
-        },
-      },
-    },
-  }),
 });
+
 export default ProfileImageSection;

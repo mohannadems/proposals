@@ -57,8 +57,9 @@ export const useProfileActions = (userProfile, isLiked, isDisliked) => {
             type: "success",
           });
 
+          // Set the tab and redirect, but don't fetch here
+          // The liked tab will fetch when it mounts
           dispatch(setActiveTab("Liked"));
-          dispatch(fetchUserLikes());
 
           router.push({
             pathname: "/(tabs)/matches",

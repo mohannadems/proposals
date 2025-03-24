@@ -2,14 +2,12 @@
 
 const STEP_FIELDS = {
   1: [
-    { key: "bio_en", label: "English Bio" },
-    { key: "bio_ar", label: "Arabic Bio" },
-    { key: "gender", label: "Gender" },
-    { key: "date_of_birth", label: "Date of Birth" },
+    { key: "bio", label: "English Bio" },
+
     { key: "guardian_contact", label: "Guardian Contact" },
   ],
   2: [
-    { key: "nationality_id", label: "Nationality" },
+    { key: "nationality", label: "Nationality" },
     { key: "country_of_residence_id", label: "Country of Residence" },
     { key: "city_id", label: "City" },
     { key: "origin_id", label: "Origin" },
@@ -22,7 +20,6 @@ const STEP_FIELDS = {
     { key: "smoking_status", label: "Smoking Status" },
     { key: "drinking_status_id", label: "Drinking Status" },
     { key: "sports_activity_id", label: "Sports Activity" },
-    { key: "sleep_habit_id", label: "Sleep Habits" },
     { key: "marriage_budget_id", label: "Marriage Budget" },
     { key: "religiosity_level_id", label: "Religiosity Level" },
     { key: "religion_id", label: "Religion" },
@@ -32,26 +29,132 @@ const STEP_FIELDS = {
   3: [
     { key: "educational_level_id", label: "Education Level" },
     { key: "specialization_id", label: "Specialization" },
-    { key: "employment_status", label: "Employment Status" },
-    { key: "position_level_id", label: "Position Level" },
     { key: "job_title_id", label: "Job Title" },
     { key: "financial_status_id", label: "Financial Status" },
     { key: "housing_status_id", label: "Housing Status" },
-    { key: "car_ownership", label: "Car Ownership" },
   ],
 };
 
+// Map form field names to API field names
+const FIELD_MAPPING = {
+  bio_en: "bio_en",
+  date_of_birth: "date_of_birth",
+  nationality_id: "nationality",
+  religion_id: "religion",
+  country_of_residence_id: "country_of_residence",
+  city_id: "city",
+  origin_id: "origin",
+  hair_color_id: "hair_color",
+  skin_color_id: "skin_color",
+  marital_status_id: "marital_status",
+  number_of_children: "children",
+  drinking_status_id: "drinking_status",
+  sports_activity_id: "sports_activity",
+  sleep_habit_id: "sleep_habit",
+  marriage_budget_id: "marriage_budget",
+  religiosity_level_id: "religiosity_level",
+  educational_level_id: "educational_level",
+  specialization_id: "specialization",
+  position_level_id: "position_level",
+  job_title_id: "job_title",
+  financial_status_id: "financial_status",
+  housing_status_id: "housing_status",
+  social_media_presence_id: "social_media_presence",
+  smoking_status: "smoking_status",
+};
+
+// Strict validation for field completion
+const isFieldComplete = (key, value, combinedData) => {
+  // Special handling for specific fields
+  switch (key) {
+    case "employment_status":
+      // Consider it complete if it's a valid boolean or non-zero number
+      return value === true || value === 1 || (value !== 0 && value !== null);
+
+    case "job_title_id":
+    case "position_level_id":
+      // If not employed, these fields are optional
+      const employmentStatus = combinedData["employment_status"];
+      return (
+        employmentStatus === false ||
+        employmentStatus === 0 ||
+        employmentStatus === null ||
+        (value !== null && value !== 0)
+      );
+
+    case "car_ownership":
+      // More flexible boolean check
+      return value === true || value === 1 || value === "1";
+
+    case "hobbies":
+    case "pets":
+      // Consider optional, but prefer non-empty arrays
+      return true; // Always consider these optional
+
+    case "profile_image":
+      // More lenient image check
+      return !!(
+        value ||
+        (combinedData.photos && combinedData.photos.length > 0) ||
+        combinedData.avatar_url
+      );
+
+    case "bio_en":
+      // Check for non-empty bio
+      return value && value.trim().length > 0;
+
+    case "date_of_birth":
+      // More flexible date of birth check
+      return value !== null && value !== undefined && value !== "";
+
+    case "guardian_contact":
+      // Optional for some users
+      return true;
+
+    default:
+      // More lenient check for most fields
+      if (Array.isArray(value)) {
+        return true; // Consider array fields optional
+      }
+
+      // Allow 0 for numeric fields like height, weight
+      if (typeof value === "number") {
+        return value !== null && value !== undefined;
+      }
+
+      return value !== null && value !== undefined && value !== "";
+  }
+};
+
 export const calculateProfileProgress = (userData, savedProgress = null) => {
-  if (!userData) return { progress: 0, missingFields: [], stepProgress: {} };
+  // If no user data, return base progress
+  if (!userData) {
+    return {
+      progress: 0,
+      stepProgress: Object.keys(STEP_FIELDS).reduce((acc, step) => {
+        acc[step] = {
+          completed: 0,
+          total: STEP_FIELDS[step].length,
+          percentage: 0,
+        };
+        return acc;
+      }, {}),
+      missingFields: [],
+      completedFields: 0,
+      totalFields: Object.values(STEP_FIELDS).reduce(
+        (acc, fields) => acc + fields.length,
+        0
+      ),
+    };
+  }
 
-  const profile = userData.profile || {};
-  const formData = savedProgress?.formData || {};
+  // Extract profile from different possible structures
+  const profile =
+    userData.profile || (userData.data && userData.data.profile) || {};
 
-  // Merge user data from different sources
   const combinedData = {
-    ...userData,
     ...profile,
-    ...formData,
+    ...(savedProgress?.formData || {}),
   };
 
   const stepProgress = {};
@@ -64,41 +167,14 @@ export const calculateProfileProgress = (userData, savedProgress = null) => {
     const stepMissingFields = [];
 
     fields.forEach(({ key, label }) => {
-      const value = combinedData[key];
       totalFields++;
 
-      let isCompleted = false;
+      // Get field value from multiple sources
+      const fieldValue =
+        combinedData[key] ||
+        (FIELD_MAPPING[key] ? combinedData[FIELD_MAPPING[key]] : null);
 
-      if (key === "employment_status") {
-        isCompleted = value !== null && value !== undefined;
-      } else if (key === "job_title_id" || key === "position_level_id") {
-        const employmentStatus = combinedData["employment_status"];
-        isCompleted =
-          employmentStatus === false || employmentStatus === null
-            ? true
-            : value !== null && value !== undefined && value !== 0;
-      } else if (key === "car_ownership") {
-        // Check if car_ownership is 0 (which means false)
-        isCompleted = value !== 0; // If value is 0, it's considered not completed
-      } else if (key === "hobbies" || key === "pets") {
-        // Consider both null and empty array as valid completed states
-        isCompleted = true; // Always mark as completed since they're optional
-      } else {
-        // General validation for other fields
-        if (Array.isArray(value)) {
-          isCompleted = value.length > 0;
-        } else if (typeof value === "boolean") {
-          isCompleted = value === true;
-        } else if (typeof value === "object" && value !== null) {
-          isCompleted = Object.keys(value).length > 0;
-        } else {
-          isCompleted =
-            value !== null &&
-            value !== undefined &&
-            value !== "" &&
-            value !== 0;
-        }
-      }
+      const isCompleted = isFieldComplete(key, fieldValue, combinedData);
 
       if (isCompleted) {
         completedInStep++;
@@ -111,6 +187,12 @@ export const calculateProfileProgress = (userData, savedProgress = null) => {
       }
     });
 
+    // Ensure at least some progress is shown
+    if (step === "1" && completedInStep === 0 && combinedData.bio) {
+      completedInStep = 1;
+      totalCompleted++;
+    }
+
     stepProgress[step] = {
       completed: completedInStep,
       total: fields.length,
@@ -120,11 +202,15 @@ export const calculateProfileProgress = (userData, savedProgress = null) => {
     missingFields.push(...stepMissingFields);
   });
 
-  const totalProgress =
-    totalFields > 0 ? Math.round((totalCompleted / totalFields) * 100) : 0;
+  // Calculate progress purely based on completed fields
+  const calculatedProgress = Math.max(
+    totalFields > 0 ? Math.round((totalCompleted / totalFields) * 100) : 0,
+    // Ensure some progress for users with partial data
+    combinedData.language ? 10 : 0
+  );
 
   return {
-    progress: totalProgress,
+    progress: calculatedProgress,
     stepProgress,
     missingFields: missingFields.sort((a, b) => a.step - b.step),
     completedFields: totalCompleted,

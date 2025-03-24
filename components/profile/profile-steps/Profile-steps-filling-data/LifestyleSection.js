@@ -95,7 +95,6 @@ const LifestyleSection = () => {
     sleepHabits = [],
   } = personalAttributes;
   const { marriageBudget = [] } = personalAttributes;
-  console.log(marriageBudget, " marriage budget");
   const {
     hobbies = [],
     pets = [],

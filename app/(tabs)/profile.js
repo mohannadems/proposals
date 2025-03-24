@@ -14,7 +14,6 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import ProfileCompletionAlert from "../../components/profile/ProfileCompletionAlert";
 import withProfileCompletion from "../../components/profile/withProfileCompletion";
-import { calculateProfileProgress } from "../../utils/profileProgress";
 import { useNavigation } from "@react-navigation/native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
@@ -372,7 +371,7 @@ const ProfileScreen = () => {
             style={styles.logoutButtonn}
             onPress={() =>
               router.push({
-                pathname: "../(profile)/seeMyProfilee",
+                pathname: "../(profile)/seeMyProfile",
                 params: { userId: profile.id },
               })
             }

@@ -236,6 +236,7 @@ const userMatchesSlice = createSlice({
         state.loading.likes = true;
         state.error.likes = null;
       })
+      // Update the fetchUserLikes.fulfilled case in your userMatchesSlice.js file
       .addCase(fetchUserLikes.fulfilled, (state, action) => {
         state.loading.likes = false;
 
@@ -243,7 +244,8 @@ const userMatchesSlice = createSlice({
         if (action.payload && action.payload.likes) {
           // Map the likes array to the format expected by the UI components
           const formattedLikes = action.payload.likes.map((like) => {
-            const user = like.user;
+            // The liked_user property contains the user data
+            const user = like.liked_user;
 
             // Get the photo URL from the first photo if available
             const mainPhoto =
@@ -255,11 +257,12 @@ const userMatchesSlice = createSlice({
               id: user.id,
               first_name: user.first_name,
               last_name: user.last_name,
-              email: user?.user?.email,
-              photos: user?.user?.photos
+              email: user.email,
+              photos: user.photos
                 ? user.photos.map((photo) => ({
                     id: photo.id,
                     photo_url: photo.url,
+                    is_main: photo.is_main || 0,
                   }))
                 : [],
               // Add additional fields that might be needed by the UI
