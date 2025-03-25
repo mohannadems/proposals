@@ -3,15 +3,12 @@ import { showMessage } from "react-native-flash-message";
 import api from "../../services/api";
 import { ENDPOINTS } from "../../constants/endpoints";
 
-// Create action for setting active tab
 export const setActiveTab = createAction("userMatches/setActiveTab");
 
-// Async thunk for fetching user matches
 export const fetchUserMatches = createAsyncThunk(
   "userMatches/fetchUserMatches",
   async (params = {}, { rejectWithValue }) => {
     try {
-      // Don't send isFilter if it's not needed
       const requestParams = { ...params };
       if (!requestParams.isFilter) {
         delete requestParams.isFilter;
@@ -34,12 +31,10 @@ export const fetchUserMatches = createAsyncThunk(
   }
 );
 
-// Async thunk for fetching filtered matches
 export const fetchFilteredMatches = createAsyncThunk(
   "userMatches/fetchFilteredMatches",
   async (filterParams = {}, { rejectWithValue }) => {
     try {
-      // Ensure isFilter is true if any filters are applied
       const requestParams = { ...filterParams };
       if (
         (requestParams.age_min || requestParams.age_max) &&
@@ -68,7 +63,6 @@ export const fetchFilteredMatches = createAsyncThunk(
   }
 );
 
-// New async thunk for fetching user likes
 export const fetchUserLikes = createAsyncThunk(
   "userMatches/fetchUserLikes",
   async (_, { rejectWithValue }) => {
@@ -86,42 +80,89 @@ export const fetchUserLikes = createAsyncThunk(
     }
   }
 );
+export const fetchMatchDetails = createAsyncThunk(
+  "userMatches/fetchMatchDetails",
+  async (userId, { rejectWithValue }) => {
+    try {
+      // First, check if this is a match
+      const matchResponse = await api.get(ENDPOINTS.MATCHES);
 
-// Helper function to ensure unique list items
+      let matchData = null;
+
+      // Find the specific match with this user
+      if (matchResponse.data && matchResponse.data.data) {
+        matchData = matchResponse.data.data.find(
+          (match) =>
+            match.matched_user_id === parseInt(userId) ||
+            match.matched_user_id === userId.toString()
+        );
+      }
+
+      // If we found a match, get additional user profile info
+      if (matchData) {
+        try {
+          const profileResponse = await api.get(
+            `${ENDPOINTS.USER_PROFILE}/${userId}`
+          );
+
+          // Combine match data with profile data
+          return {
+            ...matchData,
+            ...profileResponse.data,
+            match_percentage: profileResponse.data?.match_percentage || 90,
+          };
+        } catch (profileError) {
+          // If profile fetch fails, still return match data
+          return matchData;
+        }
+      }
+
+      return matchData;
+    } catch (error) {
+      showMessage({
+        message:
+          error.response?.data?.message || "Failed to fetch match details",
+        type: "danger",
+      });
+      return rejectWithValue(
+        error.response?.data || { message: "Failed to fetch match details" }
+      );
+    }
+  }
+);
+
 const ensureUniqueUsers = (users) => {
-  // Use Map to track unique users by ID
   const uniqueUsers = new Map();
-
   users.forEach((user) => {
     if (!uniqueUsers.has(user.id)) {
       uniqueUsers.set(user.id, user);
     }
   });
-
   return Array.from(uniqueUsers.values());
 };
 
 const initialState = {
   activeTab: "All",
+  matchDetails: null,
   preferenceMatches: [],
   suggestedMatches: [],
   suggestionPercentage: 0,
-  likedUsers: [], // New state for liked users
+  likedUsers: [],
   loading: {
     preferences: false,
     suggested: false,
-    likes: false, // New loading state for likes
+    likes: false,
   },
   error: {
     preferences: null,
     suggested: null,
-    likes: null, // New error state for likes
+    likes: null,
   },
   activeFilters: {
     isFilter: false,
     age_min: null,
     age_max: null,
-    isLikedFilter: false, // New filter flag for likes
+    isLikedFilter: false,
   },
 };
 
@@ -153,38 +194,26 @@ const userMatchesSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Handle the setActiveTab action
       .addCase(setActiveTab, (state, action) => {
         state.activeTab = action.payload;
       })
-
-      // Fetch User Matches
       .addCase(fetchUserMatches.pending, (state) => {
         state.loading.preferences = true;
         state.error.preferences = null;
       })
       .addCase(fetchUserMatches.fulfilled, (state, action) => {
         state.loading.preferences = false;
-
-        // Handle both exact matches and suggested users
         if (action.payload) {
-          // Handle exact matches (preference matches)
           if (action.payload.exact_matches) {
-            // Ensure unique users
             state.preferenceMatches = ensureUniqueUsers(
               action.payload.exact_matches
             );
           }
-
-          // Handle suggested users
           if (action.payload.suggested_users) {
-            // Ensure unique users
             state.suggestedMatches = ensureUniqueUsers(
               action.payload.suggested_users
             );
           }
-
-          // Store suggestion percentage if available
           if (action.payload.suggestion_percentage) {
             state.suggestionPercentage = action.payload.suggestion_percentage;
           }
@@ -194,64 +223,49 @@ const userMatchesSlice = createSlice({
         state.loading.preferences = false;
         state.error.preferences = action.payload;
       })
-
-      // Fetch Filtered Matches
       .addCase(fetchFilteredMatches.pending, (state) => {
         state.loading.suggested = true;
         state.error.suggested = null;
       })
       .addCase(fetchFilteredMatches.fulfilled, (state, action) => {
         state.loading.suggested = false;
-
-        // For filtered matches, we primarily update the suggested matches
-        if (action.payload && action.payload.suggested_users) {
-          // Ensure unique users
-          state.suggestedMatches = ensureUniqueUsers(
-            action.payload.suggested_users
-          );
-        } else {
-          state.suggestedMatches = [];
-        }
-
-        // Also update exact matches if they're in the response
-        if (action.payload && action.payload.exact_matches) {
-          // Ensure unique users
-          state.preferenceMatches = ensureUniqueUsers(
-            action.payload.exact_matches
-          );
-        }
-
-        // Store suggestion percentage if available
-        if (action.payload && action.payload.suggestion_percentage) {
-          state.suggestionPercentage = action.payload.suggestion_percentage;
+        if (action.payload) {
+          if (action.payload.suggested_users) {
+            state.suggestedMatches = ensureUniqueUsers(
+              action.payload.suggested_users
+            );
+          } else {
+            state.suggestedMatches = [];
+          }
+          if (action.payload.exact_matches) {
+            state.preferenceMatches = ensureUniqueUsers(
+              action.payload.exact_matches
+            );
+          }
+          if (action.payload.suggestion_percentage) {
+            state.suggestionPercentage = action.payload.suggestion_percentage;
+          }
         }
       })
       .addCase(fetchFilteredMatches.rejected, (state, action) => {
         state.loading.suggested = false;
         state.error.suggested = action.payload;
       })
-
-      // Fetch User Likes
       .addCase(fetchUserLikes.pending, (state) => {
         state.loading.likes = true;
         state.error.likes = null;
       })
-      // Update the fetchUserLikes.fulfilled case in your userMatchesSlice.js file
       .addCase(fetchUserLikes.fulfilled, (state, action) => {
         state.loading.likes = false;
-
-        // Extract and format liked users from the response
-        if (action.payload && action.payload.likes) {
-          // Map the likes array to the format expected by the UI components
+        if (action.payload?.likes) {
           const formattedLikes = action.payload.likes.map((like) => {
-            // The liked_user property contains the user data
             const user = like.liked_user;
-
-            // Get the photo URL from the first photo if available
-            const mainPhoto =
-              user.photos && user.photos.length > 0
-                ? { photo_url: user.photos[0].url }
-                : null;
+            const photoUrl = user.photos?.[0]?.url ?? null;
+            const fullPhotoUrl = photoUrl
+              ? photoUrl.startsWith("http")
+                ? photoUrl
+                : `https://proposals.world${photoUrl}`
+              : null;
 
             return {
               id: user.id,
@@ -261,20 +275,19 @@ const userMatchesSlice = createSlice({
               photos: user.photos
                 ? user.photos.map((photo) => ({
                     id: photo.id,
+                    url: photo.url,
                     photo_url: photo.url,
                     is_main: photo.is_main || 0,
                   }))
                 : [],
-              // Add additional fields that might be needed by the UI
-              match_percentage: 100, // Liked users can be considered 100% match
-              verified: false, // Default values for required fields
+              photo_url: fullPhotoUrl,
+              match_percentage: 100,
+              verified: false,
               premium: false,
               last_active: "Recently",
-              likeId: like.id, // Store the like ID to ensure uniqueness
+              likeId: like.id,
             };
           });
-
-          // Ensure unique users in liked list
           state.likedUsers = ensureUniqueUsers(formattedLikes);
         } else {
           state.likedUsers = [];
@@ -283,6 +296,19 @@ const userMatchesSlice = createSlice({
       .addCase(fetchUserLikes.rejected, (state, action) => {
         state.loading.likes = false;
         state.error.likes = action.payload;
+      })
+      .addCase(fetchMatchDetails.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.matchDetails = null;
+      })
+      .addCase(fetchMatchDetails.fulfilled, (state, action) => {
+        state.loading = false;
+        state.matchDetails = action.payload;
+      })
+      .addCase(fetchMatchDetails.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });

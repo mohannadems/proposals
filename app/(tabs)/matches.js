@@ -29,6 +29,7 @@ import { Link, useRouter } from "expo-router";
 import withProfileCompletion from "../../components/profile/withProfileCompletion";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchProfileCompletionData } from "../../store/slices/profileCompletionSlice";
+import { matchesService } from "../../services/matchesService";
 import {
   fetchUserMatches,
   fetchFilteredMatches,
@@ -79,7 +80,7 @@ const EmptyStateCard = ({ type }) => {
   );
 };
 
-const MatchCard = ({ user, onPress }) => {
+const MatchCard = ({ user, onPress, onLike, isLiked, isCheckingMatch }) => {
   const scale = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {
@@ -97,21 +98,56 @@ const MatchCard = ({ user, onPress }) => {
     }).start();
   };
 
-  // Get the main profile photo
-  const mainPhoto =
-    user.photos && user.photos.length > 0
-      ? user.photos.find((photo) => photo.is_main === 1) || user.photos[0]
-      : null;
+  const getProfileImage = () => {
+    // For debugging - remove in production
+    console.log("User photos data:", JSON.stringify(user.photos));
 
-  // Check if user has a photo property, fallback to a default image
-  const profileImage =
-    mainPhoto && mainPhoto.photo_url
-      ? { uri: mainPhoto.photo_url }
-      : require("../../assets/images/11.jpg");
+    // First check if there's a direct photo_url property
+    if (user.photo_url) {
+      console.log("Using direct photo_url:", user.photo_url);
+      return { uri: user.photo_url };
+    }
+
+    // Then check photos array
+    if (user.photos && Array.isArray(user.photos) && user.photos.length > 0) {
+      // Try to find main photo first
+      const mainPhoto = user.photos.find((photo) => photo.is_main === 1);
+
+      if (mainPhoto) {
+        // Check for photo_url property first
+        if (mainPhoto.photo_url) {
+          console.log("Using main photo.photo_url:", mainPhoto.photo_url);
+          return { uri: mainPhoto.photo_url };
+        }
+        // Then check for url property
+        if (mainPhoto.url) {
+          console.log("Using main photo.url:", mainPhoto.url);
+          return { uri: mainPhoto.url };
+        }
+      }
+
+      // If no main photo, use first photo
+      const firstPhoto = user.photos[0];
+      if (firstPhoto.photo_url) {
+        console.log("Using first photo.photo_url:", firstPhoto.photo_url);
+        return { uri: firstPhoto.photo_url };
+      }
+      if (firstPhoto.url) {
+        console.log("Using first photo.url:", firstPhoto.url);
+        return { uri: firstPhoto.url };
+      }
+    }
+
+    // Fallback to default image
+    console.log("No valid photos found, using default image");
+    return require("../../assets/images/11.jpg");
+  };
+
+  // Get profile image
+  const profileImage = getProfileImage();
 
   // Format full name
   const fullName = `${user.first_name || ""} ${user.last_name || ""}`.trim();
-
   return (
     <TouchableOpacity
       activeOpacity={1}
@@ -134,15 +170,17 @@ const MatchCard = ({ user, onPress }) => {
                   {fullName || user.first_name || "User"}
                   {user.age ? `, ${user.age}` : ""}
                 </Text>
+
                 {user.verified && (
                   <View style={styles.verifiedBadge}>
                     <Feather name="check" size={12} color={COLORS.white} />
                   </View>
                 )}
               </View>
+
               {/* <Text style={styles.spotlightLocation}>
                 {user.location || user.city || "Unknown location"}
-              </Text> */}
+                </Text> */}
             </View>
             <View style={styles.matchPercentageContainer}>
               <MaskedView
@@ -283,6 +321,8 @@ const FilterChip = ({ label, icon, active, onPress }) => (
 );
 
 const MatchesScreen = () => {
+  const [checkingMatchId, setCheckingMatchId] = useState(null);
+
   const [activeFilter, setActiveFilter] = useState("All");
   const [scrollY] = useState(new Animated.Value(0));
   const [showFilters, setShowFilters] = useState(false);
@@ -406,13 +446,16 @@ const MatchesScreen = () => {
   const handleMatchPress = useCallback(
     (user) => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      // Navigate to user profile details using expo-router
+
       router.push({
         pathname: "/(profile)/matchProfile",
-        params: { userId: user.id },
+        params: {
+          userId: user.id,
+          fromTab: activeFilter,
+        },
       });
     },
-    [router]
+    [router, activeFilter]
   );
 
   return (
@@ -1148,6 +1191,33 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     opacity: 0.7,
     textAlign: "center",
+  },
+  cardLikeButton: {
+    position: "absolute",
+    bottom: 16,
+    right: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  cardLikedIndicator: {
+    position: "absolute",
+    bottom: 16,
+    right: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 

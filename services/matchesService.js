@@ -52,4 +52,106 @@ export const matchesService = {
       return null;
     }
   },
+
+  // Check if there's a mutual match with a user after liking them
+  // Improved checkForMatch method
+  checkForMatch: async (userId) => {
+    // Validate input
+    if (userId === undefined || userId === null) {
+      console.error("No user ID provided to checkForMatch");
+      return { isMatch: false, error: "No user ID provided" };
+    }
+
+    try {
+      // Use the standard MATCHES endpoint
+      const response = await api.get(ENDPOINTS.MATCHES);
+
+      // Log the response for debugging
+      console.log("Matches response:", response.data);
+
+      // Ensure we have data and it's in the expected format
+      if (!response.data || !Array.isArray(response.data.data)) {
+        console.error("Invalid matches response structure");
+        return { isMatch: false, error: "Invalid response structure" };
+      }
+
+      // Convert userId to a string for consistent comparison
+      const userIdString = String(userId);
+
+      // Find the match
+      const matchData = response.data.data.find(
+        (match) => String(match.matched_user_id) === userIdString
+      );
+
+      // Return match result
+      if (matchData) {
+        return {
+          isMatch: true,
+          matchData,
+        };
+      }
+
+      // No match found
+      return { isMatch: false };
+    } catch (error) {
+      console.error("Error fetching mutual matches:", error);
+
+      // Provide more detailed error logging
+      if (error.response) {
+        console.error("Response error:", error.response.data);
+      }
+
+      // For development/testing purposes, return a test match
+      if (__DEV__) {
+        console.log("DEV MODE: Returning test match result");
+        return {
+          isMatch: true,
+          matchData: {
+            matched_user_id: userId,
+            matched_user_name: "Test Match",
+            matched_user_photo: null,
+          },
+        };
+      }
+
+      // Throw a more informative error
+      throw {
+        message:
+          error.response?.data?.message || "Error fetching mutual matches",
+      };
+    }
+  },
+
+  // Store liked user IDs locally for persistence
+  saveLikedUserIds: async (userIds) => {
+    try {
+      await AsyncStorage.setItem("liked_user_ids", JSON.stringify(userIds));
+    } catch (error) {
+      console.error("Error saving liked user IDs:", error);
+    }
+  },
+
+  // Get stored liked user IDs
+  getLikedUserIds: async () => {
+    try {
+      const userIds = await AsyncStorage.getItem("liked_user_ids");
+      return userIds ? JSON.parse(userIds) : [];
+    } catch (error) {
+      console.error("Error getting liked user IDs:", error);
+      return [];
+    }
+  },
+
+  // Add a user ID to the liked list
+  addLikedUserId: async (userId) => {
+    try {
+      const existingIds = await matchesService.getLikedUserIds();
+      if (!existingIds.includes(userId)) {
+        const updatedIds = [...existingIds, userId];
+        await matchesService.saveLikedUserIds(updatedIds);
+      }
+    } catch (error) {
+      console.error("Error adding liked user ID:", error);
+    }
+  },
 };
