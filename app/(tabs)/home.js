@@ -12,23 +12,11 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { useDispatch } from "react-redux";
 import { fetchProfile } from "../../store/slices/profile.slice";
+import styles from "../../styles/home";
 import i18n from "../i18n";
 import { I18nManager } from "react-native";
 import { router } from "expo-router";
-
-const { width } = Dimensions.get("window");
-
-const COLORS = {
-  primary: "#9e086c",
-  secondary: "#5856D6",
-  background: "#F8F9FA",
-  white: "#FFFFFF",
-  text: "#1C1C1E",
-  error: "#FF3B30",
-  success: "#34C759",
-  border: "#E5E5EA",
-  primaryGradient: ["#9e086c", "#9e086c"],
-};
+import COLORS from "../../constants/colors";
 
 const LandingPage = () => {
   const dispatch = useDispatch();
@@ -84,8 +72,6 @@ const LandingPage = () => {
     const isRTL = lang === "ar";
     if (I18nManager.isRTL !== isRTL) {
       I18nManager.forceRTL(isRTL);
-      // In a real app, you might want to show an alert here advising the user to restart the app
-      // for the RTL changes to take full effect
     }
     setCurrentLanguage(lang);
   };
@@ -250,255 +236,6 @@ const LandingPage = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f0f0f0",
-  },
-  scrollView: {
-    flex: 1,
-  },
-  heroContainer: {
-    height: 320,
-    width: "100%",
-  },
-  gradient: {
-    flex: 1,
-    justifyContent: "center",
-    padding: 20,
-  },
-  heroContent: {
-    marginTop: 60,
-    alignItems: I18nManager.isRTL ? "flex-end" : "flex-start",
-  },
-  heroTitle: {
-    fontSize: 48,
-    fontWeight: "800",
-    color: COLORS.white,
-    lineHeight: 56,
-    marginBottom: 16,
-    textAlign: I18nManager.isRTL ? "right" : "left",
-  },
-  heroSubtitle: {
-    fontSize: 18,
-    color: COLORS.white,
-    opacity: 0.8,
-    marginBottom: 25,
-  },
-  heroButton: {
-    width: 180,
-    height: 50,
-    overflow: "hidden",
-    borderRadius: 28,
-    backgroundColor: COLORS.white,
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 15,
-    elevation: 12,
-    shadowColor: COLORS.text,
-  },
-  buttonBlur: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  heroButtonText: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: COLORS.primary,
-  },
-  statsContainer: {
-    marginTop: -18,
-    marginHorizontal: 20,
-    marginBottom: 20,
-    zIndex: 100,
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    borderColor: COLORS.primary,
-    shadowColor: COLORS.text,
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 15,
-    elevation: 12,
-  },
-  statsCard: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    padding: 24,
-    borderRadius: 20,
-    overflow: "hidden",
-    background: "transparent",
-  },
-  statItem: {
-    alignItems: "center",
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: COLORS.primary,
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 14,
-    color: COLORS.text,
-    opacity: 0.6,
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: COLORS.border,
-  },
-  section: {
-    padding: 15,
-    marginTop: 0,
-  },
-  sectionTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: COLORS.text,
-    marginBottom: 24,
-    textAlign: "center",
-  },
-  featuresGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    marginHorizontal: -8,
-    alignItems: "flex-start", // Ensure cards align at the top
-  },
-  featureCardContainer: {
-    width: (width - 56) / 2,
-    marginHorizontal: 8,
-    marginBottom: 16,
-  },
-  featureCard: {
-    borderRadius: 20,
-    overflow: "hidden",
-    backgroundColor: COLORS.white,
-    shadowColor: COLORS.text,
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 15,
-    elevation: 12,
-    // Height will be set dynamically in the component
-  },
-  featureGradient: {
-    padding: 20,
-    alignItems: "center",
-    height: "100%",
-    justifyContent: "space-between",
-  },
-  featureIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: COLORS.primary + "20",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 16,
-  },
-  featureTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: COLORS.text,
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  featureDescription: {
-    fontSize: 14,
-    color: COLORS.text,
-    opacity: 0.6,
-    textAlign: "center",
-    paddingHorizontal: 5,
-  },
-  testimonialScroll: {
-    marginHorizontal: -20,
-    paddingHorizontal: 20,
-  },
-  testimonialCard: {
-    width: width - 80,
-    marginRight: 16,
-    padding: 20,
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
-    shadowColor: COLORS.text,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 5,
-  },
-  testimonialContentView: {
-    alignItems: "center",
-    padding: 20,
-  },
-  testimonialImageWrapper: {
-    width: 60,
-    height: 60,
-    borderRadius: 35,
-    overflow: "hidden",
-    marginBottom: 10,
-  },
-  testimonialImageStyle: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "cover",
-  },
-  testimonialText: {
-    textAlign: "center",
-    fontSize: 16,
-    marginVertical: 8,
-  },
-  testimonialName: {
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  testimonialLocation: {
-    color: "gray",
-    textAlign: "center",
-  },
-  featureIconContainer: {
-    width: 50,
-    height: 50,
-    backgroundColor: COLORS.primary,
-    borderRadius: 25,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  featureIconText: {
-    fontSize: 24,
-    color: "#ffffff",
-    fontWeight: "bold",
-  },
-  languageButtons: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginVertical: 20,
-  },
-  languageButton: {
-    padding: 10,
-    marginHorizontal: 10,
-    backgroundColor: COLORS.primary,
-    borderRadius: 5,
-  },
-});
-
-// Mock data for features with Islamic partner search content
 const FeatureIcon = ({ name }) => (
   <View style={styles.featureIconContainer}>
     <Text style={styles.featureIconText}>{name[0].toUpperCase()}</Text>
@@ -510,25 +247,25 @@ const features = [
     icon: () => <FeatureIcon name="Values" />,
     title: "Values-Based Matching",
     description: "Find partners who share your Islamic values",
-    height: 200, // Set all heights equal for each row
+    height: 200,
   },
   {
     icon: () => <FeatureIcon name="Privacy" />,
     title: "Privacy Protection",
     description: "Maintain modesty with privacy features",
-    height: 200, // Same height as first card
+    height: 200,
   },
   {
     icon: () => <FeatureIcon name="Guardian" />,
     title: "Guardian Involvement",
     description: "Include your wali in the process",
-    height: 180, // Same height as fourth card
+    height: 180,
   },
   {
     icon: () => <FeatureIcon name="Compatibility" />,
     title: "Compatibility Quiz",
     description: "Questions on deen, family and lifestyle",
-    height: 180, // Same height as third card
+    height: 180,
   },
 ];
 

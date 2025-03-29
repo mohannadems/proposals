@@ -1,5 +1,14 @@
 import { configureStore, combineReducers } from "@reduxjs/toolkit";
-import { persistStore, persistReducer } from "redux-persist";
+import {
+  persistStore,
+  persistReducer,
+  FLUSH,
+  REHYDRATE,
+  PAUSE,
+  PERSIST,
+  PURGE,
+  REGISTER,
+} from "redux-persist";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import authReducer from "./slices/auth.slice";
@@ -8,91 +17,84 @@ import profileCompletionReducer from "./slices/profileCompletionSlice";
 import profileAttributesReducer from "./slices/profileAttributesSlice";
 import searchReducer from "./slices/searchSlice";
 import userMatchesReducer from "./slices/userMatchesSlice";
-import persistedUserProfileReducer from "./slices/userProfileSlice";
-// First create the persist configs
-const profilePersistConfig = {
-  key: "profile",
-  storage: AsyncStorage,
+import userProfileReducer from "./slices/userProfileSlice";
+
+const STORAGE_KEYS = {
+  PROFILE: "profile",
+  PROFILE_COMPLETION: "profileCompletion",
+  SEARCH: "search",
+  USER_MATCHES: "userMatches",
+  USER_PROFILE: "userProfile",
 };
 
-const profileCompletionPersistConfig = {
-  key: "profileCompletion",
+const createPersistConfig = (key, whitelist = null) => ({
+  key,
   storage: AsyncStorage,
-};
-
-// Add persistence for search reducer
-const searchPersistConfig = {
-  key: "search",
-  storage: AsyncStorage,
-};
-
-// Add persistence for user matches
-const userMatchesPersistConfig = {
-  key: "userMatches",
-  storage: AsyncStorage,
-  // Only persist certain parts of the userMatches state
-  whitelist: ["spotlightUsers", "quickMatchUsers", "activeFilters"],
-};
-
-// Create persisted reducers for those you want to persist
-const persistedProfileReducer = persistReducer(
-  profilePersistConfig,
-  profileReducer
-);
-
-const persistedProfileCompletionReducer = persistReducer(
-  profileCompletionPersistConfig,
-  profileCompletionReducer
-);
-
-// Add the persisted search reducer
-const persistedSearchReducer = persistReducer(
-  searchPersistConfig,
-  searchReducer
-);
-
-// Add the persisted user matches reducer
-const persistedUserMatchesReducer = persistReducer(
-  userMatchesPersistConfig,
-  userMatchesReducer
-);
-
-// Define all reducers
-const appReducer = combineReducers({
-  auth: authReducer,
-  profile: persistedProfileReducer,
-  profileCompletion: persistedProfileCompletionReducer,
-  profileAttributes: profileAttributesReducer,
-  search: persistedSearchReducer, // Use the persisted version
-  userMatches: persistedUserMatchesReducer, // Use the persisted version
-  userProfile: persistedUserProfileReducer,
+  ...(whitelist ? { whitelist } : {}),
 });
 
-// Create the root reducer that handles logout
+const persistConfigs = {
+  profile: createPersistConfig(STORAGE_KEYS.PROFILE),
+  profileCompletion: createPersistConfig(STORAGE_KEYS.PROFILE_COMPLETION),
+  search: createPersistConfig(STORAGE_KEYS.SEARCH),
+  userMatches: createPersistConfig(STORAGE_KEYS.USER_MATCHES, [
+    "spotlightUsers",
+    "quickMatchUsers",
+    "activeFilters",
+    "likedUsers",
+  ]),
+  userProfile: createPersistConfig(STORAGE_KEYS.USER_PROFILE, [
+    "likedUsers",
+    "dislikedUsers",
+  ]),
+};
+
+const persistedReducers = {
+  profile: persistReducer(persistConfigs.profile, profileReducer),
+  profileCompletion: persistReducer(
+    persistConfigs.profileCompletion,
+    profileCompletionReducer
+  ),
+  search: persistReducer(persistConfigs.search, searchReducer),
+  userMatches: persistReducer(persistConfigs.userMatches, userMatchesReducer),
+  userProfile: persistReducer(persistConfigs.userProfile, userProfileReducer),
+};
+
+const appReducer = combineReducers({
+  auth: authReducer,
+  profile: persistedReducers.profile,
+  profileCompletion: persistedReducers.profileCompletion,
+  profileAttributes: profileAttributesReducer,
+  search: persistedReducers.search,
+  userMatches: persistedReducers.userMatches,
+  userProfile: persistedReducers.userProfile,
+});
+
 const rootReducer = (state, action) => {
-  // When logout action is dispatched, reset all state
   if (action.type === "auth/logout/fulfilled") {
     // Option 1: Reset everything (clear all state)
     state = undefined;
 
-    // Option 2 (Uncomment to use): Keep search preferences even after logout
-    // const { search } = state;
-    // state = undefined;
-    // return appReducer({ search }, action);
+    // Option 2: Uncomment to keep search preferences after logout
+    /*
+    const { search } = state;
+    state = undefined;
+    return appReducer({ search }, action);
+    */
   }
 
   return appReducer(state, action);
 };
 
-// Use the root reducer in the store configuration
 export const store = configureStore({
   reducer: rootReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: ["persist/PERSIST", "persist/REHYDRATE"],
+        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
     }),
+  devTools: process.env.NODE_ENV !== "production",
 });
 
 export const persistor = persistStore(store);

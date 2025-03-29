@@ -14,14 +14,9 @@ import {
   selectErrorStates,
 } from "../store/slices/profileAttributesSlice";
 
-/**
- * Custom hook to provide dynamic profile data
- * This replaces the static PROFILE_DATA with data from the API
- */
 export const useDynamicProfileData = () => {
   const dispatch = useDispatch();
 
-  // Get all data from Redux store
   const personalAttributes = useSelector(selectPersonalAttributes);
   const lifestyleInterests = useSelector(selectLifestyleInterests);
   const professionalEducational = useSelector(selectProfessionalEducational);
@@ -31,19 +26,16 @@ export const useDynamicProfileData = () => {
   const loading = useSelector(selectLoadingStates);
   const errors = useSelector(selectErrorStates);
 
-  // Fetch all data on hook mount
   useEffect(() => {
     dispatch(fetchAllProfileData());
   }, [dispatch]);
 
-  // Selector for cities by country
   const getCitiesByCountry = (countryId) => {
     return (
       useSelector((state) => selectCitiesByCountry(state, countryId)) || []
     );
   };
 
-  // Extract all the data to match the original PROFILE_DATA structure
   const {
     hairColors = [],
     heights = [],
@@ -79,7 +71,6 @@ export const useDynamicProfileData = () => {
     financialStatuses = [],
   } = geographic;
 
-  // Define child numbers (not in API)
   const childrenNumbers = [
     { id: 1, name: "No Children 🚫" },
     { id: 2, name: "1 Child 👶" },
@@ -88,7 +79,6 @@ export const useDynamicProfileData = () => {
     { id: 5, name: "4 or More Children 👨‍👩‍👧‍👦" },
   ];
 
-  // Dynamic version of PROFILE_DATA
   const dynamicProfileData = {
     marriageBudget,
     religiosityLevels,
@@ -117,8 +107,7 @@ export const useDynamicProfileData = () => {
     jobTitles,
     maritalStatuses,
     childrenNumbers,
-    // Cities are handled separately since they're fetched dynamically by country
-    cities: {}, // Will be accessed through getCitiesByCountry function
+    cities: {},
   };
 
   return {
@@ -131,10 +120,6 @@ export const useDynamicProfileData = () => {
   };
 };
 
-/**
- * Utility function to get cities by country ID
- * This can be used directly without the hook
- */
 export const getCitiesByCountryId = (state, countryId) => {
   return selectCitiesByCountry(state, countryId) || [];
 };

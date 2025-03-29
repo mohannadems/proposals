@@ -79,12 +79,8 @@ const EducationWorkSection = () => {
     positionLevels = [],
   } = professionalEducational;
 
-  const {
-    jobTitles = [],
-    zodiacSigns = [],
-    socialMediaPresence = [],
-  } = personalAttributes;
-
+  const { zodiacSigns = [], socialMediaPresence = [] } = personalAttributes;
+  const { jobTitles = [] } = useSelector(selectProfessionalEducational);
   const { housingStatuses = [], financialStatuses = [] } = geographic;
 
   if (
@@ -145,7 +141,7 @@ const EducationWorkSection = () => {
         name="employment_status"
         render={({ field: { value, onChange } }) => (
           <ToggleButton
-            label="Employment Status 💼"
+            label="Employment Status"
             value={value}
             onChange={(newValue) => {
               onChange(newValue);

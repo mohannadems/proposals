@@ -6,10 +6,8 @@ import { authService } from "./auth.service";
 const SEARCH_PREFERENCES_KEY = "user_search_preferences";
 const HAS_SUBMITTED_PREFERENCES = "has_submitted_preferences";
 
-// Get user-specific storage key
 const getUserSpecificKey = async () => {
   try {
-    // Get user ID from auth service
     const userId = await authService.getUserId();
 
     if (userId) {
@@ -25,16 +23,13 @@ const getUserSpecificKey = async () => {
 };
 
 export const searchService = {
-  // Submit user preferences
   submitPreferences: async (preferences) => {
     try {
       const response = await api.post(ENDPOINTS.USER_PREFERENCES, preferences);
 
-      // Save preferences with user-specific key
       const storageKey = await getUserSpecificKey();
       await AsyncStorage.setItem(storageKey, JSON.stringify(preferences));
 
-      // Also save a flag that user has submitted preferences at least once
       await AsyncStorage.setItem(HAS_SUBMITTED_PREFERENCES, "true");
 
       return response.data;
@@ -47,10 +42,8 @@ export const searchService = {
     }
   },
 
-  // Get saved preferences
   getSavedPreferences: async () => {
     try {
-      // First try API if we're online
       try {
         const response = await api.get(ENDPOINTS.GET_USER_PREFERENCES);
 
@@ -64,7 +57,6 @@ export const searchService = {
         }
       } catch (apiError) {}
 
-      // If API fails or returns no data, try local storage
       const storageKey = await getUserSpecificKey();
       const localPreferences = await AsyncStorage.getItem(storageKey);
 
@@ -79,23 +71,17 @@ export const searchService = {
     }
   },
 
-  // Debug helper to identify preference storage issues
   debugPreferences: async () => {
     try {
-      // Current user ID
       const userId = await authService.getUserId();
 
-      // Current token
       const token = await AsyncStorage.getItem("userToken");
       const tokenPrefix = token ? token.split("|")[0] : null;
 
-      // Current storage key
       const storageKey = await getUserSpecificKey();
 
-      // Check if we have preferences with this key
       const preferences = await AsyncStorage.getItem(storageKey);
 
-      // Get all preference-related keys
       const allKeys = await AsyncStorage.getAllKeys();
       const prefKeys = allKeys.filter((key) =>
         key.startsWith(SEARCH_PREFERENCES_KEY)

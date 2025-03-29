@@ -10,16 +10,13 @@ const api = axios.create({
 
 export const setAuthToken = (token) => {
   if (token) {
-    // Add the "Bearer" prefix and ensure proper spacing
     api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-    // For debugging
   } else {
     delete api.defaults.headers.common["Authorization"];
   }
 };
 api.interceptors.request.use(
   (config) => {
-    // Log the headers for debugging
     return config;
   },
   (error) => {

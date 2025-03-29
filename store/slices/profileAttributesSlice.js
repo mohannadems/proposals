@@ -7,6 +7,7 @@ export const fetchPersonalAttributes = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await profileService.fetchPersonalAttributes();
+      console.log("Personal Attributes API response:", response.data);
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -21,6 +22,7 @@ export const fetchLifestyleInterests = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await profileService.fetchLifestyleInterests();
+      console.log("Lifestyle Interests API response:", response.data);
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -35,6 +37,7 @@ export const fetchProfessionalEducational = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await profileService.fetchProfessionalEducational();
+      console.log("Professional Educational API response:", response.data);
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -49,6 +52,7 @@ export const fetchGeographic = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await profileService.fetchGeographic();
+      console.log("Geographic API response:", response.data);
       return response.data;
     } catch (error) {
       return rejectWithValue(
@@ -63,7 +67,18 @@ export const fetchCitiesByCountry = createAsyncThunk(
   async (countryId, { rejectWithValue }) => {
     try {
       const response = await profileService.fetchCitiesByCountry(countryId);
-      return { countryId, cities: response };
+      console.log(`Cities API response for country ${countryId}:`, response);
+
+      // Handle different response formats
+      let cities = [];
+      if (response && response.data) {
+        cities = response.data;
+      } else if (Array.isArray(response)) {
+        cities = response;
+      }
+
+      console.log(`Processed cities for country ${countryId}:`, cities);
+      return { countryId, cities };
     } catch (error) {
       console.warn(
         `Couldn't fetch cities for country ID ${countryId}, using empty array:`,
@@ -77,12 +92,14 @@ export const fetchCitiesByCountry = createAsyncThunk(
 export const fetchAllProfileData = createAsyncThunk(
   "profileAttributes/fetchAllProfileData",
   async (_, { dispatch }) => {
+    console.log("Fetching all profile data");
     await Promise.all([
       dispatch(fetchPersonalAttributes()),
       dispatch(fetchLifestyleInterests()),
       dispatch(fetchProfessionalEducational()),
       dispatch(fetchGeographic()),
     ]);
+    console.log("All profile data fetched successfully");
   }
 );
 
@@ -116,6 +133,7 @@ const initialState = {
   housingStatuses: [],
   financialStatuses: [],
 
+  cities: [],
   citiesByCountry: {},
 
   loading: {
@@ -140,6 +158,23 @@ const profileAttributesSlice = createSlice({
   initialState,
   reducers: {
     resetProfileAttributes: () => initialState,
+    clearCities: (state) => {
+      state.cities = [];
+    },
+    debugState: (state) => {
+      console.log(
+        "Current state:",
+        JSON.stringify(
+          {
+            marriageBudget: state.marriageBudget,
+            religiosityLevels: state.religiosityLevels,
+            cities: state.cities,
+          },
+          null,
+          2
+        )
+      );
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -157,9 +192,12 @@ const profileAttributesSlice = createSlice({
         state.skinColors = action.payload.skin_colors || [];
         state.zodiacSigns = action.payload.zodiac_signs || [];
         state.sleepHabits = action.payload.sleep_habits || [];
-        state.marriageBudget = action.payload.marriage_budget || [];
-        state.jobTitles = action.payload.job_titles || [];
         state.socialMediaPresence = action.payload.social_media_presence || [];
+
+        // JobTitles moved to professionalEducational
+        if (action.payload.job_titles) {
+          state.jobTitles = action.payload.job_titles;
+        }
       })
       .addCase(fetchPersonalAttributes.rejected, (state, action) => {
         state.loading.personalAttributes = false;
@@ -178,29 +216,40 @@ const profileAttributesSlice = createSlice({
         state.sportsActivities = action.payload.sports_activities || [];
         state.smokingTools = action.payload.smoking_tools || [];
         state.drinkingStatuses = action.payload.drinking_statuses || [];
-        state.religiosityLevels = action.payload.religiosityLevels || [];
+
+        // Handle both possible API formats for religiosity_levels
+        state.religiosityLevels =
+          action.payload.religiosity_levels ||
+          action.payload.religiosityLevels ||
+          [];
+
+        console.log("Updated religiosityLevels:", state.religiosityLevels);
       })
       .addCase(fetchLifestyleInterests.rejected, (state, action) => {
         state.loading.lifestyleInterests = false;
         state.errors.lifestyleInterests = action.payload || "An error occurred";
       });
 
-    builder
-      .addCase(fetchProfessionalEducational.pending, (state) => {
-        state.loading.professionalEducational = true;
-        state.errors.professionalEducational = null;
-      })
-      .addCase(fetchProfessionalEducational.fulfilled, (state, action) => {
-        state.loading.professionalEducational = false;
-        state.specializations = action.payload.specializations || [];
-        state.positionLevels = action.payload.position_levels || [];
-        state.educationalLevels = action.payload.educational_levels || [];
-      })
-      .addCase(fetchProfessionalEducational.rejected, (state, action) => {
-        state.loading.professionalEducational = false;
-        state.errors.professionalEducational =
-          action.payload || "An error occurred";
-      });
+    builder.addCase(fetchProfessionalEducational.fulfilled, (state, action) => {
+      state.loading.professionalEducational = false;
+      state.specializations = action.payload.specializations || [];
+      state.positionLevels = action.payload.position_levels || [];
+      state.educationalLevels = action.payload.educational_levels || [];
+      if (action.payload.marriage_budget) {
+        state.marriageBudget = action.payload.marriage_budget.map((item) => ({
+          id: item.id,
+          name: item.name || item.budget || `Budget ${item.id}`,
+        }));
+      } else if (action.payload.marriageBudget) {
+        state.marriageBudget = action.payload.marriageBudget;
+      } else {
+        state.marriageBudget = [];
+      }
+
+      if (action.payload.job_titles) {
+        state.jobTitles = action.payload.job_titles;
+      }
+    });
 
     builder
       .addCase(fetchGeographic.pending, (state) => {
@@ -228,18 +277,26 @@ const profileAttributesSlice = createSlice({
       .addCase(fetchCitiesByCountry.fulfilled, (state, action) => {
         state.loading.cities = false;
         const { countryId, cities } = action.payload;
+
+        // Store in both places for maximum compatibility
         state.citiesByCountry[countryId] = cities;
+        state.cities = cities; // Also update the direct cities array
+
+        console.log(`Updated cities for country ${countryId}:`, state.cities);
       })
       .addCase(fetchCitiesByCountry.rejected, (state, action) => {
         state.loading.cities = false;
         state.errors.cities = action.payload || "An error occurred";
+        state.cities = [];
       });
   },
 });
 
-export const { resetProfileAttributes } = profileAttributesSlice.actions;
+export const { resetProfileAttributes, clearCities, debugState } =
+  profileAttributesSlice.actions;
 export default profileAttributesSlice.reducer;
 
+// Direct selectors
 const selectHairColors = (state) => state.profileAttributes.hairColors;
 const selectHeights = (state) => state.profileAttributes.heights;
 const selectWeights = (state) => state.profileAttributes.weights;
@@ -278,6 +335,14 @@ const selectHousingStatuses = (state) =>
 const selectFinancialStatuses = (state) =>
   state.profileAttributes.financialStatuses;
 
+// Export direct selectors for critical fields
+export const selectCities = (state) => state.profileAttributes.cities;
+export const selectDirectMarriageBudget = (state) =>
+  state.profileAttributes.marriageBudget;
+export const selectDirectReligiosityLevels = (state) =>
+  state.profileAttributes.religiosityLevels;
+
+// Composed selectors
 export const selectPersonalAttributes = createSelector(
   [
     selectHairColors,
@@ -288,8 +353,6 @@ export const selectPersonalAttributes = createSelector(
     selectSkinColors,
     selectZodiacSigns,
     selectSleepHabits,
-    selectMarriageBudget,
-    selectJobTitles,
     selectSocialMediaPresence,
   ],
   (
@@ -301,8 +364,6 @@ export const selectPersonalAttributes = createSelector(
     skinColors,
     zodiacSigns,
     sleepHabits,
-    marriageBudget,
-    jobTitles,
     socialMediaPresence
   ) => ({
     hairColors,
@@ -313,8 +374,6 @@ export const selectPersonalAttributes = createSelector(
     skinColors,
     zodiacSigns,
     sleepHabits,
-    marriageBudget,
-    jobTitles,
     socialMediaPresence,
   })
 );
@@ -346,11 +405,25 @@ export const selectLifestyleInterests = createSelector(
 );
 
 export const selectProfessionalEducational = createSelector(
-  [selectSpecializations, selectPositionLevels, selectEducationalLevels],
-  (specializations, positionLevels, educationalLevels) => ({
+  [
+    selectSpecializations,
+    selectPositionLevels,
+    selectEducationalLevels,
+    selectMarriageBudget,
+    selectJobTitles,
+  ],
+  (
     specializations,
     positionLevels,
     educationalLevels,
+    marriageBudget,
+    jobTitles
+  ) => ({
+    specializations,
+    positionLevels,
+    educationalLevels,
+    marriageBudget,
+    jobTitles,
   })
 );
 

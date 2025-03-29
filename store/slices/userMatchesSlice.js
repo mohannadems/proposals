@@ -3,6 +3,27 @@ import { showMessage } from "react-native-flash-message";
 import api from "../../services/api";
 import { ENDPOINTS } from "../../constants/endpoints";
 
+const handleApiError = (error, defaultMessage) => {
+  const errorMessage = error.response?.data?.message || defaultMessage;
+  showMessage({
+    message: errorMessage,
+    type: "danger",
+  });
+  return error.response?.data || { message: defaultMessage };
+};
+
+const ensureUniqueUsers = (users) => {
+  if (!Array.isArray(users) || users.length === 0) return [];
+
+  const uniqueUsers = new Map();
+  users.forEach((user) => {
+    if (user && user.id && !uniqueUsers.has(user.id)) {
+      uniqueUsers.set(user.id, user);
+    }
+  });
+  return Array.from(uniqueUsers.values());
+};
+
 export const setActiveTab = createAction("userMatches/setActiveTab");
 
 export const fetchUserMatches = createAsyncThunk(
@@ -20,13 +41,7 @@ export const fetchUserMatches = createAsyncThunk(
       );
       return response.data;
     } catch (error) {
-      showMessage({
-        message: error.response?.data?.message || "Failed to fetch matches",
-        type: "danger",
-      });
-      return rejectWithValue(
-        error.response?.data || { message: "Failed to fetch matches" }
-      );
+      return rejectWithValue(handleApiError(error, "Failed to fetch matches"));
     }
   }
 );
@@ -36,6 +51,7 @@ export const fetchFilteredMatches = createAsyncThunk(
   async (filterParams = {}, { rejectWithValue }) => {
     try {
       const requestParams = { ...filterParams };
+
       if (
         (requestParams.age_min || requestParams.age_max) &&
         requestParams.isFilter !== false
@@ -51,13 +67,8 @@ export const fetchFilteredMatches = createAsyncThunk(
       );
       return response.data;
     } catch (error) {
-      showMessage({
-        message:
-          error.response?.data?.message || "Failed to fetch filtered matches",
-        type: "danger",
-      });
       return rejectWithValue(
-        error.response?.data || { message: "Failed to fetch filtered matches" }
+        handleApiError(error, "Failed to fetch filtered matches")
       );
     }
   }
@@ -70,76 +81,54 @@ export const fetchUserLikes = createAsyncThunk(
       const response = await api.get(ENDPOINTS.GET_LIKES);
       return response.data;
     } catch (error) {
-      showMessage({
-        message: error.response?.data?.message || "Failed to fetch liked users",
-        type: "danger",
-      });
       return rejectWithValue(
-        error.response?.data || { message: "Failed to fetch liked users" }
+        handleApiError(error, "Failed to fetch liked users")
       );
     }
   }
 );
+
 export const fetchMatchDetails = createAsyncThunk(
   "userMatches/fetchMatchDetails",
   async (userId, { rejectWithValue }) => {
     try {
-      // First, check if this is a match
       const matchResponse = await api.get(ENDPOINTS.MATCHES);
-
       let matchData = null;
 
-      // Find the specific match with this user
-      if (matchResponse.data && matchResponse.data.data) {
+      if (matchResponse.data?.data) {
+        const parsedUserId =
+          typeof userId === "string" ? parseInt(userId, 10) : userId;
         matchData = matchResponse.data.data.find(
           (match) =>
-            match.matched_user_id === parseInt(userId) ||
+            match.matched_user_id === parsedUserId ||
             match.matched_user_id === userId.toString()
         );
       }
 
-      // If we found a match, get additional user profile info
       if (matchData) {
         try {
           const profileResponse = await api.get(
             `${ENDPOINTS.USER_PROFILE}/${userId}`
           );
 
-          // Combine match data with profile data
           return {
             ...matchData,
             ...profileResponse.data,
             match_percentage: profileResponse.data?.match_percentage || 90,
           };
         } catch (profileError) {
-          // If profile fetch fails, still return match data
           return matchData;
         }
       }
 
       return matchData;
     } catch (error) {
-      showMessage({
-        message:
-          error.response?.data?.message || "Failed to fetch match details",
-        type: "danger",
-      });
       return rejectWithValue(
-        error.response?.data || { message: "Failed to fetch match details" }
+        handleApiError(error, "Failed to fetch match details")
       );
     }
   }
 );
-
-const ensureUniqueUsers = (users) => {
-  const uniqueUsers = new Map();
-  users.forEach((user) => {
-    if (!uniqueUsers.has(user.id)) {
-      uniqueUsers.set(user.id, user);
-    }
-  });
-  return Array.from(uniqueUsers.values());
-};
 
 const initialState = {
   activeTab: "All",
@@ -152,11 +141,13 @@ const initialState = {
     preferences: false,
     suggested: false,
     likes: false,
+    matchDetails: false,
   },
   error: {
     preferences: null,
     suggested: null,
     likes: null,
+    matchDetails: null,
   },
   activeFilters: {
     isFilter: false,
@@ -164,6 +155,45 @@ const initialState = {
     age_max: null,
     isLikedFilter: false,
   },
+};
+
+const formatLikesData = (likes) => {
+  if (!Array.isArray(likes)) return [];
+
+  return likes
+    .map((like) => {
+      const user = like.liked_user;
+      if (!user) return null;
+
+      const photoUrl = user.photos?.[0]?.url ?? null;
+      const fullPhotoUrl = photoUrl
+        ? photoUrl.startsWith("http")
+          ? photoUrl
+          : `https://proposals.world${photoUrl}`
+        : null;
+
+      return {
+        id: user.id,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        email: user.email,
+        photos: user.photos
+          ? user.photos.map((photo) => ({
+              id: photo.id,
+              url: photo.url,
+              photo_url: photo.url,
+              is_main: photo.is_main || 0,
+            }))
+          : [],
+        photo_url: fullPhotoUrl,
+        match_percentage: 100,
+        verified: false,
+        premium: false,
+        last_active: "Recently",
+        likeId: like.id,
+      };
+    })
+    .filter(Boolean);
 };
 
 const userMatchesSlice = createSlice({
@@ -178,18 +208,16 @@ const userMatchesSlice = createSlice({
       };
     },
     clearFilters: (state) => {
-      state.activeFilters = {
-        isFilter: false,
-        age_min: null,
-        age_max: null,
-        isLikedFilter: false,
-      };
+      state.activeFilters = initialState.activeFilters;
     },
     setLikedFilter: (state, action) => {
       state.activeFilters.isLikedFilter = action.payload;
     },
     setActiveTabReducer: (state, action) => {
       state.activeTab = action.payload;
+    },
+    clearMatchDetails: (state) => {
+      state.matchDetails = null;
     },
   },
   extraReducers: (builder) => {
@@ -203,20 +231,21 @@ const userMatchesSlice = createSlice({
       })
       .addCase(fetchUserMatches.fulfilled, (state, action) => {
         state.loading.preferences = false;
-        if (action.payload) {
-          if (action.payload.exact_matches) {
-            state.preferenceMatches = ensureUniqueUsers(
-              action.payload.exact_matches
-            );
-          }
-          if (action.payload.suggested_users) {
-            state.suggestedMatches = ensureUniqueUsers(
-              action.payload.suggested_users
-            );
-          }
-          if (action.payload.suggestion_percentage) {
-            state.suggestionPercentage = action.payload.suggestion_percentage;
-          }
+
+        if (action.payload?.exact_matches) {
+          state.preferenceMatches = ensureUniqueUsers(
+            action.payload.exact_matches
+          );
+        }
+
+        if (action.payload?.suggested_users) {
+          state.suggestedMatches = ensureUniqueUsers(
+            action.payload.suggested_users
+          );
+        }
+
+        if (action.payload?.suggestion_percentage) {
+          state.suggestionPercentage = action.payload.suggestion_percentage;
         }
       })
       .addCase(fetchUserMatches.rejected, (state, action) => {
@@ -229,22 +258,23 @@ const userMatchesSlice = createSlice({
       })
       .addCase(fetchFilteredMatches.fulfilled, (state, action) => {
         state.loading.suggested = false;
-        if (action.payload) {
-          if (action.payload.suggested_users) {
-            state.suggestedMatches = ensureUniqueUsers(
-              action.payload.suggested_users
-            );
-          } else {
-            state.suggestedMatches = [];
-          }
-          if (action.payload.exact_matches) {
-            state.preferenceMatches = ensureUniqueUsers(
-              action.payload.exact_matches
-            );
-          }
-          if (action.payload.suggestion_percentage) {
-            state.suggestionPercentage = action.payload.suggestion_percentage;
-          }
+
+        if (action.payload?.suggested_users) {
+          state.suggestedMatches = ensureUniqueUsers(
+            action.payload.suggested_users
+          );
+        } else {
+          state.suggestedMatches = [];
+        }
+
+        if (action.payload?.exact_matches) {
+          state.preferenceMatches = ensureUniqueUsers(
+            action.payload.exact_matches
+          );
+        }
+
+        if (action.payload?.suggestion_percentage) {
+          state.suggestionPercentage = action.payload.suggestion_percentage;
         }
       })
       .addCase(fetchFilteredMatches.rejected, (state, action) => {
@@ -257,37 +287,9 @@ const userMatchesSlice = createSlice({
       })
       .addCase(fetchUserLikes.fulfilled, (state, action) => {
         state.loading.likes = false;
-        if (action.payload?.likes) {
-          const formattedLikes = action.payload.likes.map((like) => {
-            const user = like.liked_user;
-            const photoUrl = user.photos?.[0]?.url ?? null;
-            const fullPhotoUrl = photoUrl
-              ? photoUrl.startsWith("http")
-                ? photoUrl
-                : `https://proposals.world${photoUrl}`
-              : null;
 
-            return {
-              id: user.id,
-              first_name: user.first_name,
-              last_name: user.last_name,
-              email: user.email,
-              photos: user.photos
-                ? user.photos.map((photo) => ({
-                    id: photo.id,
-                    url: photo.url,
-                    photo_url: photo.url,
-                    is_main: photo.is_main || 0,
-                  }))
-                : [],
-              photo_url: fullPhotoUrl,
-              match_percentage: 100,
-              verified: false,
-              premium: false,
-              last_active: "Recently",
-              likeId: like.id,
-            };
-          });
+        if (action.payload?.likes) {
+          const formattedLikes = formatLikesData(action.payload.likes);
           state.likedUsers = ensureUniqueUsers(formattedLikes);
         } else {
           state.likedUsers = [];
@@ -298,17 +300,16 @@ const userMatchesSlice = createSlice({
         state.error.likes = action.payload;
       })
       .addCase(fetchMatchDetails.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-        state.matchDetails = null;
+        state.loading.matchDetails = true;
+        state.error.matchDetails = null;
       })
       .addCase(fetchMatchDetails.fulfilled, (state, action) => {
-        state.loading = false;
+        state.loading.matchDetails = false;
         state.matchDetails = action.payload;
       })
       .addCase(fetchMatchDetails.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload;
+        state.loading.matchDetails = false;
+        state.error.matchDetails = action.payload;
       });
   },
 });
@@ -318,6 +319,19 @@ export const {
   clearFilters,
   setLikedFilter,
   setActiveTabReducer,
+  clearMatchDetails,
 } = userMatchesSlice.actions;
+
+// Selectors
+export const selectActiveTab = (state) => state.userMatches.activeTab;
+export const selectPreferenceMatches = (state) =>
+  state.userMatches.preferenceMatches;
+export const selectSuggestedMatches = (state) =>
+  state.userMatches.suggestedMatches;
+export const selectLikedUsers = (state) => state.userMatches.likedUsers;
+export const selectActiveFilters = (state) => state.userMatches.activeFilters;
+export const selectMatchDetails = (state) => state.userMatches.matchDetails;
+export const selectLoadingStates = (state) => state.userMatches.loading;
+export const selectErrorStates = (state) => state.userMatches.error;
 
 export default userMatchesSlice.reducer;

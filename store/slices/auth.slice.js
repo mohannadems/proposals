@@ -5,7 +5,6 @@ import { authService } from "../../services/auth.service";
 import { ENDPOINTS } from "../../constants/endpoints";
 import { setAuthToken } from "../../services/api";
 
-// Initial State
 const initialState = {
   user: null,
   tokens: null,
@@ -15,7 +14,6 @@ const initialState = {
   tempEmail: null,
 };
 
-// Login Thunk
 export const login = createAsyncThunk(
   "auth/login",
   async (credentials, { rejectWithValue }) => {
@@ -30,7 +28,6 @@ export const login = createAsyncThunk(
   }
 );
 
-// Register Thunk
 export const register = createAsyncThunk(
   "auth/register",
   async (userData, { dispatch, rejectWithValue }) => {
@@ -46,19 +43,15 @@ export const register = createAsyncThunk(
   }
 );
 
-// Logout Thunk
 export const logout = createAsyncThunk(
   "auth/logout",
   async (_, { rejectWithValue }) => {
     try {
-      // Optional: Call backend logout endpoint
       await api.post(ENDPOINTS.LOGOUT);
 
-      // Clear token but NOT user ID (for persistent preferences)
       await AsyncStorage.removeItem("userToken");
       await AsyncStorage.removeItem("userData");
 
-      // Reset auth token
       setAuthToken(null);
 
       return true;
@@ -69,7 +62,6 @@ export const logout = createAsyncThunk(
   }
 );
 
-// New thunk to completely clear user data (optional)
 export const clearUserData = createAsyncThunk(
   "auth/clearUserData",
   async (_, { rejectWithValue }) => {
@@ -92,10 +84,8 @@ export const verifyOTP = createAsyncThunk(
     try {
       const response = await authService.verifyOTP(otpData);
       if (response.success) {
-        // Handle token storage consistent with login format
         if (response.access_token) {
           await AsyncStorage.setItem("userToken", response.access_token);
-          // Set the authorization header with correct token format
           setAuthToken(`Bearer ${response.access_token}`);
         }
         return response;
@@ -145,7 +135,6 @@ export const checkAuthState = createAsyncThunk(
   }
 );
 
-// Auth Slice
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -155,12 +144,10 @@ const authSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    builder
-      // Login Cases
-      .addCase(login.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      });
+    builder.addCase(login.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
     builder
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false;
@@ -168,7 +155,6 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.user = action.payload.data.user;
 
-        // Store auth data
         AsyncStorage.setItem("userToken", action.payload.data.access_token);
         if (action.payload.data.user) {
           AsyncStorage.setItem(
@@ -222,7 +208,6 @@ const authSlice = createSlice({
         state.error = action.payload?.message || "Registration failed";
       })
 
-      // Verify OTP Cases
       .addCase(resendOTP.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -235,7 +220,6 @@ const authSlice = createSlice({
         state.error = action.payload || "Failed to resend OTP";
       })
 
-      // Logout Cases
       .addCase(logout.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -250,7 +234,6 @@ const authSlice = createSlice({
       .addCase(logout.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload || "Logout failed";
-        // Ensure authentication state is reset even on failure
         state.isAuthenticated = false;
         state.user = null;
         state.tokens = null;
@@ -269,7 +252,6 @@ const authSlice = createSlice({
       .addCase(checkAuthState.rejected, (state) => {
         state.loading = false;
       })
-      // Clear User Data Cases (new)
       .addCase(clearUserData.fulfilled, (state) => {
         state.loading = false;
         state.user = null;

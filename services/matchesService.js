@@ -55,6 +55,7 @@ export const matchesService = {
 
   // Check if there's a mutual match with a user after liking them
   // Improved checkForMatch method
+  // Updated checkForMatch method to handle actual API response format
   checkForMatch: async (userId) => {
     // Validate input
     if (userId === undefined || userId === null) {
@@ -70,21 +71,27 @@ export const matchesService = {
       console.log("Matches response:", response.data);
 
       // Ensure we have data and it's in the expected format
-      if (!response.data || !Array.isArray(response.data.data)) {
-        console.error("Invalid matches response structure");
+      // The actual response has a 'matches' array instead of 'data.data'
+      if (
+        !response.data ||
+        !response.data.matches ||
+        !Array.isArray(response.data.matches)
+      ) {
+        console.error("Invalid matches response structure:", response.data);
         return { isMatch: false, error: "Invalid response structure" };
       }
 
       // Convert userId to a string for consistent comparison
       const userIdString = String(userId);
 
-      // Find the match
-      const matchData = response.data.data.find(
+      // Find the match in the 'matches' array (not 'data.data')
+      const matchData = response.data.matches.find(
         (match) => String(match.matched_user_id) === userIdString
       );
 
       // Return match result
       if (matchData) {
+        console.log("Match found:", matchData);
         return {
           isMatch: true,
           matchData,
@@ -92,6 +99,7 @@ export const matchesService = {
       }
 
       // No match found
+      console.log("No match found for userId:", userId);
       return { isMatch: false };
     } catch (error) {
       console.error("Error fetching mutual matches:", error);

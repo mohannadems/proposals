@@ -5,6 +5,7 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { useFormContext } from "react-hook-form";
 import { useDispatch, useSelector } from "react-redux";
@@ -18,7 +19,6 @@ import { CardHeader } from "./CardHeader";
 import { SectionHeader } from "./SectionHeader";
 import { HobbyItem } from "./HobbyComponents";
 import { PetItem } from "./PetComponents";
-import { Platform } from "react-native";
 import {
   AnimatedFormContainer,
   AnimatedDropdown,
@@ -38,7 +38,6 @@ import {
   selectLoadingStates,
 } from "../../../../store/slices/profileAttributesSlice";
 
-// Import constants and styles
 import { cardConfigs } from "./constants";
 import { COLORS } from "../../../../constants/colors";
 import SelectableGrid from "./SelectableGrid";
@@ -94,7 +93,10 @@ const LifestyleSection = () => {
     skinColors = [],
     sleepHabits = [],
   } = personalAttributes;
-  const { marriageBudget = [] } = personalAttributes;
+
+  // Get marriageBudget from the correct location
+  const { marriageBudget = [] } = professionalEducational;
+
   const {
     hobbies = [],
     pets = [],
@@ -135,6 +137,7 @@ const LifestyleSection = () => {
     Cycling: "bicycle",
     Hiking: "walk",
   };
+
   if (
     loading.personalAttributes ||
     loading.lifestyleInterests ||
@@ -300,10 +303,7 @@ const LifestyleSection = () => {
             control={control}
             name="marriage_budget_id"
             label="Marriage Budget"
-            items={marriageBudget.map((item) => ({
-              id: item.id,
-              name: item.budget,
-            }))}
+            items={marriageBudget}
             leftIcon={
               <MaterialIcon
                 name="account-balance-wallet"
@@ -528,7 +528,6 @@ const styles = StyleSheet.create({
   },
   preferenceItemSelected: {
     backgroundColor: COLORS.primary,
-    borderColor: COLORS.primaryDark,
     borderColor: "transparent",
     transform: [{ scale: 1.02 }],
     ...Platform.select({
@@ -551,7 +550,7 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     textAlign: "left",
     paddingHorizontal: 8,
-    fontSize: 8,
+    fontSize: 14,
   },
   preferenceTextSelected: {
     color: COLORS.white,

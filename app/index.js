@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { View, StyleSheet, Image, Animated } from "react-native";
+import { useEffect, useRef, useState, useCallback } from "react";
+import { View, StyleSheet, Image, Animated, Text } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useSelector, useDispatch } from "react-redux";
@@ -10,53 +10,92 @@ export default function SplashScreen() {
   const dispatch = useDispatch();
   const { isAuthenticated, loading } = useSelector((state) => state.auth);
   const [authChecked, setAuthChecked] = useState(false);
+  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        await dispatch(checkAuthState()).unwrap();
-        setAuthChecked(true);
-      } catch (error) {
-        console.error("Auth check failed:", error);
-        setAuthChecked(true); // Proceed even if check fails
-      }
-    };
-
-    initializeAuth();
+  // Memoize the auth initialization function
+  const initializeAuth = useCallback(async () => {
+    try {
+      await dispatch(checkAuthState()).unwrap();
+      setAuthChecked(true);
+    } catch (error) {
+      console.error("Auth check failed:", error);
+      setError(error.message || "Authentication check failed");
+      setAuthChecked(true); // Proceed even if check fails
+    }
   }, [dispatch]);
 
+  // Handle authentication check on mount
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
+
+  // Handle navigation after auth check is complete
   useEffect(() => {
     if (!authChecked) return;
 
+    let navigationTimer;
+
+    // Start fade-in animation
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 1000,
       useNativeDriver: true,
     }).start();
 
-    const navigationTimer = setTimeout(() => {
-      const initialRoute = isAuthenticated ? "/(tabs)/home" : "/welcome";
-      router.replace(initialRoute);
+    // Navigate to appropriate screen
+    navigationTimer = setTimeout(() => {
+      try {
+        const initialRoute = isAuthenticated ? "/(tabs)/home" : "/welcome";
+        router.replace(initialRoute);
+      } catch (navError) {
+        console.error("Navigation failed:", navError);
+        // Fallback to welcome screen if navigation fails
+        router.replace("/welcome");
+      }
     }, 2000);
 
-    return () => clearTimeout(navigationTimer);
+    // Cleanup function
+    return () => {
+      if (navigationTimer) clearTimeout(navigationTimer);
+    };
   }, [fadeAnim, authChecked, isAuthenticated]);
 
   return (
-    <LinearGradient
-      colors={["white", "white"]}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-      style={styles.container}
-    >
-      <Animated.View style={[styles.logoContainer, { opacity: fadeAnim }]}>
-        <Image
-          source={require("../assets/images/logo2.png")}
-          style={styles.logo}
-          resizeMode="contain"
-        />
-      </Animated.View>
-    </LinearGradient>
+    <View style={styles.container}>
+      <LinearGradient
+        colors={["#ffff", "#ffff", "#ffff"]}
+        style={styles.container}
+      >
+        <Animated.View
+          style={[
+            styles.logoContainer,
+            {
+              opacity: fadeAnim,
+              transform: [
+                {
+                  scale: fadeAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.8, 1],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          <Image
+            source={require("../assets/images/logo2.png")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </Animated.View>
+
+        {error && (
+          <Animated.View style={{ opacity: fadeAnim }}>
+            <Text style={styles.errorText}>{error}</Text>
+          </Animated.View>
+        )}
+      </LinearGradient>
+    </View>
   );
 }
 
@@ -65,6 +104,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    backgroundColor: "#ffff",
   },
   logoContainer: {
     width: 200,
@@ -72,8 +112,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  logo: {
-    width: "100%",
-    height: "100%",
-  },
+  logo: { width: "100%", height: "100%" },
 });

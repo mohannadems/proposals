@@ -2,7 +2,25 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { showMessage } from "react-native-flash-message";
 import { userProfileService } from "../../services/userProfileService";
 
-// Async thunk for fetching user profile details
+const handleApiError = (error, defaultMessage) => {
+  const errorMessage =
+    error.response?.data?.message || error.message || defaultMessage;
+
+  showMessage({
+    message: errorMessage,
+    type: "danger",
+  });
+
+  return errorMessage;
+};
+
+const showSuccessMessage = (message) => {
+  showMessage({
+    message,
+    type: "success",
+  });
+};
+
 export const fetchUserProfile = createAsyncThunk(
   "userProfile/fetchUserProfile",
   async (userId, { rejectWithValue }) => {
@@ -10,38 +28,26 @@ export const fetchUserProfile = createAsyncThunk(
       const response = await userProfileService.getUserProfile(userId);
       return response;
     } catch (error) {
-      console.error("Failed to fetch user profile:", error);
-      showMessage({
-        message: error.message || "Failed to fetch user profile",
-        type: "danger",
-      });
-      return rejectWithValue(error.message || "Failed to fetch user profile");
+      return rejectWithValue(
+        handleApiError(error, "Failed to fetch user profile")
+      );
     }
   }
 );
 
-// Async thunk for liking a user
 export const likeUser = createAsyncThunk(
   "userProfile/likeUser",
   async (userId, { rejectWithValue }) => {
     try {
       const response = await userProfileService.likeUser(userId);
-      showMessage({
-        message: "User liked successfully",
-        type: "success",
-      });
-      return response;
+      showSuccessMessage("User liked successfully");
+      return { response, userId };
     } catch (error) {
-      showMessage({
-        message: error.message || "Failed to like user",
-        type: "danger",
-      });
-      return rejectWithValue(error.message || "Failed to like user");
+      return rejectWithValue(handleApiError(error, "Failed to like user"));
     }
   }
 );
 
-// Async thunk for disliking a user
 export const dislikeUser = createAsyncThunk(
   "userProfile/dislikeUser",
   async (userId, { rejectWithValue }) => {
@@ -51,13 +57,9 @@ export const dislikeUser = createAsyncThunk(
         message: "User disliked",
         type: "info",
       });
-      return response;
+      return { response, userId };
     } catch (error) {
-      showMessage({
-        message: error.message || "Failed to dislike user",
-        type: "danger",
-      });
-      return rejectWithValue(error.message || "Failed to dislike user");
+      return rejectWithValue(handleApiError(error, "Failed to dislike user"));
     }
   }
 );
@@ -78,6 +80,16 @@ const initialState = {
   },
 };
 
+const setPending = (state, key) => {
+  state.loading[key] = true;
+  state.error[key] = null;
+};
+
+const setRejected = (state, key, payload) => {
+  state.loading[key] = false;
+  state.error[key] = payload;
+};
+
 const userProfileSlice = createSlice({
   name: "userProfile",
   initialState,
@@ -85,61 +97,77 @@ const userProfileSlice = createSlice({
     clearUserProfile: (state) => {
       state.userProfile = null;
     },
+    clearLikeDislikeErrors: (state) => {
+      state.error.like = null;
+      state.error.dislike = null;
+    },
+    resetUserProfileState: () => initialState,
   },
   extraReducers: (builder) => {
     builder
-      // Fetch user profile
       .addCase(fetchUserProfile.pending, (state) => {
-        state.loading.profile = true;
-        state.error.profile = null;
+        setPending(state, "profile");
       })
       .addCase(fetchUserProfile.fulfilled, (state, action) => {
         state.loading.profile = false;
-        if (action.payload && action.payload.data) {
+        if (action.payload?.data) {
           state.userProfile = action.payload.data;
         }
       })
       .addCase(fetchUserProfile.rejected, (state, action) => {
-        state.loading.profile = false;
-        state.error.profile = action.payload;
+        setRejected(state, "profile", action.payload);
       })
 
-      // Like user
       .addCase(likeUser.pending, (state) => {
-        state.loading.like = true;
-        state.error.like = null;
+        setPending(state, "like");
       })
       .addCase(likeUser.fulfilled, (state, action) => {
         state.loading.like = false;
-        if (state.userProfile) {
-          // Add user to liked users array
-          state.likedUsers.push(state.userProfile.id);
+
+        const userId = action.payload.userId;
+        if (userId && !state.likedUsers.includes(userId)) {
+          state.likedUsers.push(userId);
         }
+
+        state.dislikedUsers = state.dislikedUsers.filter((id) => id !== userId);
       })
       .addCase(likeUser.rejected, (state, action) => {
-        state.loading.like = false;
-        state.error.like = action.payload;
+        setRejected(state, "like", action.payload);
       })
 
-      // Dislike user
       .addCase(dislikeUser.pending, (state) => {
-        state.loading.dislike = true;
-        state.error.dislike = null;
+        setPending(state, "dislike");
       })
       .addCase(dislikeUser.fulfilled, (state, action) => {
         state.loading.dislike = false;
-        if (state.userProfile) {
-          // Add user to disliked users array
-          state.dislikedUsers.push(state.userProfile.id);
+
+        const userId = action.payload.userId;
+        if (userId && !state.dislikedUsers.includes(userId)) {
+          state.dislikedUsers.push(userId);
         }
+
+        state.likedUsers = state.likedUsers.filter((id) => id !== userId);
       })
       .addCase(dislikeUser.rejected, (state, action) => {
-        state.loading.dislike = false;
-        state.error.dislike = action.payload;
+        setRejected(state, "dislike", action.payload);
       });
   },
 });
 
-export const { clearUserProfile } = userProfileSlice.actions;
+export const {
+  clearUserProfile,
+  clearLikeDislikeErrors,
+  resetUserProfileState,
+} = userProfileSlice.actions;
+
+export const selectUserProfile = (state) => state.userProfile.userProfile;
+export const selectLikedUsers = (state) => state.userProfile.likedUsers;
+export const selectDislikedUsers = (state) => state.userProfile.dislikedUsers;
+export const selectLoadingStates = (state) => state.userProfile.loading;
+export const selectErrorStates = (state) => state.userProfile.error;
+export const selectIsUserLiked = (state, userId) =>
+  state.userProfile.likedUsers.includes(userId);
+export const selectIsUserDisliked = (state, userId) =>
+  state.userProfile.dislikedUsers.includes(userId);
 
 export default userProfileSlice.reducer;

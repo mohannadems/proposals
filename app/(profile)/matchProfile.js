@@ -33,7 +33,6 @@ import { setActiveTab } from "../../store/slices/userMatchesSlice";
 
 const HEADER_HEIGHT = Platform.OS === "ios" ? 520 : 280;
 
-// Full-screen loading spinner component
 const LoadingSpinner = ({ visible }) => {
   if (!visible) return null;
 
@@ -72,34 +71,6 @@ const LoadingSpinner = ({ visible }) => {
   );
 };
 
-// Debug test match button
-const DebugMatchButton = ({ onPress, visible = true }) => {
-  if (!visible) return null;
-
-  return (
-    <TouchableOpacity
-      onPress={onPress}
-      style={{
-        position: "absolute",
-        top: Platform.OS === "ios" ? 100 : 70,
-        right: 20,
-        backgroundColor: "#ff3b30",
-        paddingVertical: 8,
-        paddingHorizontal: 15,
-        borderRadius: 20,
-        zIndex: 999,
-        flexDirection: "row",
-        alignItems: "center",
-      }}
-    >
-      <Feather name="zap" size={16} color="#fff" style={{ marginRight: 5 }} />
-      <Text style={{ color: "#fff", fontWeight: "600", fontSize: 14 }}>
-        TEST MATCH
-      </Text>
-    </TouchableOpacity>
-  );
-};
-
 const MatchProfileScreen = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -108,10 +79,8 @@ const MatchProfileScreen = () => {
   const { userId, fromTab } = params;
   const dispatch = useDispatch();
 
-  // Add state for tracking match checking
   const [checkingMatch, setCheckingMatch] = useState(false);
 
-  // Add state for debug mode - turn this on for testing
   const [debugMode] = useState(true);
 
   const { likedUsers } = useSelector((state) => state.userMatches);
@@ -153,11 +122,9 @@ const MatchProfileScreen = () => {
     setShowDislikeModal,
   } = useProfileActions(userProfile, isLiked, isDisliked);
 
-  // Debug function to simulate a match being found
   const handleDebugMatch = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    // Navigate to match screen for testing
     router.push({
       pathname: "/(profile)/match-screen",
       params: {
@@ -171,44 +138,39 @@ const MatchProfileScreen = () => {
     handleLike();
   };
 
+  // Fix for the handleLocalLikeConfirm function in MatchProfileScreen.js
   const handleLocalLikeConfirm = async () => {
-    // First close the confirmation modal
     setShowLikeModal(false);
-
-    // Then show the loading spinner
     setCheckingMatch(true);
 
     try {
-      // Call the original like confirm handler
       await handleLikeConfirm();
-
-      // Set the liked state
       setHasBeenLiked(true);
 
-      // Save this user ID to liked users
       await matchesService.addLikedUserId(userId);
-
-      // Check if there's a mutual match
       const matchResult = await matchesService.checkForMatch(userId);
 
-      console.log("🚀 Match result:", matchResult); // Debugging output
+      console.log("🚀 Match result:", matchResult);
 
-      if (matchResult && matchResult.isMatch) {
-        // Provide haptic feedback for a match
+      // Fixed condition: checking the boolean isMatch property correctly
+      if (
+        matchResult &&
+        matchResult.isMatch === true &&
+        matchResult.matchData
+      ) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-        // Navigate to match screen if there's a mutual match
         router.push({
           pathname: "/(profile)/match-screen",
           params: {
             matchedUserId: userId,
-            isNewMatch: true,
+            isNewMatch: true, // Changed from string to boolean value
           },
         });
         return;
       }
 
-      // If no match, update the liked tab
+      // If we didn't find a match, update the UI accordingly
       dispatch(setActiveTab("Liked"));
     } catch (error) {
       console.error("Error checking for match:", error);
@@ -217,12 +179,10 @@ const MatchProfileScreen = () => {
     }
   };
 
-  // DEBUGGING: Automatically check for a match on profile load if debugMode is enabled
   useEffect(() => {
     const checkForMatch = async () => {
       if (debugMode && userId) {
         try {
-          // We don't want to auto-match if already liked
           if (!hasBeenLiked) {
             console.log("🔍 DEBUG: Checking for match with user ID:", userId);
             const result = await matchesService.checkForMatch(userId);
@@ -232,7 +192,6 @@ const MatchProfileScreen = () => {
               console.log(
                 "✅ DEBUG: Match found! Can navigate to match screen."
               );
-              // We don't auto-navigate here, let the user click the debug button
             }
           }
         } catch (err) {
@@ -293,11 +252,7 @@ const MatchProfileScreen = () => {
     <View style={{ flex: 1 }}>
       <StatusBar barStyle="light-content" />
 
-      {/* Debug match testing button */}
-      {debugMode && <DebugMatchButton onPress={handleDebugMatch} />}
-
       <ScrollView style={styles.container}>
-        {/* Full-screen loading spinner for match checking */}
         <LoadingSpinner visible={checkingMatch} />
 
         <DislikeConfirmationBanner

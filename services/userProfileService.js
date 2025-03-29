@@ -2,10 +2,8 @@ import api from "./api";
 import { ENDPOINTS } from "../constants/endpoints";
 
 export const userProfileService = {
-  // Get user profile using query parameters
   getUserProfile: async (userId) => {
     try {
-      // Use a query parameter approach
       const response = await api.get(
         `${ENDPOINTS.USER_PROFILE}?user_id=${userId}`
       );
@@ -19,7 +17,6 @@ export const userProfileService = {
     }
   },
 
-  // Like a user
   likeUser: async (likedUserId) => {
     try {
       const response = await api.post(ENDPOINTS.LIKE_USER, {
@@ -34,7 +31,6 @@ export const userProfileService = {
     }
   },
 
-  // Dislike a user
   dislikeUser: async (dislikedUserId) => {
     try {
       const response = await api.post(ENDPOINTS.DISLIKE_USER, {

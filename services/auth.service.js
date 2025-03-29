@@ -2,7 +2,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "./api";
 import { ENDPOINTS } from "../constants/endpoints";
 
-// Keys for storage
 const USER_TOKEN_KEY = "userToken";
 const USER_ID_KEY = "userId";
 const USER_PROFILE_KEY = "userProfile";
@@ -19,34 +18,27 @@ export const authService = {
       ) {
         const token = response.data.data.access_token;
 
-        // Save token
         await AsyncStorage.setItem(USER_TOKEN_KEY, token);
 
-        // Set auth header for subsequent requests
         api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-        // Extract a stable identifier from the token
-        // For tokens like "77|vnYZXOFDU4Mr..." use the first part
         const tokenParts = token.split("|");
         if (tokenParts.length > 0) {
           const tokenIdentifier = tokenParts[0];
           await AsyncStorage.setItem(USER_ID_KEY, tokenIdentifier);
         }
 
-        // Try to fetch user profile to get a better user ID
         try {
           const profileResponse = await api.get(ENDPOINTS.USER_PROFILE);
 
           if (profileResponse.data.success && profileResponse.data.data) {
             const userProfile = profileResponse.data.data;
 
-            // Save full profile
             await AsyncStorage.setItem(
               USER_PROFILE_KEY,
               JSON.stringify(userProfile)
             );
 
-            // If profile has an ID, use that instead of token-based ID
             if (userProfile.id) {
               await AsyncStorage.setItem(
                 USER_ID_KEY,
@@ -76,20 +68,16 @@ export const authService = {
       if (response.data.success && response.data.access_token) {
         const token = response.data.access_token;
 
-        // Save token
         await AsyncStorage.setItem(USER_TOKEN_KEY, token);
 
-        // Set auth header
         api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-        // Save token-based ID
         const tokenParts = token.split("|");
         if (tokenParts.length > 0) {
           const tokenIdentifier = tokenParts[0];
           await AsyncStorage.setItem(USER_ID_KEY, tokenIdentifier);
         }
 
-        // Try to get user profile
         try {
           const profileResponse = await api.get(ENDPOINTS.USER_PROFILE);
 
@@ -129,14 +117,10 @@ export const authService = {
 
   logout: async () => {
     try {
-      // Call logout API if needed
       try {
         await api.post(ENDPOINTS.LOGOUT);
       } catch (logoutError) {}
 
-      // DO NOT remove USER_ID_KEY - critical for preference persistence
-
-      // Remove token and profile
       await AsyncStorage.removeItem(USER_TOKEN_KEY);
       await AsyncStorage.removeItem(USER_PROFILE_KEY);
 
@@ -148,17 +132,14 @@ export const authService = {
     }
   },
 
-  // Get user ID for preference storage
   getUserId: async () => {
     try {
-      // First check direct user ID
       const userId = await AsyncStorage.getItem(USER_ID_KEY);
 
       if (userId) {
         return userId;
       }
 
-      // Try to get from profile as fallback
       const profileJson = await AsyncStorage.getItem(USER_PROFILE_KEY);
       if (profileJson) {
         try {
@@ -171,7 +152,6 @@ export const authService = {
         } catch (e) {}
       }
 
-      // Last resort: try to extract from token
       const token = await AsyncStorage.getItem(USER_TOKEN_KEY);
       if (token) {
         const tokenParts = token.split("|");

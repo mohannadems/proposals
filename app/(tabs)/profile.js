@@ -1,10 +1,15 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+  useRef,
+} from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
   Image,
   Animated,
   RefreshControl,
@@ -12,23 +17,19 @@ import {
   Alert,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import ProfileCompletionAlert from "../../components/profile/ProfileCompletionAlert";
-import withProfileCompletion from "../../components/profile/withProfileCompletion";
-import { useNavigation } from "@react-navigation/native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../../constants/colors";
-import { fetchProfile } from "../../store/slices/profile.slice";
+import {
+  fetchProfile,
+  updateProfilePhoto,
+} from "../../store/slices/profile.slice";
 import { logout } from "../../store/slices/auth.slice";
 import styles from "../../styles/ProfileScreenStyles";
 import { useRouter } from "expo-router";
 import PhotoUploader from "../../components/profile/PhotoUploader";
-import * as ImageManipulator from "expo-image-manipulator";
-import { updateProfilePhoto } from "../../store/slices/profile.slice";
-import * as ImagePicker from "expo-image-picker";
 import ModernLoadingScreen from "../../components/common/ModernLoader";
 
-// Utility function to get color based on completion percentage
 const getProgressColor = (value) => {
   if (value >= 100) return COLORS.primary || "#4CAF50";
   if (value >= 70) return COLORS.info || "#2196F3";
@@ -36,7 +37,46 @@ const getProgressColor = (value) => {
   return COLORS.error || "#FF5722";
 };
 
-// Enhanced ProfileSection component with completion tracking
+const ProfileItem = ({ icon, label, value, isRequired = false }) => {
+  const isComplete = value !== null && value !== undefined && value !== "";
+  const isArray = Array.isArray(value);
+  const displayValue = isArray ? value.join(", ") : value;
+
+  return (
+    <View
+      style={[
+        styles.profileItem,
+        isComplete && { backgroundColor: COLORS.primary + "10" },
+      ]}
+    >
+      <MaterialIcons
+        name={icon}
+        size={24}
+        color={isComplete ? COLORS.primary : COLORS.primary}
+      />
+      <View style={styles.profileItemContent}>
+        <Text style={styles.itemLabel}>
+          {label}
+          {isRequired && <Text style={{ color: COLORS.error }}> *</Text>}
+        </Text>
+        <Text
+          style={[styles.itemValue, isComplete && { color: COLORS.primary }]}
+        >
+          {displayValue || "Not provided"}
+        </Text>
+      </View>
+      {isComplete && (
+        <MaterialIcons
+          name="check"
+          size={16}
+          color={COLORS.primary}
+          style={{ marginLeft: 8 }}
+        />
+      )}
+    </View>
+  );
+};
+
 const ProfileSection = ({ title, children, fields, profile }) => {
   const calculateSectionCompletion = () => {
     if (!profile) return 0;
@@ -96,54 +136,15 @@ const ProfileSection = ({ title, children, fields, profile }) => {
   );
 };
 
-// Enhanced ProfileItem component with improved validation
-const ProfileItem = ({ icon, label, value, isRequired = false }) => {
-  const isComplete = value !== null && value !== undefined && value !== "";
-  const isArray = Array.isArray(value);
-  const displayValue = isArray ? value.join(", ") : value;
-
-  return (
-    <View
-      style={[
-        styles.profileItem,
-        isComplete && { backgroundColor: COLORS.primary + "10" },
-      ]}
-    >
-      <MaterialIcons
-        name={icon}
-        size={24}
-        color={isComplete ? COLORS.primary : COLORS.primary}
-      />
-      <View style={styles.profileItemContent}>
-        <Text style={styles.itemLabel}>
-          {label}
-          {isRequired && <Text style={{ color: COLORS.error }}> *</Text>}
-        </Text>
-        <Text
-          style={[styles.itemValue, isComplete && { color: COLORS.primary }]}
-        >
-          {displayValue || "Not provided"}
-        </Text>
-      </View>
-      {isComplete && (
-        <MaterialIcons
-          name="check"
-          size={16}
-          color={COLORS.primary}
-          style={{ marginLeft: 8 }}
-        />
-      )}
-    </View>
-  );
-};
-
 const ProfileScreen = () => {
-  const [photoUploadError, setPhotoUploadError] = useState(null);
+  const fetchedRef = useRef(false);
+  const isFirstMount = useRef(true);
 
+  const [photoUploadError, setPhotoUploadError] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const router = useRouter();
-  const navigation = useNavigation();
   const dispatch = useDispatch();
+
   const {
     data: profile,
     loading,
@@ -152,70 +153,7 @@ const ProfileScreen = () => {
 
   const [refreshing, setRefreshing] = useState(false);
   const progressAnimation = useMemo(() => new Animated.Value(0), []);
-  useEffect(() => {
-    dispatch(fetchProfile(), updateProfilePhoto());
-  }, [dispatch]);
-  const onRefresh = useCallback(
-    async (retries = 3) => {
-      setRefreshing(true);
-      try {
-        const updatedProfile = await dispatch(fetchProfile()).unwrap();
 
-        // Extract profile photo URL
-        const photoUrl =
-          updatedProfile?.profile?.photo_url ||
-          updatedProfile?.data?.profile?.photo_url;
-
-        if (photoUrl) {
-        }
-
-        setRefreshing(false);
-      } catch (error) {
-        console.error("Profile refresh error:", error);
-        if (retries > 0) {
-          setTimeout(() => onRefresh(retries - 1), 1000);
-        } else {
-          setRefreshing(false);
-          Alert.alert(
-            "Error",
-            "Failed to refresh profile. Please try again later."
-          );
-        }
-      }
-    },
-    [dispatch]
-  );
-  const handleLogout = useCallback(() => {
-    Alert.alert("Logout", "Are you sure you want to log out?", [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await dispatch(logout()).unwrap();
-
-            setTimeout(() => {
-              router.push("/(auth)/login");
-            }, 100);
-          } catch (error) {
-            Alert.alert(
-              "Logout Failed",
-              error?.message || "Unable to logout. Please try again."
-            );
-          }
-        },
-      },
-    ]);
-  }, [dispatch, router]);
-  useEffect(() => {
-    dispatch(fetchProfile());
-  }, [dispatch]);
-
-  // Section field definitions for tracking completion
   const sectionFields = {
     basic: ["first_name", "last_name", "email", "phone_number", "gender"],
     demographics: [
@@ -259,6 +197,54 @@ const ProfileScreen = () => {
     contact: ["profile.guardian_contact"],
   };
 
+  useEffect(() => {
+    if (isFirstMount.current && !fetchedRef.current) {
+      console.log("ProfileScreen: Initial profile fetch");
+      fetchedRef.current = true;
+      dispatch(fetchProfile());
+      isFirstMount.current = false;
+    }
+  }, [dispatch]);
+
+  const onRefresh = useCallback(async () => {
+    if (refreshing) return;
+
+    setRefreshing(true);
+    try {
+      await dispatch(fetchProfile()).unwrap();
+    } catch (error) {
+      console.error("Profile refresh error:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [dispatch, refreshing]);
+
+  const handleLogout = useCallback(() => {
+    Alert.alert("Logout", "Are you sure you want to log out?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await dispatch(logout()).unwrap();
+            setTimeout(() => {
+              router.push("/(auth)/login");
+            }, 100);
+          } catch (error) {
+            Alert.alert(
+              "Logout Failed",
+              error?.message || "Unable to logout. Please try again."
+            );
+          }
+        },
+      },
+    ]);
+  }, [dispatch, router]);
+
   const calculateProgress = () => {
     if (!profile) return 0;
     const allFields = Object.values(sectionFields).flat();
@@ -273,8 +259,10 @@ const ProfileScreen = () => {
     return Math.round((filledFields.length / allFields.length) * 100);
   };
 
+  const animatedOnce = useRef(false);
   useEffect(() => {
-    if (profile) {
+    if (profile && !animatedOnce.current) {
+      animatedOnce.current = true;
       const progress = calculateProgress();
       Animated.timing(progressAnimation, {
         toValue: progress,
@@ -282,42 +270,8 @@ const ProfileScreen = () => {
         useNativeDriver: false,
       }).start();
     }
-  }, [profile]);
+  }, [profile, progressAnimation]);
 
-  if (loading && !refreshing) {
-    return <ModernLoadingScreen />;
-  }
-
-  if (error) {
-    // Navigate to login after 100ms delay
-    setTimeout(() => {
-      router.push("/(auth)/login");
-    }, 200);
-
-    return (
-      <View style={styles.errorContainer}>
-        <MaterialIcons name="error-outline" size={48} color={COLORS.error} />
-        <Text style={styles.errorText}>An error occurred: {error}</Text>
-        <TouchableOpacity
-          onPress={() => dispatch(fetchProfile())}
-          style={styles.retryButton}
-        >
-          <Text style={styles.retryButtonText}>Retry</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  if (!profile) {
-    return (
-      <View style={styles.errorContainer}>
-        <MaterialIcons name="person-off" size={48} color={COLORS.text} />
-        <Text style={styles.errorText}>No profile data available.</Text>
-      </View>
-    );
-  }
-
-  const progress = calculateProgress();
   const handlePhotoUpdate = async (formData) => {
     setIsUploading(true);
     setPhotoUploadError(null);
@@ -340,6 +294,40 @@ const ProfileScreen = () => {
       setIsUploading(false);
     }
   };
+
+  if (loading && !refreshing && !profile) {
+    return <ModernLoadingScreen />;
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <MaterialIcons name="error-outline" size={48} color={COLORS.error} />
+        <Text style={styles.errorText}>An error occurred: {error}</Text>
+        <TouchableOpacity
+          onPress={() => {
+            fetchedRef.current = false;
+            dispatch(fetchProfile());
+          }}
+          style={styles.retryButton}
+        >
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <View style={styles.errorContainer}>
+        <MaterialIcons name="person-off" size={48} color={COLORS.text} />
+        <Text style={styles.errorText}>No profile data available.</Text>
+      </View>
+    );
+  }
+
+  const progress = calculateProgress();
+
   return (
     <>
       <ScrollView
@@ -399,7 +387,7 @@ const ProfileScreen = () => {
             />
             <Text style={styles.userName}>
               {profile.first_name} {profile.last_name}
-              {profile.progress === 100 && " ✓"}
+              {progress === 100 && " ✓"}
             </Text>
             <View style={styles.statusContainer}>
               <View
@@ -723,4 +711,5 @@ const ProfileScreen = () => {
     </>
   );
 };
+
 export default ProfileScreen;

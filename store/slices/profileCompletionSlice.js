@@ -1,4 +1,3 @@
-// src/redux/profileCompletionSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { persistReducer } from "redux-persist";
@@ -7,20 +6,104 @@ import { profileService } from "../../services/profile.service";
 const profilePersistConfig = {
   key: "profileCompletion",
   storage: AsyncStorage,
-  whitelist: ["completedSteps", "missingFields"],
+  whitelist: ["completedSteps", "missingFields", "lastUpdated"],
 };
 
-// Create an async thunk for fetching profile completion data
+const initialState = {
+  completedSteps: [],
+  lastCompletedStep: null,
+  missingFields: [],
+  loading: false,
+  error: null,
+  lastUpdated: null,
+};
+
 export const fetchProfileCompletionData = createAsyncThunk(
   "profileCompletion/fetch",
   async (_, { rejectWithValue }) => {
     try {
-      // Call the actual API to get profile data
       const response = await profileService.getProfile();
+
+      if (response.success) {
+        const profileData = response.data;
+
+        const completedSteps = [];
+        const missingFields = [];
+
+        const requiredFields = [
+          "bio_en",
+          "date_of_birth",
+          "height",
+          "weight",
+          "nationality_id",
+          "country_of_residence_id",
+          "city_id",
+          "educational_level_id",
+          "employment_status",
+          "smoking_status",
+          "religion_id",
+          "hair_color_id",
+          "skin_color_id",
+          "marital_status_id",
+          "housing_status_id",
+          "health_issues_en",
+          "religiosity_level_id",
+          "financial_status_id",
+          "marriage_budget_id",
+          "position_level_id",
+          "social_media_presence_id",
+        ];
+
+        if (
+          profileData.smoking_status === 1 &&
+          (!profileData.smoking_tools || profileData.smoking_tools.length === 0)
+        ) {
+          missingFields.push("smoking_tools");
+        }
+
+        for (const field of requiredFields) {
+          if (field === "height" || field === "weight") {
+            if (profileData[field] && profileData[field] > 0) {
+              completedSteps.push(field);
+            } else {
+              missingFields.push(field);
+            }
+          } else if (
+            field === "employment_status" ||
+            field === "car_ownership" ||
+            field === "hijab_status"
+          ) {
+            if (
+              profileData[field] !== undefined &&
+              profileData[field] !== null
+            ) {
+              completedSteps.push(field);
+            } else {
+              missingFields.push(field);
+            }
+          } else if (Array.isArray(profileData[field])) {
+            completedSteps.push(field);
+          } else if (profileData[field] || profileData[field] === 0) {
+            completedSteps.push(field);
+          } else {
+            missingFields.push(field);
+          }
+        }
+
+        if (
+          profileData.guardian_contact &&
+          /^\+?\d+$/.test(profileData.guardian_contact)
+        ) {
+          completedSteps.push("guardian_contact");
+        } else {
+          missingFields.push("guardian_contact");
+        }
+
+        return { completedSteps, missingFields };
+      }
 
       return rejectWithValue("Failed to fetch profile completion data");
     } catch (error) {
-      console.error("Profile completion fetch error:", error);
       return rejectWithValue(
         error.response?.data?.message ||
           "Failed to fetch profile completion data"
@@ -31,20 +114,17 @@ export const fetchProfileCompletionData = createAsyncThunk(
 
 const profileCompletionSlice = createSlice({
   name: "profileCompletion",
-  initialState: {
-    completedSteps: [],
-    lastCompletedStep: null,
-    missingFields: [],
-    loading: false,
-    error: null,
-    lastUpdated: null,
-  },
+  initialState,
   reducers: {
     updateCompletedStep: (state, action) => {
       const step = action.payload;
       if (!state.completedSteps.includes(step)) {
         state.completedSteps.push(step);
         state.lastCompletedStep = step;
+
+        state.missingFields = state.missingFields.filter(
+          (field) => field !== step
+        );
       }
       state.lastUpdated = new Date().toISOString();
     },
@@ -52,14 +132,7 @@ const profileCompletionSlice = createSlice({
       state.missingFields = action.payload;
       state.lastUpdated = new Date().toISOString();
     },
-    resetProfileCompletion: () => ({
-      completedSteps: [],
-      lastCompletedStep: null,
-      missingFields: [],
-      loading: false,
-      error: null,
-      lastUpdated: null,
-    }),
+    resetProfileCompletion: () => initialState,
   },
   extraReducers: (builder) => {
     builder
@@ -69,12 +142,19 @@ const profileCompletionSlice = createSlice({
       })
       .addCase(fetchProfileCompletionData.fulfilled, (state, action) => {
         state.loading = false;
-        state.completedSteps = action.payload.completedSteps;
-        state.lastCompletedStep =
-          action.payload.completedSteps[
-            action.payload.completedSteps.length - 1
-          ] || null;
-        state.missingFields = action.payload.missingFields;
+
+        if (action.payload) {
+          state.completedSteps = action.payload.completedSteps || [];
+          state.lastCompletedStep =
+            action.payload.completedSteps &&
+            action.payload.completedSteps.length > 0
+              ? action.payload.completedSteps[
+                  action.payload.completedSteps.length - 1
+                ]
+              : null;
+          state.missingFields = action.payload.missingFields || [];
+        }
+
         state.lastUpdated = new Date().toISOString();
         state.error = null;
       })
@@ -89,7 +169,6 @@ const profileCompletionSlice = createSlice({
 export const { updateCompletedStep, setMissingFields, resetProfileCompletion } =
   profileCompletionSlice.actions;
 
-// Selector to check if we should refetch (e.g., if data is stale)
 export const selectShouldRefetchProfile = (state) => {
   if (!state.profileCompletion.lastUpdated) return true;
 
@@ -97,8 +176,15 @@ export const selectShouldRefetchProfile = (state) => {
   const now = new Date();
   const differenceInMinutes = (now - lastUpdated) / (1000 * 60);
 
-  // Refetch if data is older than 5 minutes
   return differenceInMinutes > 5;
+};
+
+export const selectCompletionPercentage = (state) => {
+  const { completedSteps, missingFields } = state.profileCompletion;
+  const totalSteps = completedSteps.length + missingFields.length;
+
+  if (totalSteps === 0) return 0;
+  return Math.round((completedSteps.length / totalSteps) * 100);
 };
 
 export default persistReducer(

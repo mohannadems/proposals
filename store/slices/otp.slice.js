@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { authService } from "../../services/auth.service"; // Adjust the import path as needed
 
-// Async thunk for OTP verification
 export const verifyOTP = createAsyncThunk(
   "auth/verifyOTP",
   async ({ email, otp }, { rejectWithValue }) => {
@@ -14,7 +13,6 @@ export const verifyOTP = createAsyncThunk(
   }
 );
 
-// Async thunk for resending OTP
 export const resendOTP = createAsyncThunk(
   "auth/resendOTP",
   async (email, { rejectWithValue }) => {
@@ -27,7 +25,6 @@ export const resendOTP = createAsyncThunk(
   }
 );
 
-// Initial state for auth slice
 const initialState = {
   user: null,
   tempEmail: null,
@@ -41,15 +38,12 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    // Reducer to set temporary email during OTP flow
     setTempEmail: (state, action) => {
       state.tempEmail = action.payload;
     },
-    // Reducer to clear auth state
     clearAuthState: () => initialState,
   },
   extraReducers: (builder) => {
-    // OTP Verification Reducers
     builder
       .addCase(verifyOTP.pending, (state) => {
         state.loading = true;
@@ -67,7 +61,6 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
       })
 
-      // Resend OTP Reducers
       .addCase(resendOTP.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -83,6 +76,5 @@ const authSlice = createSlice({
   },
 });
 
-// Export actions and reducer
 export const { setTempEmail, clearAuthState } = authSlice.actions;
 export default authSlice.reducer;

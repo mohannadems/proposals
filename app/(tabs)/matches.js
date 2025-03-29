@@ -1,4 +1,11 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+  memo,
+  useMemo,
+} from "react";
 import {
   View,
   Text,
@@ -7,29 +14,26 @@ import {
   Image,
   TouchableOpacity,
   Animated,
-  Dimensions,
   StatusBar,
   Platform,
   ActivityIndicator,
   TextInput,
   RefreshControl,
+  Alert,
 } from "react-native";
-import { useRoute } from "expo-router";
-import { setActiveTab } from "../../store/slices/userMatchesSlice";
-
+import { useLocalSearchParams, Link, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { SharedElement } from "react-navigation-shared-element";
 import MaskedView from "@react-native-masked-view/masked-view";
-import { useLocalSearchParams } from "expo-router";
-import { COLORS } from "../../constants/colors";
-import { Link, useRouter } from "expo-router";
-import withProfileCompletion from "../../components/profile/withProfileCompletion";
 import { useDispatch, useSelector } from "react-redux";
+import { COLORS } from "../../constants/colors";
+import styles from "../../styles/matches";
+import withProfileCompletion from "../../components/profile/withProfileCompletion";
+import { useImageUtils } from "../../hooks/useImageUtils";
 import { fetchProfileCompletionData } from "../../store/slices/profileCompletionSlice";
-import { matchesService } from "../../services/matchesService";
 import {
   fetchUserMatches,
   fetchFilteredMatches,
@@ -37,29 +41,28 @@ import {
   setActiveFilters,
   setLikedFilter,
   clearFilters,
+  setActiveTab,
 } from "../../store/slices/userMatchesSlice";
 
-const { width, height } = Dimensions.get("window");
-const CARD_WIDTH = width - 48;
-const CARD_HEIGHT = height * 0.7;
-
-// Empty state component for when no matches are found
-const EmptyStateCard = ({ type }) => {
+const EmptyStateCard = memo(({ type }) => {
   const messages = {
     preferences: {
       title: "No Preference Matches",
       description:
         "We couldn't find exact matches for your preferences. Try adjusting your search criteria.",
+      icon: "search",
     },
     suggested: {
       title: "No Suggested Matches",
       description:
         "No suggested matches at the moment. Check back later or modify your filters.",
+      icon: "search",
     },
     liked: {
       title: "No Liked Profiles",
       description:
         "You haven't liked anyone yet. Browse matches and tap the heart icon to see them here.",
+      icon: "heart",
     },
   };
 
@@ -68,96 +71,60 @@ const EmptyStateCard = ({ type }) => {
   return (
     <View style={styles.emptyStateContainer}>
       <View style={styles.emptyStateIconContainer}>
-        <Feather
-          name={type === "liked" ? "heart" : "search"}
-          size={40}
-          color={COLORS.primary}
-        />
+        <Feather name={content.icon} size={40} color={COLORS.primary} />
       </View>
       <Text style={styles.emptyStateTitle}>{content.title}</Text>
       <Text style={styles.emptyStateDescription}>{content.description}</Text>
     </View>
   );
-};
+});
 
-const MatchCard = ({ user, onPress, onLike, isLiked, isCheckingMatch }) => {
+const MatchCard = memo(({ user, onPress }) => {
+  const { getProfileImage } = useImageUtils();
   const scale = useRef(new Animated.Value(1)).current;
 
-  const handlePressIn = () => {
+  const handlePressIn = useCallback(() => {
     Animated.spring(scale, {
       toValue: 0.5,
       useNativeDriver: true,
     }).start();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  };
+  }, [scale]);
 
-  const handlePressOut = () => {
+  const handlePressOut = useCallback(() => {
     Animated.spring(scale, {
       toValue: 1,
       useNativeDriver: true,
     }).start();
-  };
+  }, [scale]);
 
-  const getProfileImage = () => {
-    // For debugging - remove in production
-    console.log("User photos data:", JSON.stringify(user.photos));
+  const profileImage = useMemo(() => {
+    return getProfileImage(user);
+  }, [user, getProfileImage]);
 
-    // First check if there's a direct photo_url property
-    if (user.photo_url) {
-      console.log("Using direct photo_url:", user.photo_url);
-      return { uri: user.photo_url };
-    }
+  const fullName = useMemo(
+    () => `${user.first_name || ""} ${user.last_name || ""}`.trim(),
+    [user.first_name, user.last_name]
+  );
 
-    // Then check photos array
-    if (user.photos && Array.isArray(user.photos) && user.photos.length > 0) {
-      // Try to find main photo first
-      const mainPhoto = user.photos.find((photo) => photo.is_main === 1);
+  const matchPercentage = user.match_percentage || 85;
 
-      if (mainPhoto) {
-        // Check for photo_url property first
-        if (mainPhoto.photo_url) {
-          console.log("Using main photo.photo_url:", mainPhoto.photo_url);
-          return { uri: mainPhoto.photo_url };
-        }
-        // Then check for url property
-        if (mainPhoto.url) {
-          console.log("Using main photo.url:", mainPhoto.url);
-          return { uri: mainPhoto.url };
-        }
-      }
-
-      // If no main photo, use first photo
-      const firstPhoto = user.photos[0];
-      if (firstPhoto.photo_url) {
-        console.log("Using first photo.photo_url:", firstPhoto.photo_url);
-        return { uri: firstPhoto.photo_url };
-      }
-      if (firstPhoto.url) {
-        console.log("Using first photo.url:", firstPhoto.url);
-        return { uri: firstPhoto.url };
-      }
-    }
-
-    // Fallback to default image
-    console.log("No valid photos found, using default image");
-    return require("../../assets/images/11.jpg");
-  };
-
-  // Get profile image
-  const profileImage = getProfileImage();
-
-  // Format full name
-  const fullName = `${user.first_name || ""} ${user.last_name || ""}`.trim();
   return (
     <TouchableOpacity
       activeOpacity={1}
       onPress={() => onPress(user)}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
+      accessible={true}
+      accessibilityLabel={`View profile of ${fullName}, ${matchPercentage}% match`}
     >
       <Animated.View style={[styles.spotlightCard, { transform: [{ scale }] }]}>
         <SharedElement id={`user.${user.id}.image`}>
-          <Image source={profileImage} style={styles.spotlightImage} />
+          <Image
+            source={profileImage}
+            style={styles.spotlightImage}
+            defaultSource={require("../../assets/images/11.jpg")}
+          />
         </SharedElement>
         <LinearGradient
           colors={["transparent", "rgba(0,0,0,0.8)"]}
@@ -177,10 +144,6 @@ const MatchCard = ({ user, onPress, onLike, isLiked, isCheckingMatch }) => {
                   </View>
                 )}
               </View>
-
-              {/* <Text style={styles.spotlightLocation}>
-                {user.location || user.city || "Unknown location"}
-                </Text> */}
             </View>
             <View style={styles.matchPercentageContainer}>
               <MaskedView
@@ -189,7 +152,7 @@ const MatchCard = ({ user, onPress, onLike, isLiked, isCheckingMatch }) => {
                     <Animated.View
                       style={[
                         styles.progressBar,
-                        { width: `${user.match_percentage || 85}%` },
+                        { width: `${matchPercentage}%` },
                       ]}
                     />
                   </View>
@@ -203,7 +166,7 @@ const MatchCard = ({ user, onPress, onLike, isLiked, isCheckingMatch }) => {
                 />
               </MaskedView>
               <Text style={styles.matchPercentage}>
-                {user.match_percentage || 85}% Match
+                {matchPercentage}% Match
               </Text>
             </View>
           </BlurView>
@@ -222,40 +185,40 @@ const MatchCard = ({ user, onPress, onLike, isLiked, isCheckingMatch }) => {
       </Animated.View>
     </TouchableOpacity>
   );
-};
+});
 
-const QuickMatch = ({ user, onPress }) => {
+const QuickMatch = memo(({ user, onPress }) => {
+  const { getProfileImage } = useImageUtils();
   const scale = useRef(new Animated.Value(1)).current;
 
-  const handlePressIn = () => {
+  const handlePressIn = useCallback(() => {
     Animated.spring(scale, {
       toValue: 0.95,
       useNativeDriver: true,
     }).start();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  };
+  }, [scale]);
 
-  const handlePressOut = () => {
+  const handlePressOut = useCallback(() => {
     Animated.spring(scale, {
       toValue: 1,
       useNativeDriver: true,
     }).start();
-  };
+  }, [scale]);
 
-  // Get the main profile photo
-  const mainPhoto =
-    user.photos && user.photos.length > 0
-      ? user.photos.find((photo) => photo.is_main === 1) || user.photos[0]
-      : null;
+  const profileImage = useMemo(() => {
+    return getProfileImage(user, require("../../assets/images/222.jpg"));
+  }, [user, getProfileImage]);
 
-  // Check if user has a photo property, fallback to a default image
-  const profileImage =
-    mainPhoto && mainPhoto.photo_url
-      ? { uri: mainPhoto.photo_url }
-      : require("../../assets/images/222.jpg");
+  const fullName = useMemo(
+    () => `${user.first_name || ""} ${user.last_name || ""}`.trim(),
+    [user.first_name, user.last_name]
+  );
 
-  // Format full name
-  const fullName = `${user.first_name || ""} ${user.last_name || ""}`.trim();
+  const distance = useMemo(
+    () => user.distance || `${Math.floor(Math.random() * 10) + 1} miles away`,
+    [user.distance]
+  );
 
   return (
     <TouchableOpacity
@@ -263,21 +226,26 @@ const QuickMatch = ({ user, onPress }) => {
       onPress={() => onPress(user)}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
+      accessible={true}
+      accessibilityLabel={`View profile of ${fullName}, ${user.age || ""}`}
     >
       <Animated.View
         style={[styles.quickMatchCard, { transform: [{ scale }] }]}
       >
-        <Image source={profileImage} style={styles.quickMatchImage} />
+        <Image
+          source={profileImage}
+          style={styles.quickMatchImage}
+          defaultSource={require("../../assets/images/222.jpg")}
+        />
         <BlurView intensity={80} style={styles.quickMatchInfo}>
           <View style={styles.quickMatchHeader}>
-            <Text style={styles.quickMatchName}>
+            <Text style={styles.quickMatchName} numberOfLines={1}>
               {fullName || user.first_name || "User"}
             </Text>
             <Text style={styles.quickMatchAge}>{user.age || ""}</Text>
           </View>
-          <Text style={styles.quickMatchDistance}>
-            {user.distance ||
-              `${Math.floor(Math.random() * 10) + 1} miles away`}
+          <Text style={styles.quickMatchDistance} numberOfLines={1}>
+            {distance}
           </Text>
         </BlurView>
         {user.premium && (
@@ -291,15 +259,19 @@ const QuickMatch = ({ user, onPress }) => {
       </Animated.View>
     </TouchableOpacity>
   );
-};
+});
 
-const FilterChip = ({ label, icon, active, onPress }) => (
+const FilterChip = memo(({ label, icon, active, onPress }) => (
   <TouchableOpacity
     style={[styles.filterChip, active && styles.filterChipActive]}
     onPress={() => {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       onPress();
     }}
+    accessible={true}
+    accessibilityLabel={`${label} filter ${active ? "selected" : ""}`}
+    accessibilityRole="button"
+    accessibilityState={{ selected: active }}
   >
     <LinearGradient
       colors={active ? COLORS.primaryGradient : ["transparent", "transparent"]}
@@ -318,19 +290,129 @@ const FilterChip = ({ label, icon, active, onPress }) => (
       {label}
     </Text>
   </TouchableOpacity>
+));
+
+const FiltersPanel = memo(
+  ({
+    showFilters,
+    filtersHeight,
+    activeFilters,
+    dispatch,
+    onClose,
+    onApply,
+    onReset,
+  }) => (
+    <Animated.View style={[styles.filtersPanel, { height: filtersHeight }]}>
+      <BlurView intensity={80} style={StyleSheet.absoluteFill}>
+        <ScrollView style={styles.filtersList}>
+          <Text style={styles.filtersTitle}>Filters</Text>
+
+          <View style={styles.filterSection}>
+            <Text style={styles.filterSectionTitle}>Age Range</Text>
+            <View style={styles.ageRangeInputContainer}>
+              <View style={styles.ageInputWrapper}>
+                <Text style={styles.ageInputLabel}>Min</Text>
+                <TextInput
+                  style={styles.ageInput}
+                  placeholder="18"
+                  placeholderTextColor="rgba(255,255,255,0.5)"
+                  keyboardType="number-pad"
+                  maxLength={2}
+                  value={
+                    activeFilters.age_min
+                      ? activeFilters.age_min.toString()
+                      : ""
+                  }
+                  onChangeText={(text) => {
+                    dispatch(
+                      setActiveFilters({
+                        age_min: text ? parseInt(text) : null,
+                      })
+                    );
+                  }}
+                />
+              </View>
+              <View style={styles.ageSeparator} />
+              <View style={styles.ageInputWrapper}>
+                <Text style={styles.ageInputLabel}>Max</Text>
+                <TextInput
+                  style={styles.ageInput}
+                  placeholder="50"
+                  placeholderTextColor="rgba(255,255,255,0.5)"
+                  keyboardType="number-pad"
+                  maxLength={2}
+                  value={
+                    activeFilters.age_max
+                      ? activeFilters.age_max.toString()
+                      : ""
+                  }
+                  onChangeText={(text) => {
+                    dispatch(
+                      setActiveFilters({
+                        age_max: text ? parseInt(text) : null,
+                      })
+                    );
+                  }}
+                />
+              </View>
+            </View>
+          </View>
+
+          <TouchableOpacity style={styles.applyButton} onPress={onApply}>
+            <LinearGradient
+              colors={COLORS.primaryGradient}
+              style={StyleSheet.absoluteFill}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            />
+            <Text style={styles.applyButtonText}>Apply Filters</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.resetButton} onPress={onReset}>
+            <Text style={styles.resetButtonText}>Reset Filters</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </BlurView>
+    </Animated.View>
+  )
 );
 
-const MatchesScreen = () => {
-  const [checkingMatchId, setCheckingMatchId] = useState(null);
+const SectionHeader = memo(
+  ({ title, percentage, showPercentage, onSeeAllPress }) => (
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <View style={styles.sectionHeaderRight}>
+        {showPercentage && percentage > 0 && (
+          <View style={styles.percentageContainer}>
+            <Text style={styles.percentageText}>{percentage}% match</Text>
+          </View>
+        )}
+        <TouchableOpacity onPress={onSeeAllPress}>
+          <Text style={styles.seeAllButton}>See All</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  )
+);
 
+const LoadingIndicator = memo(() => (
+  <View style={styles.loaderContainer}>
+    <ActivityIndicator size="large" color={COLORS.primary} />
+  </View>
+));
+
+const MatchesScreen = () => {
   const [activeFilter, setActiveFilter] = useState("All");
   const [scrollY] = useState(new Animated.Value(0));
   const [showFilters, setShowFilters] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  const filtersHeight = useRef(new Animated.Value(0)).current;
+
   const dispatch = useDispatch();
   const router = useRouter();
   const params = useLocalSearchParams();
-  // Get data from Redux state
+
   const {
     preferenceMatches,
     suggestedMatches,
@@ -342,82 +424,183 @@ const MatchesScreen = () => {
     activeTab,
   } = useSelector((state) => state.userMatches);
 
-  // On component mount, fetch profile data, matches, and liked users
   useEffect(() => {
-    dispatch(fetchProfileCompletionData());
+    let isMounted = true;
+    let retryCount = 0;
+    const MAX_RETRIES = 2;
 
-    // Set "All" as default and fetch initial matches without filter flag
-    setActiveFilter("All");
-    dispatch(clearFilters());
-    dispatch(fetchUserMatches());
+    const fetchInitialData = async () => {
+      try {
+        setActiveFilter("All");
+        dispatch(clearFilters());
 
-    // Also fetch liked users so they're available when filter is changed
-    dispatch(fetchUserLikes());
+        try {
+          await dispatch(fetchProfileCompletionData()).unwrap();
+        } catch (error) {
+          console.warn(
+            "Error fetching profile completion data, continuing anyway:",
+            error
+          );
+        }
+
+        if (!isMounted) return;
+
+        await dispatch(fetchUserMatches()).unwrap();
+
+        setTimeout(async () => {
+          if (isMounted) {
+            try {
+              await dispatch(fetchUserLikes()).unwrap();
+            } catch (error) {
+              console.warn("Error fetching liked users:", error);
+            }
+          }
+        }, 500);
+      } catch (error) {
+        console.error("Error fetching initial data:", error);
+        if (isMounted) {
+          if (retryCount < MAX_RETRIES) {
+            retryCount++;
+            console.log(
+              `Retrying data fetch (${retryCount}/${MAX_RETRIES})...`
+            );
+            setTimeout(fetchInitialData, 1000);
+          } else {
+            Alert.alert(
+              "Data Load Error",
+              "There was a problem loading matches. Please try again later."
+            );
+          }
+        }
+      }
+    };
+
+    fetchInitialData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [dispatch]);
+
+  const isFirstMount = useRef(true);
   useEffect(() => {
-    // If activeTab is set to "Liked" in Redux, or we have a parameter to show liked
+    if (isFirstMount.current) {
+      isFirstMount.current = false;
+      return;
+    }
+
     if (activeTab === "Liked" || params.showLiked === "true") {
-      // Set the filter once without immediately dispatching the fetch
       setActiveFilter("Liked");
 
-      // Set the filter in Redux, but don't fetch yet
       dispatch(setLikedFilter(true));
 
-      // Reset the activeTab in Redux to prevent re-triggering this effect
-      dispatch(setActiveTab("All"));
+      setTimeout(() => {
+        dispatch(setActiveTab("All"));
+      }, 0);
     }
   }, [params.showLiked, activeTab, dispatch]);
 
-  // Add a separate effect that handles the actual data fetching
-  // This effect will only run when the active filter changes
+  const prevActiveFilterRef = useRef(activeFilter);
   useEffect(() => {
-    if (activeFilter === "Liked") {
-      // Only fetch if we're not already loading
-      if (!loading.likes) {
-        dispatch(fetchUserLikes());
-      }
+    if (
+      activeFilter === "Liked" &&
+      prevActiveFilterRef.current !== "Liked" &&
+      !loading.likes
+    ) {
+      dispatch(fetchUserLikes());
     }
-  }, [activeFilter, dispatch]);
 
-  // Handle filter chip clicks
-  const handleFilterChange = (filter) => {
-    // Don't do anything if the filter is already active
-    if (activeFilter === filter) return;
+    prevActiveFilterRef.current = activeFilter;
+  }, [activeFilter, dispatch, loading.likes]);
 
-    setActiveFilter(filter);
+  useEffect(() => {
+    Animated.spring(filtersHeight, {
+      toValue: showFilters ? 350 : 0,
+      useNativeDriver: false,
+    }).start();
+  }, [showFilters, filtersHeight]);
 
-    if (filter === "All") {
-      // For "All", reset filters and show regular matches
-      dispatch(clearFilters());
-      dispatch(fetchUserMatches());
-    } else if (filter === "Liked") {
-      // For "Liked", set the liked filter flag to true
-      dispatch(setLikedFilter(true));
+  const handleFilterChange = useCallback(
+    (filter) => {
+      if (activeFilter === filter) return;
 
-      // Only fetch if we don't already have likes or if we need to refresh
-      if (likedUsers.length === 0 || !loading.likes) {
-        dispatch(fetchUserLikes());
+      setActiveFilter(filter);
+
+      if (filter === "All") {
+        dispatch(clearFilters());
+        dispatch(fetchUserMatches());
+      } else if (filter === "Liked") {
+        dispatch(setLikedFilter(true));
+
+        if (likedUsers.length === 0 || !loading.likes) {
+          dispatch(fetchUserLikes());
+        }
+      } else {
+        dispatch(clearFilters());
+        dispatch(setActiveFilters({ isFilter: true }));
+        dispatch(fetchFilteredMatches({ isFilter: true }));
       }
-    } else {
-      // For other filters (like "nearby"), handle accordingly
-      dispatch(clearFilters());
-      dispatch(setActiveFilters({ isFilter: true }));
-      dispatch(fetchFilteredMatches({ isFilter: true }));
-    }
-  };
+    },
+    [activeFilter, dispatch, likedUsers.length, loading.likes]
+  );
 
-  // Handle refresh based on active filter
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
 
-    if (activeFilter === "Liked") {
-      // Refresh liked users
-      dispatch(fetchUserLikes()).finally(() => setRefreshing(false));
-    } else {
-      // Refresh regular matches
-      dispatch(fetchUserMatches()).finally(() => setRefreshing(false));
-    }
+    const refreshAction =
+      activeFilter === "Liked"
+        ? dispatch(fetchUserLikes())
+        : dispatch(fetchUserMatches());
+
+    refreshAction
+      .then(() => setRefreshing(false))
+      .catch((error) => {
+        console.error("Error refreshing data:", error);
+        setRefreshing(false);
+        Alert.alert(
+          "Refresh Failed",
+          "There was a problem refreshing your matches. Please try again."
+        );
+      });
   }, [dispatch, activeFilter]);
+
+  const handleMatchPress = useCallback(
+    (user) => {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+      router.push({
+        pathname: "/(profile)/matchProfile",
+        params: {
+          userId: user.id,
+          fromTab: activeFilter,
+        },
+      });
+    },
+    [router, activeFilter]
+  );
+
+  // Handle applying filters
+  const handleApplyFilters = useCallback(() => {
+    const filters = {
+      ...activeFilters,
+      isFilter: true,
+    };
+
+    if (!filters.age_min && !filters.age_max) {
+      delete filters.isFilter;
+    }
+
+    dispatch(setActiveFilters(filters));
+    dispatch(fetchFilteredMatches(filters));
+    setShowFilters(false);
+  }, [activeFilters, dispatch]);
+
+  const handleResetFilters = useCallback(() => {
+    dispatch(clearFilters());
+    dispatch(fetchUserMatches());
+    setShowFilters(false);
+    setActiveFilter("All");
+  }, [dispatch]);
 
   const headerHeight = scrollY.interpolate({
     inputRange: [0, 100],
@@ -434,28 +617,18 @@ const MatchesScreen = () => {
     extrapolate: "clamp",
   });
 
-  const filtersHeight = useRef(new Animated.Value(0)).current;
+  const preferenceSectionTitle = useMemo(
+    () =>
+      activeFilter === "Liked" ? "Profiles You Liked" : "Preference Matches",
+    [activeFilter]
+  );
 
-  useEffect(() => {
-    Animated.spring(filtersHeight, {
-      toValue: showFilters ? 350 : 0,
-      useNativeDriver: false,
-    }).start();
-  }, [showFilters, filtersHeight]);
-
-  const handleMatchPress = useCallback(
-    (user) => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-      router.push({
-        pathname: "/(profile)/matchProfile",
-        params: {
-          userId: user.id,
-          fromTab: activeFilter,
-        },
-      });
-    },
-    [router, activeFilter]
+  const suggestedSectionTitle = useMemo(
+    () =>
+      activeFilter === "Liked"
+        ? "More Profiles You Liked"
+        : "Suggested Matches",
+    [activeFilter]
   );
 
   return (
@@ -482,6 +655,10 @@ const MatchesScreen = () => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   setShowFilters(!showFilters);
                 }}
+                accessibilityLabel={
+                  showFilters ? "Close filters" : "Open filters"
+                }
+                accessibilityRole="button"
               >
                 <Feather
                   name={showFilters ? "x" : "sliders"}
@@ -494,115 +671,23 @@ const MatchesScreen = () => {
         </BlurView>
       </Animated.View>
 
-      <Animated.View style={[styles.filtersPanel, { height: filtersHeight }]}>
-        <BlurView intensity={80} style={StyleSheet.absoluteFill}>
-          <ScrollView style={styles.filtersList}>
-            <Text style={styles.filtersTitle}>Filters</Text>
-
-            <View style={styles.filterSection}>
-              <Text style={styles.filterSectionTitle}>Age Range</Text>
-              <View style={styles.ageRangeInputContainer}>
-                <View style={styles.ageInputWrapper}>
-                  <Text style={styles.ageInputLabel}>Min</Text>
-                  <TextInput
-                    style={styles.ageInput}
-                    placeholder="18"
-                    placeholderTextColor="rgba(255,255,255,0.5)"
-                    keyboardType="number-pad"
-                    maxLength={2}
-                    value={
-                      activeFilters.age_min
-                        ? activeFilters.age_min.toString()
-                        : ""
-                    }
-                    onChangeText={(text) => {
-                      dispatch(
-                        setActiveFilters({
-                          age_min: text ? parseInt(text) : null,
-                        })
-                      );
-                    }}
-                  />
-                </View>
-                <View style={styles.ageSeparator} />
-                <View style={styles.ageInputWrapper}>
-                  <Text style={styles.ageInputLabel}>Max</Text>
-                  <TextInput
-                    style={styles.ageInput}
-                    placeholder="50"
-                    placeholderTextColor="rgba(255,255,255,0.5)"
-                    keyboardType="number-pad"
-                    maxLength={2}
-                    value={
-                      activeFilters.age_max
-                        ? activeFilters.age_max.toString()
-                        : ""
-                    }
-                    onChangeText={(text) => {
-                      dispatch(
-                        setActiveFilters({
-                          age_max: text ? parseInt(text) : null,
-                        })
-                      );
-                    }}
-                  />
-                </View>
-              </View>
-            </View>
-
-            {/* Apply Filter Button */}
-            <TouchableOpacity
-              style={styles.applyButton}
-              onPress={() => {
-                // Apply the filters
-                const filters = {
-                  ...activeFilters,
-                  isFilter: true,
-                };
-
-                if (!filters.age_min && !filters.age_max) {
-                  // If no age filters, don't send isFilter
-                  delete filters.isFilter;
-                }
-
-                dispatch(setActiveFilters(filters));
-                dispatch(fetchFilteredMatches(filters));
-                setShowFilters(false);
-              }}
-            >
-              <LinearGradient
-                colors={COLORS.primaryGradient}
-                style={StyleSheet.absoluteFill}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-              />
-              <Text style={styles.applyButtonText}>Apply Filters</Text>
-            </TouchableOpacity>
-
-            {/* Reset Filters Button */}
-            <TouchableOpacity
-              style={styles.resetButton}
-              onPress={() => {
-                dispatch(clearFilters());
-                // Reset by fetching without isFilter parameter
-                dispatch(fetchUserMatches());
-                setShowFilters(false);
-                setActiveFilter("All");
-              }}
-            >
-              <Text style={styles.resetButtonText}>Reset Filters</Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </BlurView>
-      </Animated.View>
+      <FiltersPanel
+        showFilters={showFilters}
+        filtersHeight={filtersHeight}
+        activeFilters={activeFilters}
+        dispatch={dispatch}
+        onClose={() => setShowFilters(false)}
+        onApply={handleApplyFilters}
+        onReset={handleResetFilters}
+      />
 
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
-        onScroll={(event) => {
-          const offsetY = event.nativeEvent.contentOffset.y;
-          scrollY.setValue(offsetY);
-        }}
+        onScroll={Animated.event(
+          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+          { useNativeDriver: false }
+        )}
         scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
@@ -635,27 +720,15 @@ const MatchesScreen = () => {
             </ScrollView>
           </View>
 
-          {/* Preference Matches Section (formerly Spotlight) */}
           <View style={styles.spotlightSection}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>
-                {activeFilter === "Liked"
-                  ? "Profiles You Liked"
-                  : "Preference Matches"}
-              </Text>
-              <TouchableOpacity>
-                <Link href="../(profile)/match-screen">
-                  <Text style={styles.seeAllButton}>See All</Text>
-                </Link>
-              </TouchableOpacity>
-            </View>
+            <SectionHeader
+              title={preferenceSectionTitle}
+              onSeeAllPress={() => {}}
+            />
 
             {activeFilter === "Liked" ? (
-              // Liked filter selected
               loading.likes ? (
-                <View style={styles.loaderContainer}>
-                  <ActivityIndicator size="large" color={COLORS.primary} />
-                </View>
+                <LoadingIndicator />
               ) : likedUsers.length === 0 ? (
                 <EmptyStateCard type="liked" />
               ) : (
@@ -673,11 +746,8 @@ const MatchesScreen = () => {
                   ))}
                 </ScrollView>
               )
-            ) : // All or other filter selected
-            loading.preferences ? (
-              <View style={styles.loaderContainer}>
-                <ActivityIndicator size="large" color={COLORS.primary} />
-              </View>
+            ) : loading.preferences ? (
+              <LoadingIndicator />
             ) : preferenceMatches.length === 0 ? (
               <EmptyStateCard type="preferences" />
             ) : (
@@ -697,34 +767,17 @@ const MatchesScreen = () => {
             )}
           </View>
 
-          {/* Suggested Matches Section (formerly Quick Matches) */}
           <View style={styles.quickMatchSection}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>
-                {activeFilter === "Liked"
-                  ? "More Profiles may Liked"
-                  : "Suggested Matches"}
-              </Text>
-              <View style={styles.sectionHeaderRight}>
-                {activeFilter !== "Liked" && suggestionPercentage > 0 && (
-                  <View style={styles.percentageContainer}>
-                    <Text style={styles.percentageText}>
-                      {suggestionPercentage}% match
-                    </Text>
-                  </View>
-                )}
-                <TouchableOpacity>
-                  <Text style={styles.seeAllButton}>See All</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
+            <SectionHeader
+              title={suggestedSectionTitle}
+              percentage={suggestionPercentage}
+              showPercentage={activeFilter !== "Liked"}
+              onSeeAllPress={() => {}}
+            />
 
             {activeFilter === "Liked" ? (
-              // Liked filter selected for bottom section
               loading.likes ? (
-                <View style={styles.loaderContainer}>
-                  <ActivityIndicator size="large" color={COLORS.primary} />
-                </View>
+                <LoadingIndicator />
               ) : likedUsers.length === 0 ? (
                 <EmptyStateCard type="liked" />
               ) : (
@@ -738,11 +791,8 @@ const MatchesScreen = () => {
                   ))}
                 </View>
               )
-            ) : // All or other filter selected for bottom section
-            loading.suggested ? (
-              <View style={styles.loaderContainer}>
-                <ActivityIndicator size="large" color={COLORS.primary} />
-              </View>
+            ) : loading.suggested ? (
+              <LoadingIndicator />
             ) : suggestedMatches.length === 0 ? (
               <EmptyStateCard type="suggested" />
             ) : (
@@ -762,463 +812,5 @@ const MatchesScreen = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-  header: {
-    width: "100%",
-    position: "absolute",
-    top: 0,
-    overflow: "hidden",
-    zIndex: 100,
-  },
-  headerGradient: {
-    flex: 1,
-    paddingTop: Platform.OS === "ios" ? 50 : StatusBar.currentHeight + 10,
-  },
-  headerContent: {
-    paddingTop: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingBottom: 15,
-  },
-  headerTitle: {
-    fontSize: 34,
-    fontWeight: "700",
-    color: COLORS.white,
-  },
-  filterButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  filtersPanel: {
-    position: "absolute",
-    top: Platform.OS === "ios" ? 120 : 100,
-    left: 0,
-    right: 0,
-    zIndex: 99,
-    overflow: "hidden",
-    backgroundColor: COLORS.primary,
-  },
-  filtersList: {
-    padding: 20,
-  },
-  filtersTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: COLORS.white,
-    marginBottom: 20,
-  },
-  filterSection: {
-    marginBottom: 20,
-  },
-  filterSectionTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.white,
-    marginBottom: 10,
-  },
-  scrollView: {
-    flex: 1,
-    marginTop: Platform.OS === "ios" ? 120 : 100,
-  },
-  content: {
-    padding: 20,
-  },
-  filterContainer: {
-    marginBottom: 20,
-  },
-  filterScroll: {
-    paddingRight: 20,
-    gap: 12,
-  },
-  filterChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: COLORS.white,
-    gap: 8,
-    shadowColor: COLORS.text,
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-    overflow: "hidden",
-  },
-  filterChipActive: {
-    backgroundColor: "transparent",
-  },
-  filterChipText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.text,
-  },
-  filterChipTextActive: {
-    color: COLORS.white,
-  },
-  spotlightSection: {
-    marginBottom: 30,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
-  sectionHeaderRight: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  percentageContainer: {
-    marginRight: 10,
-    backgroundColor: "rgba(0, 0, 0, 0.05)",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  percentageText: {
-    fontSize: 12,
-    fontWeight: "500",
-    color: COLORS.primary,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: COLORS.text,
-  },
-  seeAllButton: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.primary,
-  },
-  spotlightScroll: {
-    paddingRight: 20,
-    gap: 16,
-  },
-  spotlightCard: {
-    width: CARD_WIDTH * 0.8,
-    height: CARD_HEIGHT * 0.6,
-    borderRadius: 20,
-    overflow: "hidden",
-    backgroundColor: COLORS.white,
-    shadowColor: COLORS.text,
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  spotlightImage: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "cover",
-  },
-  spotlightGradient: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: "60%",
-  },
-  spotlightInfo: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 20,
-  },
-  spotlightHeader: {
-    marginBottom: 12,
-  },
-  nameVerifiedContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  spotlightName: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: COLORS.white,
-  },
-  spotlightLocation: {
-    fontSize: 14,
-    color: COLORS.white,
-    opacity: 0.8,
-  },
-  verifiedBadge: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: COLORS.primary,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  matchPercentageContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  progressMask: {
-    height: 4,
-    width: 100,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 2,
-    overflow: "hidden",
-  },
-  progressBar: {
-    height: "100%",
-    backgroundColor: "white",
-  },
-  progressGradient: {
-    height: 4,
-    width: "100%",
-  },
-  matchPercentage: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.white,
-  },
-  premiumBadge: {
-    position: "absolute",
-    top: 16,
-    right: 16,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: COLORS.white,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  activeStatus: {
-    position: "absolute",
-    top: 16,
-    left: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  activeDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: COLORS.success,
-  },
-  activeText: {
-    fontSize: 12,
-    color: COLORS.white,
-  },
-  quickMatchSection: {
-    marginBottom: 20,
-  },
-  quickMatchGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 16,
-  },
-  quickMatchCard: {
-    width: (width - 56) / 2,
-    height: ((width - 56) / 2) * 1.3,
-    borderRadius: 16,
-    overflow: "hidden",
-    backgroundColor: COLORS.white,
-    shadowColor: COLORS.text,
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
-    elevation: 8,
-  },
-  quickMatchImage: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "cover",
-  },
-  quickMatchInfo: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 12,
-  },
-  quickMatchHeader: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: 4,
-  },
-  quickMatchName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.white,
-  },
-  quickMatchAge: {
-    fontSize: 14,
-    color: COLORS.white,
-    opacity: 0.8,
-  },
-  quickMatchDistance: {
-    fontSize: 12,
-    color: COLORS.white,
-    opacity: 0.8,
-  },
-  premiumRing: {
-    position: "absolute",
-    top: -2,
-    left: -2,
-    right: -2,
-    bottom: -2,
-    borderRadius: 18,
-    zIndex: -1,
-  },
-  loaderContainer: {
-    height: 200,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  applyButton: {
-    marginTop: 10,
-    height: 50,
-    borderRadius: 25,
-    overflow: "hidden",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  applyButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.white,
-  },
-  resetButton: {
-    marginTop: 10,
-    height: 45,
-    borderRadius: 22.5,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.3)",
-  },
-  resetButtonText: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: COLORS.white,
-  },
-  ageRangeInputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 8,
-  },
-  ageInputWrapper: {
-    flex: 1,
-  },
-  ageInputLabel: {
-    fontSize: 12,
-    color: COLORS.white,
-    marginBottom: 4,
-  },
-  ageInput: {
-    height: 50,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 12,
-    color: COLORS.white,
-    fontSize: 16,
-    paddingHorizontal: 15,
-    textAlign: "center",
-  },
-  ageSeparator: {
-    width: 20,
-    height: 2,
-    backgroundColor: "rgba(255, 255, 255, 0.3)",
-    marginHorizontal: 10,
-  },
-  // Empty state styles
-  emptyStateContainer: {
-    backgroundColor: COLORS.white,
-    borderRadius: 20,
-    padding: 30,
-    alignItems: "center",
-    justifyContent: "center",
-    marginVertical: 20,
-    shadowColor: COLORS.text,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  emptyStateIconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "rgba(0, 0, 0, 0.05)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 20,
-  },
-  emptyStateTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: COLORS.text,
-    marginBottom: 10,
-    textAlign: "center",
-  },
-  emptyStateDescription: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: COLORS.text,
-    opacity: 0.7,
-    textAlign: "center",
-  },
-  cardLikeButton: {
-    position: "absolute",
-    bottom: 16,
-    right: 16,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: COLORS.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  cardLikedIndicator: {
-    position: "absolute",
-    bottom: 16,
-    right: 16,
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
 
 export default withProfileCompletion(MatchesScreen);

@@ -58,7 +58,6 @@ const initialState = {
   error: null,
 };
 
-// Async Thunks
 export const saveProfileCreationProgress = createAsyncThunk(
   "profileCreation/saveProgress",
   async ({ stepData, currentStep }, { rejectWithValue }) => {
@@ -94,13 +93,11 @@ export const clearProfileCreationProgress = createAsyncThunk(
   }
 );
 
-// Profile Creation Slice
 const profileCreationSlice = createSlice({
   name: "profileCreation",
   initialState,
   reducers: {
     updateSavedFormFields: (state, action) => {
-      // Merge new form fields with existing saved fields
       state.savedFormFields = {
         ...state.savedFormFields,
         ...action.payload,

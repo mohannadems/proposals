@@ -1,9 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback, memo } from "react";
 import {
   View,
   Text,
   Image,
-  StyleSheet,
   TouchableOpacity,
   Dimensions,
   Animated,
@@ -13,6 +12,7 @@ import {
   Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import styles from "../../styles/match-screen";
 import {
   X,
   Heart,
@@ -26,28 +26,42 @@ import {
 import Confetti from "react-native-confetti";
 import { BlurView } from "expo-blur";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 
-// Import services
 import { profileService } from "../../services/profile.service";
 import { matchesService } from "../../services/matchesService";
+import { COLORS } from "../../constants/colors";
 
-const COLORS = {
-  primary: "#9e086c",
-  secondary: "#5856D6",
-  background: "#F8F9FA",
-  white: "#FFFFFF",
-  text: "#1C1C1E",
-  error: "#FF3B30",
-  success: "#34C759",
-  border: "#E5E5EA",
-  primaryGradient: ["#9e086c", "#5856D6"],
-  darkOverlay: "rgba(0, 0, 0, 0.5)",
+const { width } = Dimensions.get("window");
+
+const ERROR_MESSAGES = {
+  MISSING_USER_ID: "Cannot view profile. User ID is missing.",
+  NO_CONTACT: "Contact number is not available for this match.",
+  GO_BACK: "Go Back",
+  REVEAL_TITLE: "Reveal Contact Number",
+  REVEAL_MESSAGE: "Are you sure you want to view the full contact number?",
+  CANCEL: "Cancel",
+  REVEAL: "Reveal",
+  DEFAULT_PROFILE_ERROR: "Failed to load match details",
+  MY_PROFILE_ERROR: "Failed to load your profile",
+  MATCH_NOT_FOUND: "No match found or match data is incomplete",
+  MATCH_ID_MISSING: "Match ID is missing",
 };
 
-const { width, height } = Dimensions.get("window");
+const FALLBACK_IMAGES = {
+  MY_PROFILE: "https://i.pravatar.cc/300?img=11",
+  MATCH_PROFILE: "https://i.pravatar.cc/300?img=32",
+};
 
-const ProfileDetailCard = ({ icon, title, value }) => (
+const ANIMATION_CONFIG = {
+  SCALE_DURATION: 500,
+  OPACITY_DURATION: 600,
+  FADE_DURATION: 800,
+  FADE_DELAY: 300,
+  CONFETTI_DURATION: 5000,
+};
+
+const ProfileDetailCard = memo(({ icon, title, value }) => (
   <View style={styles.detailCard}>
     {icon}
     <View style={styles.detailContent}>
@@ -55,232 +69,352 @@ const ProfileDetailCard = ({ icon, title, value }) => (
       <Text style={styles.detailValue}>{value}</Text>
     </View>
   </View>
+));
+
+const SafeHeader = memo(({ handleClose }) => (
+  <View style={styles.header}>
+    <View style={styles.headerTitleContainer}>
+      <Heart color={COLORS.white} size={22} style={styles.headerIcon} />
+      <Text style={styles.headerText}>Perfect Match!</Text>
+    </View>
+    <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+      <X color={COLORS.white} size={24} />
+    </TouchableOpacity>
+  </View>
+));
+
+const ProfileImages = memo(
+  ({
+    myImageUrl,
+    myName,
+    myAge,
+    myLocation,
+    matchImageUrl,
+    matchName,
+    matchAge,
+    matchLocation,
+  }) => (
+    <View style={styles.profileContainer}>
+      <View style={styles.profileCard}>
+        <Image
+          source={{ uri: myImageUrl }}
+          style={styles.profileImage}
+          defaultSource={require("../../assets/images/11.jpg")}
+        />
+        <BlurView intensity={80} style={styles.profileInfo}>
+          <Text style={styles.profileName}>
+            {myName}
+            {myAge ? `, ${myAge}` : ""}
+          </Text>
+          <View style={styles.profileLocation}>
+            <MapPin color={COLORS.white} size={14} />
+            <Text style={styles.locationText}>{myLocation}</Text>
+          </View>
+        </BlurView>
+      </View>
+
+      <View style={styles.profileConnector}>
+        <View style={styles.connectorLine} />
+        <View style={styles.connectorCircle}>
+          <Check color={COLORS.white} size={16} />
+        </View>
+        <View style={styles.connectorLine} />
+      </View>
+
+      <View style={styles.profileCard}>
+        <Image
+          source={{ uri: matchImageUrl }}
+          style={[styles.profileImage, { backgroundColor: "#e1e1e1" }]} // Add a background color
+          defaultSource={require("../../assets/images/11.jpg")}
+          resizeMode="cover" // Ensure proper sizing
+          // Add these to handle errors more explicitly
+          onError={() => console.log("Error loading image:", matchImageUrl)}
+          onLoad={() => console.log("Successfully loaded image")}
+        />
+        <BlurView intensity={80} style={styles.profileInfo}>
+          <Text style={styles.profileName}>
+            {matchName}
+            {matchAge ? `, ${matchAge}` : ""}
+          </Text>
+          <View style={styles.profileLocation}>
+            <MapPin color={COLORS.white} size={14} />
+            <Text style={styles.locationText}>{matchLocation}</Text>
+          </View>
+        </BlurView>
+      </View>
+    </View>
+  )
+);
+
+const ActionButtons = memo(
+  ({ showFullNumber, handleShowFullNumber, handleViewProfile }) => (
+    <>
+      <TouchableOpacity
+        style={styles.viewProfileButton}
+        onPress={handleShowFullNumber}
+      >
+        <Phone color={COLORS.white} size={18} style={{ marginRight: 10 }} />
+        <Text style={styles.viewProfileText}>
+          {showFullNumber ? "Full Number" : "Reveal Number"}
+        </Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[
+          styles.viewProfileButton,
+          { marginTop: 10, backgroundColor: COLORS.secondary },
+        ]}
+        onPress={handleViewProfile}
+      >
+        <Text style={styles.viewProfileText}>View Full Profile</Text>
+      </TouchableOpacity>
+    </>
+  )
+);
+
+const getProfileImage = (profile, isMatchProfile = false) => {
+  try {
+    if (isMatchProfile && profile?.matched_user_photo) {
+      const photoUrl = profile.matched_user_photo;
+      // If the URL already includes http/https, use it directly
+      if (photoUrl.startsWith("http")) {
+        return photoUrl;
+      } else {
+        // Otherwise, prepend your server domain
+        return `https://proposals.world${photoUrl}`; // FIXED: Removed extra quote
+      }
+    }
+
+    if (profile?.profile?.photos?.length > 0) {
+      const mainPhoto =
+        profile.profile.photos.find((photo) => photo.is_main) ||
+        profile.profile.photos[0];
+
+      const photoUrl = mainPhoto.photo_url;
+      if (photoUrl.startsWith("http")) {
+        return photoUrl;
+      } else {
+        return `https://proposals.world${photoUrl}`; // Also ensure consistency here
+      }
+    }
+
+    // If no valid profile photo is found, use fallback
+    return (
+      profile?.profile?.avatar_url ||
+      (isMatchProfile
+        ? FALLBACK_IMAGES.MATCH_PROFILE
+        : FALLBACK_IMAGES.MY_PROFILE)
+    );
+  } catch (err) {
+    console.error("Error extracting profile image:", err);
+    return isMatchProfile
+      ? FALLBACK_IMAGES.MATCH_PROFILE
+      : FALLBACK_IMAGES.MY_PROFILE;
+  }
+};
+
+const LoadingView = () => (
+  <View
+    style={[
+      styles.container,
+      { justifyContent: "center", alignItems: "center" },
+    ]}
+  >
+    <StatusBar barStyle="light-content" />
+    <LinearGradient colors={COLORS.primaryGradient} style={styles.gradient}>
+      <ActivityIndicator size="large" color={COLORS.white} />
+      <Text style={styles.loadingText}>Loading match details...</Text>
+    </LinearGradient>
+  </View>
+);
+
+const ErrorView = ({ error, onRetry }) => (
+  <View
+    style={[
+      styles.container,
+      { justifyContent: "center", alignItems: "center" },
+    ]}
+  >
+    <StatusBar barStyle="light-content" />
+    <LinearGradient colors={COLORS.primaryGradient} style={styles.gradient}>
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
+          <Text style={styles.retryText}>{ERROR_MESSAGES.GO_BACK}</Text>
+        </TouchableOpacity>
+      </View>
+    </LinearGradient>
+  </View>
 );
 
 const MatchScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { matchedUserId, isNewMatch } = params;
-  const dispatch = useDispatch();
 
-  // State for profiles
   const [myProfile, setMyProfile] = useState(null);
   const [matchProfile, setMatchProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showFullNumber, setShowFullNumber] = useState(false);
 
-  // Get current user from Redux (fallback)
   const currentUser = useSelector((state) => state.auth.user);
 
-  // Animation refs
-  const confettiRef = useRef();
+  const confettiRef = useRef(null);
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const fadeInAnim = useRef(new Animated.Value(0)).current;
   const slideUpAnim = useRef(new Animated.Value(50)).current;
 
-  const getProfileImage = (profile, isMatchProfile = false) => {
+  const fetchProfiles = useCallback(async () => {
     try {
-      // For match profile with matched_user_photo
-      if (isMatchProfile && profile?.matched_user_photo) {
-        return profile.matched_user_photo.startsWith("http")
-          ? profile.matched_user_photo
-          : `https://proposals.world${profile.matched_user_photo}`;
+      setLoading(true);
+
+      const myProfileResponse = await profileService.getProfile();
+
+      if (!myProfileResponse.success) {
+        throw new Error(
+          myProfileResponse.message || ERROR_MESSAGES.MY_PROFILE_ERROR
+        );
       }
 
-      // For regular profile
-      if (profile?.profile?.photos?.length > 0) {
-        const mainPhoto =
-          profile.profile.photos.find((photo) => photo.is_main) ||
-          profile.profile.photos[0];
+      setMyProfile(myProfileResponse.data);
 
-        return mainPhoto.photo_url.startsWith("http")
-          ? mainPhoto.photo_url
-          : `https://proposals.world${mainPhoto.photo_url}`;
+      if (!matchedUserId) {
+        throw new Error(ERROR_MESSAGES.MATCH_ID_MISSING);
       }
 
-      // Fallback avatars
-      return (
-        profile?.profile?.avatar_url ||
-        (isMatchProfile
-          ? "https://i.pravatar.cc/300?img=32"
-          : "https://i.pravatar.cc/300?img=11")
+      const matchProfileResponse = await matchesService.checkForMatch(
+        matchedUserId
       );
-    } catch (err) {
-      console.error("Error extracting profile image:", err);
-      return isMatchProfile
-        ? "https://i.pravatar.cc/300?img=32"
-        : "https://i.pravatar.cc/300?img=11";
-    }
-  };
-  // Fetch profiles
-  useEffect(() => {
-    const fetchProfiles = async () => {
-      try {
-        setLoading(true);
 
-        // Fetch my profile
-        const myProfileResponse = await profileService.getProfile();
-        if (myProfileResponse.success) {
-          setMyProfile(myProfileResponse.data);
-        }
-
-        // Fetch match profile
-        if (matchedUserId) {
-          const matchProfileResponse = await matchesService.checkForMatch(
-            matchedUserId
-          );
-          if (matchProfileResponse.isMatch) {
-            setMatchProfile(matchProfileResponse.matchData);
-          } else {
-            throw new Error("No match found");
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching profiles:", err);
-        setError(err.message || "Failed to load match details");
-      } finally {
-        setLoading(false);
+      if (!matchProfileResponse.isMatch) {
+        throw new Error(ERROR_MESSAGES.MATCH_NOT_FOUND);
       }
-    };
 
-    fetchProfiles();
+      setMatchProfile(matchProfileResponse.matchData);
+    } catch (err) {
+      setError(err.message || ERROR_MESSAGES.DEFAULT_PROFILE_ERROR);
+    } finally {
+      setLoading(false);
+    }
   }, [matchedUserId]);
 
-  // Animations and confetti
   useEffect(() => {
-    if (!loading && matchProfile && isNewMatch && confettiRef.current) {
+    let isMounted = true;
+
+    fetchProfiles();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchProfiles]);
+
+  useEffect(() => {
+    if (
+      !loading &&
+      matchProfile &&
+      isNewMatch === "true" &&
+      confettiRef.current
+    ) {
       confettiRef.current.startConfetti();
     }
 
-    // Animate in the content
-    Animated.parallel([
+    const animationSet = Animated.parallel([
       Animated.timing(scaleAnim, {
         toValue: 1,
-        duration: 500,
+        duration: ANIMATION_CONFIG.SCALE_DURATION,
         useNativeDriver: true,
       }),
       Animated.timing(opacityAnim, {
         toValue: 1,
-        duration: 600,
+        duration: ANIMATION_CONFIG.OPACITY_DURATION,
         useNativeDriver: true,
       }),
       Animated.timing(fadeInAnim, {
         toValue: 1,
-        duration: 800,
-        delay: 300,
+        duration: ANIMATION_CONFIG.FADE_DURATION,
+        delay: ANIMATION_CONFIG.FADE_DELAY,
         useNativeDriver: true,
       }),
       Animated.timing(slideUpAnim, {
         toValue: 0,
-        duration: 800,
-        delay: 300,
+        duration: ANIMATION_CONFIG.FADE_DURATION,
+        delay: ANIMATION_CONFIG.FADE_DELAY,
         useNativeDriver: true,
       }),
-    ]).start();
+    ]);
 
-    // Stop confetti after 5 seconds
-    const timer = setTimeout(() => {
-      if (confettiRef.current) {
-        confettiRef.current.stopConfetti();
-      }
-    }, 5000);
+    animationSet.start();
 
-    return () => clearTimeout(timer);
+    let timer;
+    if (isNewMatch === "true") {
+      timer = setTimeout(() => {
+        if (confettiRef.current) {
+          confettiRef.current.stopConfetti();
+        }
+      }, ANIMATION_CONFIG.CONFETTI_DURATION);
+    }
+
+    return () => {
+      animationSet.stop();
+      if (timer) clearTimeout(timer);
+    };
   }, [loading, matchProfile, isNewMatch]);
 
-  // Handlers
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     router.back();
-  };
+  }, [router]);
 
-  const handleViewProfile = () => {
+  const handleViewProfile = useCallback(() => {
+    if (!matchedUserId) {
+      Alert.alert("Error", ERROR_MESSAGES.MISSING_USER_ID);
+      return;
+    }
+
     router.push({
       pathname: "/(profile)/matchProfile",
       params: { userId: matchedUserId },
     });
-  };
+  }, [router, matchedUserId]);
 
-  const handleShowFullNumber = () => {
+  const handleShowFullNumber = useCallback(() => {
     if (matchProfile?.matched_user_phone) {
-      // First time showing, ask for confirmation
       if (!showFullNumber) {
         Alert.alert(
-          "Reveal Contact Number",
-          "Are you sure you want to view the full contact number?",
+          ERROR_MESSAGES.REVEAL_TITLE,
+          ERROR_MESSAGES.REVEAL_MESSAGE,
           [
             {
-              text: "Cancel",
+              text: ERROR_MESSAGES.CANCEL,
               style: "cancel",
             },
             {
-              text: "Reveal",
+              text: ERROR_MESSAGES.REVEAL,
               onPress: () => setShowFullNumber(true),
             },
           ]
         );
       }
     } else {
-      Alert.alert(
-        "No Contact",
-        "Contact number is not available for this match."
-      );
+      Alert.alert("No Contact", ERROR_MESSAGES.NO_CONTACT);
     }
-  };
+  }, [matchProfile, showFullNumber]);
 
-  // Loading state
   if (loading) {
-    return (
-      <View
-        style={[
-          styles.container,
-          { justifyContent: "center", alignItems: "center" },
-        ]}
-      >
-        <ActivityIndicator size="large" color={COLORS.white} />
-        <Text style={{ color: COLORS.white, fontSize: 16, marginTop: 10 }}>
-          Loading match details...
-        </Text>
-      </View>
-    );
+    return <LoadingView />;
   }
 
-  // Error state
   if (error) {
-    return (
-      <View
-        style={[
-          styles.container,
-          { justifyContent: "center", alignItems: "center", padding: 20 },
-        ]}
-      >
-        <Text
-          style={{
-            color: COLORS.white,
-            fontSize: 16,
-            marginBottom: 20,
-            textAlign: "center",
-          }}
-        >
-          {error}
-        </Text>
-        <TouchableOpacity
-          style={styles.retryButton}
-          onPress={() => router.back()}
-        >
-          <Text style={styles.retryText}>Go Back</Text>
-        </TouchableOpacity>
-      </View>
-    );
+    return <ErrorView error={error} onRetry={handleClose} />;
   }
 
   const myImageUrl = myProfile
     ? getProfileImage(myProfile)
-    : "https://i.pravatar.cc/300?img=11";
+    : FALLBACK_IMAGES.MY_PROFILE;
   const matchImageUrl = matchProfile
     ? getProfileImage(matchProfile, true)
-    : "https://i.pravatar.cc/300?img=32";
+    : FALLBACK_IMAGES.MATCH_PROFILE;
 
   const myName = myProfile?.first_name || "You";
   const myAge = myProfile?.profile?.age || "";
@@ -290,27 +424,18 @@ const MatchScreen = () => {
   const matchAge = matchProfile?.matched_user_age || "";
   const matchLocation = matchProfile?.matched_user_city || "Unknown location";
 
-  // Mask phone number for privacy
   const maskedPhoneNumber = matchProfile?.matched_user_phone
     ? `${matchProfile.matched_user_phone.slice(
         0,
         3
       )}****${matchProfile.matched_user_phone.slice(-3)}`
     : "Not Available";
-
+  console.log("FINAL IMAGE URL:", matchImageUrl);
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />
       <LinearGradient colors={COLORS.primaryGradient} style={styles.gradient}>
-        <View style={styles.header}>
-          <View style={styles.headerTitleContainer}>
-            <Heart color={COLORS.white} size={22} style={styles.headerIcon} />
-            <Text style={styles.headerText}>Perfect Match!</Text>
-          </View>
-          <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-            <X color={COLORS.white} size={24} />
-          </TouchableOpacity>
-        </View>
+        <SafeHeader handleClose={handleClose} />
 
         {isNewMatch === "true" && <Confetti ref={confettiRef} />}
 
@@ -332,49 +457,16 @@ const MatchScreen = () => {
               <Text style={styles.matchLabel}>Match</Text>
             </View>
 
-            <View style={styles.profileContainer}>
-              <View style={styles.profileCard}>
-                <Image
-                  source={{ uri: myImageUrl }}
-                  style={styles.profileImage}
-                />
-                <BlurView intensity={80} style={styles.profileInfo}>
-                  <Text style={styles.profileName}>
-                    {myName}
-                    {myAge ? `, ${myAge}` : ""}
-                  </Text>
-                  <View style={styles.profileLocation}>
-                    <MapPin color={COLORS.white} size={14} />
-                    <Text style={styles.locationText}>{myLocation}</Text>
-                  </View>
-                </BlurView>
-              </View>
-
-              <View style={styles.profileConnector}>
-                <View style={styles.connectorLine} />
-                <View style={styles.connectorCircle}>
-                  <Check color={COLORS.white} size={16} />
-                </View>
-                <View style={styles.connectorLine} />
-              </View>
-
-              <View style={styles.profileCard}>
-                <Image
-                  source={{ uri: matchImageUrl }}
-                  style={styles.profileImage}
-                />
-                <BlurView intensity={80} style={styles.profileInfo}>
-                  <Text style={styles.profileName}>
-                    {matchName}
-                    {matchAge ? `, ${matchAge}` : ""}
-                  </Text>
-                  <View style={styles.profileLocation}>
-                    <MapPin color={COLORS.white} size={14} />
-                    <Text style={styles.locationText}>{matchLocation}</Text>
-                  </View>
-                </BlurView>
-              </View>
-            </View>
+            <ProfileImages
+              myImageUrl={myImageUrl}
+              myName={myName}
+              myAge={myAge}
+              myLocation={myLocation}
+              matchImageUrl={matchImageUrl}
+              matchName={matchName}
+              matchAge={matchAge}
+              matchLocation={matchLocation}
+            />
 
             <Animated.View
               style={[
@@ -424,29 +516,11 @@ const MatchScreen = () => {
                   </Text>
                 </View>
 
-                <TouchableOpacity
-                  style={styles.viewProfileButton}
-                  onPress={handleShowFullNumber}
-                >
-                  <Phone
-                    color={COLORS.white}
-                    size={18}
-                    style={{ marginRight: 10 }}
-                  />
-                  <Text style={styles.viewProfileText}>
-                    {showFullNumber ? "Full Number" : "Reveal Number"}
-                  </Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.viewProfileButton,
-                    { marginTop: 10, backgroundColor: COLORS.secondary },
-                  ]}
-                  onPress={handleViewProfile}
-                >
-                  <Text style={styles.viewProfileText}>View Full Profile</Text>
-                </TouchableOpacity>
+                <ActionButtons
+                  showFullNumber={showFullNumber}
+                  handleShowFullNumber={handleShowFullNumber}
+                  handleViewProfile={handleViewProfile}
+                />
               </View>
             </Animated.View>
           </Animated.View>
@@ -455,208 +529,5 @@ const MatchScreen = () => {
     </View>
   );
 };
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.primary,
-  },
-  gradient: {
-    flex: 1,
-    width: "100%",
-    height: "100%",
-  },
-  header: {
-    width: "100%",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 15,
-  },
-  headerTitleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  headerIcon: {
-    marginRight: 8,
-  },
-  headerText: {
-    color: COLORS.white,
-    fontSize: 22,
-    fontWeight: "bold",
-  },
-  closeButton: {
-    padding: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
-    borderRadius: 20,
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: 30, // Added padding at the bottom
-  },
-  content: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "flex-start",
-    paddingHorizontal: 20,
-    paddingTop: 10,
-  },
-  matchBadge: {
-    backgroundColor: COLORS.white,
-    paddingVertical: 6,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  matchPercentage: {
-    color: COLORS.primary,
-    fontSize: 16,
-    fontWeight: "bold",
-    marginRight: 4,
-  },
-  matchLabel: {
-    color: COLORS.text,
-    fontSize: 14,
-  },
-  profileContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    width: "100%",
-    marginBottom: 20,
-  },
-  profileCard: {
-    width: width * 0.38,
-    height: width * 0.5,
-    borderRadius: 20,
-    overflow: "hidden",
-    backgroundColor: COLORS.white,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  profileImage: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "cover",
-  },
-  profileInfo: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 12,
-  },
-  profileName: {
-    color: COLORS.white,
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 2,
-  },
-  profileLocation: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  locationText: {
-    color: COLORS.white,
-    fontSize: 12,
-    marginLeft: 4,
-  },
-  profileConnector: {
-    alignItems: "center",
-    width: width * 0.08,
-  },
-  connectorLine: {
-    height: 1,
-    width: width * 0.08,
-    backgroundColor: COLORS.white,
-  },
-  connectorCircle: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
-    margin: 6,
-  },
-  detailsContainer: {
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    width: "100%",
-    paddingVertical: 50, // Increased padding
-    paddingHorizontal: 20,
-    minHeight: 600, // Ensure it's tall enough even with little content
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: COLORS.text,
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  detailsContent: {
-    paddingBottom: 20,
-  },
-  detailCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 16,
-    backgroundColor: COLORS.background,
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  detailContent: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  detailTitle: {
-    fontSize: 14,
-    color: COLORS.text,
-    opacity: 0.7,
-    marginBottom: 2,
-  },
-  detailValue: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.text,
-  },
-  matchTextContainer: {
-    marginTop: 15,
-    marginBottom: 25,
-    paddingHorizontal: 6,
-  },
-  matchText: {
-    fontSize: 15,
-    color: COLORS.text,
-    opacity: 0.8,
-    lineHeight: 22,
-    textAlign: "center",
-  },
-  viewProfileButton: {
-    backgroundColor: COLORS.primary,
-    paddingVertical: 16,
-    borderRadius: 16,
-    alignItems: "center",
-    marginTop: 10,
-    marginHorizontal: 20,
-  },
-  viewProfileText: {
-    color: COLORS.white,
-    fontWeight: "600",
-    fontSize: 16,
-  },
-});
 
 export default MatchScreen;

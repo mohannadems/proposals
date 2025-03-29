@@ -2,9 +2,7 @@
 import api from "./api";
 import { ENDPOINTS } from "../constants/endpoints";
 
-// Profile data services
 export const profileService = {
-  // Fetch personal attributes (hair color, height, weight, etc.)
   fetchPersonalAttributes: async () => {
     try {
       const response = await api.get(ENDPOINTS.PERSONAL_ATTRIBUTES);
@@ -15,7 +13,6 @@ export const profileService = {
     }
   },
 
-  // Fetch lifestyle and interests data (hobbies, pets, sports, etc.)
   fetchLifestyleInterests: async () => {
     try {
       const response = await api.get(ENDPOINTS.LIFESTYLE_INTERESTS);
@@ -26,7 +23,6 @@ export const profileService = {
     }
   },
 
-  // Fetch professional and educational data
   fetchProfessionalEducational: async () => {
     try {
       const response = await api.get(ENDPOINTS.PROFESSIONAL_EDUCATIONAL);
@@ -37,7 +33,6 @@ export const profileService = {
     }
   },
 
-  // Fetch geographic data (countries, cities, etc.)
   fetchGeographic: async () => {
     try {
       const response = await api.get(ENDPOINTS.GEOGRAPHIC);
@@ -48,14 +43,12 @@ export const profileService = {
     }
   },
 
-  // Fetch cities by country ID - UPDATED with correct endpoint
   fetchCitiesByCountry: async (countryId) => {
     try {
       if (!countryId) {
         return [];
       }
 
-      // Use the correct endpoint format: api/countries/{countryId}/cities
       const response = await api.get(`/countries/${countryId}/cities`);
       return response.data.data || [];
     } catch (error) {
@@ -63,12 +56,10 @@ export const profileService = {
         `Error fetching cities for country ID ${countryId}:`,
         error
       );
-      // Return empty array if there's an error
       return [];
     }
   },
 
-  // Fetch all profile attribute data in parallel
   fetchAllProfileData: async () => {
     try {
       const [

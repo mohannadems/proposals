@@ -1,69 +1,113 @@
-// store/searchSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { searchService } from "../../services/searchService";
 
-// Async thunk for submitting preferences
+export const DEFAULT_AGE_RANGE = {
+  min: 18,
+  max: 50,
+};
+
+const handleApiError = (error) =>
+  error.response?.data?.message || error.message || "An error occurred";
+
 export const submitSearchPreferences = createAsyncThunk(
   "search/submitPreferences",
   async (preferences, { rejectWithValue }) => {
     try {
       const response = await searchService.submitPreferences(preferences);
+
+      if (!response || typeof response !== "object") {
+        return rejectWithValue("Invalid response format from server");
+      }
+
       return response;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data || "Failed to submit preferences"
-      );
+      return rejectWithValue(handleApiError(error));
     }
   }
 );
 
-// Async thunk for getting saved preferences - modified as API uses POST
 export const getSavedPreferences = createAsyncThunk(
   "search/getSavedPreferences",
   async (_, { rejectWithValue }) => {
     try {
-      // Note: This might not be used now since we're initializing with defaults
       const response = await searchService.getSavedPreferences();
+
+      if (!response || typeof response !== "object") {
+        return rejectWithValue("Invalid response format from server");
+      }
+
       return response;
     } catch (error) {
-      return rejectWithValue(
-        error.response?.data || { message: "Failed to get saved preferences" }
-      );
+      return rejectWithValue(handleApiError(error));
     }
   }
 );
 
+const initialPreferences = {
+  preferred_nationality_id: null,
+  preferred_origin_id: null,
+  preferred_country_id: null,
+  preferred_city_id: null,
+  preferred_age_min: DEFAULT_AGE_RANGE.min,
+  preferred_age_max: DEFAULT_AGE_RANGE.max,
+  preferred_educational_level_id: null,
+  preferred_specialization_id: null,
+  preferred_employment_status: null,
+  preferred_job_title_id: null,
+  preferred_financial_status_id: null,
+  preferred_height_id: null,
+  preferred_weight_id: null,
+  preferred_marital_status_id: null,
+  preferred_smoking_status: null,
+  preferred_smoking_tools: [],
+  preferred_drinking_status_id: null,
+  preferred_sports_activity_id: null,
+  preferred_social_media_presence_id: null,
+  preferred_marriage_budget_id: null,
+  preferred_religiosity_level_id: null,
+  preferred_sleep_habit_id: null,
+  preferred_pets_id: [],
+  language: 1,
+};
+
 const initialState = {
-  preferences: {
-    preferred_nationality_id: null,
-    preferred_origin_id: null,
-    preferred_country_id: null,
-    preferred_city_id: null,
-    preferred_age_min: 18,
-    preferred_age_max: 50,
-    preferred_educational_level_id: null,
-    preferred_specialization_id: null,
-    preferred_employment_status: null,
-    preferred_job_title_id: null,
-    preferred_financial_status_id: null,
-    preferred_height_id: null,
-    preferred_weight_id: null,
-    preferred_marital_status_id: null,
-    preferred_smoking_status: null,
-    preferred_smoking_tools: [],
-    preferred_drinking_status_id: null,
-    preferred_sports_activity_id: null,
-    preferred_social_media_presence_id: null,
-    preferred_marriage_budget: null,
-    preferred_religiosity_level_id: null,
-    preferred_sleep_habit_id: null,
-    preferred_pets_id: [],
-    language: 1,
-  },
+  preferences: initialPreferences,
   searchResults: [],
   loading: false,
   error: null,
   success: false,
+  hasLoadedPreferences: false,
+  initialLoadComplete: false,
+};
+
+const handlePending = (state) => {
+  state.loading = true;
+  state.error = null;
+};
+
+const handleRejected = (state, action) => {
+  state.loading = false;
+  state.success = false;
+  state.error =
+    typeof action.payload === "object" && action.payload !== null
+      ? action.payload.message || "Something went wrong"
+      : action.payload || "Something went wrong";
+};
+
+const parseSearchResults = (payload) => {
+  if (!payload || !payload.data) {
+    return [];
+  }
+
+  if (Array.isArray(payload.data)) {
+    return payload.data;
+  }
+
+  if (typeof payload.data === "object") {
+    return [payload.data];
+  }
+
+  return [];
 };
 
 const searchSlice = createSlice({
@@ -72,10 +116,12 @@ const searchSlice = createSlice({
   reducers: {
     updatePreference: (state, action) => {
       const { field, value } = action.payload;
-      state.preferences[field] = value;
+      if (field in state.preferences) {
+        state.preferences[field] = value;
+      }
     },
     resetPreferences: (state) => {
-      state.preferences = initialState.preferences;
+      state.preferences = initialPreferences;
     },
     resetSearchState: (state) => {
       state.searchResults = [];
@@ -83,85 +129,85 @@ const searchSlice = createSlice({
       state.error = null;
       state.success = false;
     },
+    setInitialLoadComplete: (state, action) => {
+      state.initialLoadComplete = action.payload;
+    },
+    clearError: (state) => {
+      state.error = null;
+    },
+    manuallySetLoading: (state, action) => {
+      state.loading = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
-      // Handle submitSearchPreferences
-      .addCase(submitSearchPreferences.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
+      .addCase(submitSearchPreferences.pending, handlePending)
       .addCase(submitSearchPreferences.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-
-        // Ensure we're storing an array for searchResults
-        if (Array.isArray(action.payload.data)) {
-          state.searchResults = action.payload.data;
-        } else if (action.payload.data) {
-          // If data exists but isn't an array, try to handle it safely
-          try {
-            state.searchResults = [action.payload.data];
-          } catch (e) {
-            console.error("Error parsing search results:", e);
-            state.searchResults = [];
-          }
-        } else {
-          state.searchResults = [];
-        }
-      })
-      .addCase(submitSearchPreferences.rejected, (state, action) => {
-        state.loading = false;
-        // Handle different error formats
-        if (typeof action.payload === "object" && action.payload !== null) {
-          state.error = action.payload.message || "Something went wrong";
-        } else {
-          state.error = action.payload || "Something went wrong";
-        }
-      })
-
-      // Handle getSavedPreferences
-      .addCase(getSavedPreferences.pending, (state) => {
-        state.loading = true;
         state.error = null;
+        state.searchResults = parseSearchResults(action.payload);
       })
+      .addCase(submitSearchPreferences.rejected, handleRejected)
+
+      .addCase(getSavedPreferences.pending, handlePending)
       .addCase(getSavedPreferences.fulfilled, (state, action) => {
         state.loading = false;
+        state.error = null;
+        state.initialLoadComplete = true;
+        state.hasLoadedPreferences = true;
 
-        if (action.payload && action.payload.data) {
-          // Check if we received a non-empty object
-          if (Object.keys(action.payload.data).length > 0) {
-            // REPLACE the preferences instead of merging
+        if (action.payload?.data && typeof action.payload.data === "object") {
+          const loadedPrefs = action.payload.data;
+          const newPreferences = { ...state.preferences };
 
-            // Make sure to preserve any default values that might not be in the response
-            const loadedPrefs = action.payload.data;
+          Object.entries(loadedPrefs).forEach(([key, value]) => {
+            if (
+              key in newPreferences &&
+              value !== null &&
+              value !== undefined
+            ) {
+              newPreferences[key] = Array.isArray(value) ? [...value] : value;
+            }
+          });
 
-            // Update each field only if it exists in the loaded preferences
-            Object.keys(loadedPrefs).forEach((key) => {
-              if (state.preferences.hasOwnProperty(key)) {
-                state.preferences[key] = loadedPrefs[key];
-              }
-            });
-
-            // Flag that we have preferences loaded
-            state.hasLoadedPreferences = true;
-          } else {
-          }
+          state.preferences = newPreferences;
         }
       })
       .addCase(getSavedPreferences.rejected, (state, action) => {
-        state.loading = false;
-        // Handle different error formats
-        if (typeof action.payload === "object" && action.payload !== null) {
-          state.error =
-            action.payload.message || "Failed to fetch saved preferences";
-        } else {
-          state.error = action.payload || "Failed to fetch saved preferences";
-        }
+        handleRejected(state, action);
+        state.initialLoadComplete = true;
+        state.hasLoadedPreferences = true;
       });
   },
 });
 
-export const { updatePreference, resetPreferences, resetSearchState } =
-  searchSlice.actions;
+export const {
+  updatePreference,
+  resetPreferences,
+  resetSearchState,
+  setInitialLoadComplete,
+  clearError,
+  manuallySetLoading,
+} = searchSlice.actions;
+
+// Selectors
+export const selectPreferences = (state) => state.search.preferences;
+export const selectSearchResults = (state) => state.search.searchResults;
+export const selectSearchLoading = (state) => state.search.loading;
+export const selectSearchError = (state) => state.search.error;
+export const selectHasLoadedPreferences = (state) =>
+  state.search.hasLoadedPreferences;
+
+export const selectIsBasicSectionComplete = (state) => {
+  const prefs = state.search.preferences;
+  return !!(
+    prefs.preferred_nationality_id ||
+    prefs.preferred_origin_id ||
+    prefs.preferred_country_id ||
+    prefs.preferred_age_min !== DEFAULT_AGE_RANGE.min ||
+    prefs.preferred_age_max !== DEFAULT_AGE_RANGE.max
+  );
+};
+
 export default searchSlice.reducer;
