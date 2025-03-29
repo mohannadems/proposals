@@ -138,7 +138,6 @@ const MatchProfileScreen = () => {
     handleLike();
   };
 
-  // Fix for the handleLocalLikeConfirm function in MatchProfileScreen.js
   const handleLocalLikeConfirm = async () => {
     setShowLikeModal(false);
     setCheckingMatch(true);
@@ -150,9 +149,6 @@ const MatchProfileScreen = () => {
       await matchesService.addLikedUserId(userId);
       const matchResult = await matchesService.checkForMatch(userId);
 
-      console.log("🚀 Match result:", matchResult);
-
-      // Fixed condition: checking the boolean isMatch property correctly
       if (
         matchResult &&
         matchResult.isMatch === true &&
@@ -164,13 +160,12 @@ const MatchProfileScreen = () => {
           pathname: "/(profile)/match-screen",
           params: {
             matchedUserId: userId,
-            isNewMatch: true, // Changed from string to boolean value
+            isNewMatch: true,
           },
         });
         return;
       }
 
-      // If we didn't find a match, update the UI accordingly
       dispatch(setActiveTab("Liked"));
     } catch (error) {
       console.error("Error checking for match:", error);
@@ -184,15 +179,7 @@ const MatchProfileScreen = () => {
       if (debugMode && userId) {
         try {
           if (!hasBeenLiked) {
-            console.log("🔍 DEBUG: Checking for match with user ID:", userId);
             const result = await matchesService.checkForMatch(userId);
-            console.log("🔍 DEBUG: Match result:", result);
-
-            if (result && result.isMatch) {
-              console.log(
-                "✅ DEBUG: Match found! Can navigate to match screen."
-              );
-            }
           }
         } catch (err) {
           console.error("DEBUG error checking match:", err);

@@ -31,6 +31,7 @@ import { useSelector } from "react-redux";
 import { profileService } from "../../services/profile.service";
 import { matchesService } from "../../services/matchesService";
 import { COLORS } from "../../constants/colors";
+import ModernLoadingScreen from "../../components/common/ModernLoader";
 
 const { width } = Dimensions.get("window");
 
@@ -402,7 +403,7 @@ const MatchScreen = () => {
   }, [matchProfile, showFullNumber]);
 
   if (loading) {
-    return <LoadingView />;
+    return <ModernLoadingScreen />;
   }
 
   if (error) {
