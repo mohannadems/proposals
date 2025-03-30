@@ -311,7 +311,12 @@ const ProfileScreen = () => {
           }}
           style={styles.retryButton}
         >
-          <Text style={styles.retryButtonText}>Retry</Text>
+          <Text
+            style={styles.retryButtonText}
+            onPress={() => router.push("/(auth)/login")}
+          >
+            Retry
+          </Text>
         </TouchableOpacity>
       </View>
     );
