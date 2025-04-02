@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useContext } from "react";
 import {
   View,
   ScrollView,
@@ -25,8 +25,10 @@ import { useProfileForm } from "../../components/profile/profile-steps/Profile-s
 import { FORM_STEPS } from "../../components/profile/profile-steps/Profile-steps-filling-data/form_steps";
 import styles from "../../styles/fillProfileData";
 import { COLORS } from "../../constants/colors";
+import { LanguageContext } from "../../contexts/LanguageContext";
 
 const ProfileFormScreen = () => {
+  const { t, isRTL } = useContext(LanguageContext);
   const userId = useSelector((state) => state.profile.data?.id);
   const scrollViewRef = useRef(null);
   const navigation = useNavigation();
@@ -53,16 +55,28 @@ const ProfileFormScreen = () => {
     setErrorModalVisible
   );
 
+  // Translate FORM_STEPS titles and descriptions
+  const getTranslatedStep = (step) => {
+    if (!t) return step;
+
+    return {
+      ...step,
+      title: t(`profile.form_steps.${step.key}.title`) || step.title,
+      description:
+        t(`profile.form_steps.${step.key}.description`) || step.description,
+    };
+  };
+
   const renderCurrentStepContent = () => {
     switch (currentStep) {
       case 1:
-        return <PersonalInfoSection />;
+        return <PersonalInfoSection isRTL={isRTL} t={t} />;
       case 2:
-        return <LifestyleSection />;
+        return <LifestyleSection isRTL={isRTL} t={t} />;
       case 3:
-        return <EducationWorkSection />;
+        return <EducationWorkSection isRTL={isRTL} t={t} />;
       case 4:
-        return <ProfileImageSection />;
+        return <ProfileImageSection isRTL={isRTL} t={t} />;
       default:
         return null;
     }
@@ -70,18 +84,46 @@ const ProfileFormScreen = () => {
 
   const renderCurrentStep = () => {
     const currentStepData = FORM_STEPS[currentStep - 1];
+    const translatedStepData = getTranslatedStep(currentStepData);
+
     return (
       <View style={styles.stepContainer}>
-        <View style={styles.stepHeader}>
+        <View
+          style={[
+            styles.stepHeader,
+            { flexDirection: isRTL ? "row-reverse" : "row" },
+          ]}
+        >
           <Feather
             name={currentStepData.icon}
             size={30}
             color={COLORS.primary}
           />
-          <View style={styles.stepHeaderText}>
-            <Text style={styles.stepTitle}>{currentStepData.title}</Text>
-            <Text style={styles.stepDescription}>
-              {currentStepData.description}
+          <View
+            style={[
+              styles.stepHeaderText,
+              {
+                marginLeft: isRTL ? 0 : 10,
+                marginRight: isRTL ? 10 : 0,
+                alignItems: isRTL ? "flex-end" : "flex-start",
+              },
+            ]}
+          >
+            <Text
+              style={[
+                styles.stepTitle,
+                { textAlign: isRTL ? "right" : "left" },
+              ]}
+            >
+              {translatedStepData.title}
+            </Text>
+            <Text
+              style={[
+                styles.stepDescription,
+                { textAlign: isRTL ? "right" : "left" },
+              ]}
+            >
+              {translatedStepData.description}
             </Text>
           </View>
         </View>
@@ -94,14 +136,18 @@ const ProfileFormScreen = () => {
     return (
       <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>Loading your profile...</Text>
+        <Text style={styles.loadingText}>
+          {t ? t("profile.loading_profile") : "Loading your profile..."}
+        </Text>
       </SafeAreaView>
     );
   }
 
   return (
     <FormProvider {...methods}>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView
+        style={[styles.container, { direction: isRTL ? "rtl" : "ltr" }]}
+      >
         <View style={styles.gradientBackground}>
           <KeyboardAvoidingView
             behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -110,22 +156,50 @@ const ProfileFormScreen = () => {
             <View style={styles.header}>
               <TouchableOpacity
                 onPress={() => navigation.goBack()}
-                style={styles.backButton}
+                style={[
+                  styles.backButton,
+                  {
+                    left: isRTL ? "auto" : 16,
+                    right: isRTL ? 16 : "auto",
+                  },
+                ]}
               >
-                <Feather name="arrow-left" size={24} color={COLORS.text} />
+                <Feather
+                  name={isRTL ? "arrow-right" : "arrow-left"}
+                  size={24}
+                  color={COLORS.text}
+                />
               </TouchableOpacity>
               <View style={styles.headerTextContainer}>
-                <Text style={styles.title}>Complete Your Profile</Text>
-                <Text style={styles.subtitle}>
-                  Create a profile that truly represents you
+                <Text
+                  style={[
+                    styles.title,
+                    { textAlign: isRTL ? "right" : "left" },
+                  ]}
+                >
+                  {t ? t("profile.complete_profile") : "Complete Your Profile"}
+                </Text>
+                <Text
+                  style={[
+                    styles.subtitle,
+                    { textAlign: isRTL ? "right" : "left" },
+                  ]}
+                >
+                  {t
+                    ? t("profile.profile_description")
+                    : "Create a profile that truly represents you"}
                 </Text>
               </View>
             </View>
 
             <ProgressSteps
-              steps={FORM_STEPS}
+              steps={FORM_STEPS.map((step, index) => ({
+                ...getTranslatedStep(step),
+                key: index,
+              }))}
               currentStep={currentStep}
               style={styles.stepIndicator}
+              isRTL={isRTL}
             />
 
             <Animated.View
@@ -153,14 +227,25 @@ const ProfileFormScreen = () => {
               </ScrollView>
             </Animated.View>
 
-            <View style={styles.footer}>
+            <View
+              style={[
+                styles.footer,
+                { flexDirection: isRTL ? "row-reverse" : "row" },
+              ]}
+            >
               {currentStep > 1 && (
                 <TouchableOpacity
                   style={[styles.button, styles.buttonSecondary]}
                   onPress={handlePrevious}
                 >
-                  <Feather name="chevron-left" size={20} color={COLORS.text} />
-                  <Text style={styles.buttonTextSecondary}>Previous</Text>
+                  <Feather
+                    name={isRTL ? "chevron-right" : "chevron-left"}
+                    size={20}
+                    color={COLORS.text}
+                  />
+                  <Text style={styles.buttonTextSecondary}>
+                    {t ? t("common.previous") : "Previous"}
+                  </Text>
                 </TouchableOpacity>
               )}
 
@@ -178,10 +263,16 @@ const ProfileFormScreen = () => {
                 ) : (
                   <>
                     <Text style={styles.buttonTextPrimary}>
-                      {currentStep === FORM_STEPS.length ? "Submit" : "Next"}
+                      {currentStep === FORM_STEPS.length
+                        ? t
+                          ? t("common.submit")
+                          : "Submit"
+                        : t
+                        ? t("common.next")
+                        : "Next"}
                     </Text>
                     <Feather
-                      name="chevron-right"
+                      name={isRTL ? "chevron-left" : "chevron-right"}
                       size={20}
                       color={COLORS.white}
                     />
@@ -194,6 +285,8 @@ const ProfileFormScreen = () => {
               visible={errorModalVisible}
               errors={currentErrors}
               onClose={() => setErrorModalVisible(false)}
+              isRTL={isRTL}
+              t={t}
             />
           </KeyboardAvoidingView>
         </View>

@@ -5,27 +5,99 @@ import { Controller } from "react-hook-form";
 import { COLORS } from "../../../../constants/colors";
 import { Ionicons } from "@expo/vector-icons";
 
-const GenderSelector = ({ control, name, label }) => {
+const GenderSelector = ({
+  control,
+  name,
+  label,
+  isRTL = false,
+  t,
+  required = false,
+}) => {
+  // Define gender options with translation support
   const genderOptions = [
-    { value: "male", label: "Male", icon: "male" },
-    { value: "female", label: "Female", icon: "female" },
+    {
+      value: "male",
+      label: t ? t("profile.gender.male") : "Male",
+      icon: "male",
+    },
+    {
+      value: "female",
+      label: t ? t("profile.gender.female") : "Female",
+      icon: "female",
+    },
   ];
+
+  // Create dynamic styles based on RTL
+  const dynamicStyles = {
+    container: {
+      marginBottom: 16,
+    },
+    label: {
+      fontSize: 14,
+      fontWeight: "500",
+      color: COLORS.text,
+      marginBottom: 8,
+      textAlign: isRTL ? "right" : "left",
+    },
+    optionsContainer: {
+      flexDirection: isRTL ? "row-reverse" : "row",
+      gap: 12,
+    },
+    option: {
+      flex: 1,
+      flexDirection: isRTL ? "row-reverse" : "row",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 16,
+      backgroundColor: COLORS.white,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: COLORS.border,
+      gap: 8,
+    },
+    selectedOption: {
+      backgroundColor: COLORS.primary,
+      borderColor: COLORS.primary,
+    },
+    optionText: {
+      fontSize: 16,
+      color: COLORS.text,
+      fontWeight: "500",
+    },
+    selectedOptionText: {
+      color: COLORS.white,
+    },
+    errorText: {
+      color: COLORS.error,
+      fontSize: 12,
+      marginTop: 4,
+      textAlign: isRTL ? "right" : "left",
+    },
+    required: {
+      color: COLORS.error,
+    },
+  };
 
   return (
     <Controller
       control={control}
       name={name}
       render={({ field: { value, onChange }, fieldState: { error } }) => (
-        <View style={styles.container}>
-          {label && <Text style={styles.label}>{label}</Text>}
+        <View style={dynamicStyles.container}>
+          {label && (
+            <Text style={dynamicStyles.label}>
+              {label}
+              {required && <Text style={dynamicStyles.required}> *</Text>}
+            </Text>
+          )}
 
-          <View style={styles.optionsContainer}>
+          <View style={dynamicStyles.optionsContainer}>
             {genderOptions.map((option) => (
               <TouchableOpacity
                 key={option.value}
                 style={[
-                  styles.option,
-                  value === option.value && styles.selectedOption,
+                  dynamicStyles.option,
+                  value === option.value && dynamicStyles.selectedOption,
                 ]}
                 onPress={() => onChange(option.value)}
               >
@@ -36,8 +108,8 @@ const GenderSelector = ({ control, name, label }) => {
                 />
                 <Text
                   style={[
-                    styles.optionText,
-                    value === option.value && styles.selectedOptionText,
+                    dynamicStyles.optionText,
+                    value === option.value && dynamicStyles.selectedOptionText,
                   ]}
                 >
                   {option.label}
@@ -46,56 +118,15 @@ const GenderSelector = ({ control, name, label }) => {
             ))}
           </View>
 
-          {error && <Text style={styles.errorText}>{error.message}</Text>}
+          {error && (
+            <Text style={dynamicStyles.errorText}>
+              {t ? t("profile.gender.error") : error.message}
+            </Text>
+          )}
         </View>
       )}
     />
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: COLORS.text,
-    marginBottom: 8,
-  },
-  optionsContainer: {
-    flexDirection: "row",
-    gap: 12,
-  },
-  option: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    gap: 8,
-  },
-  selectedOption: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  optionText: {
-    fontSize: 16,
-    color: COLORS.text,
-    fontWeight: "500",
-  },
-  selectedOptionText: {
-    color: COLORS.white,
-  },
-  errorText: {
-    color: COLORS.error,
-    fontSize: 12,
-    marginTop: 4,
-  },
-});
 
 export default GenderSelector;

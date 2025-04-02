@@ -1,6 +1,5 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useContext } from "react";
 import {
-  StyleSheet,
   View,
   Text,
   ScrollView,
@@ -12,26 +11,31 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { useDispatch } from "react-redux";
 import { fetchProfile } from "../../store/slices/profile.slice";
-import styles from "../../styles/home";
-import i18n from "../i18n";
-import { I18nManager } from "react-native";
+import createHomeStyles from "../../styles/home";
 import { router } from "expo-router";
-import COLORS from "../../constants/colors";
-
+import { COLORS } from "../../constants/colors";
+import { LanguageContext } from "../../contexts/LanguageContext";
+import RTLWrapper from "../../components/common/RTLWrapper";
+import styles from "../../styles/home";
 const LandingPage = () => {
   const dispatch = useDispatch();
+  const { t, isRTL } = useContext(LanguageContext);
+  const styles = createHomeStyles(isRTL);
+
   const scrollY = new Animated.Value(0);
   const fadeAnim = new Animated.Value(0);
   const featureAnims = features.map(() => new Animated.Value(0));
   const testimonialAnims = testimonials.map(() => new Animated.Value(0));
-  const [, updateState] = useState();
-  const forceUpdate = useCallback(() => updateState({}), []);
-  const [currentLanguage, setCurrentLanguage] = useState(i18n.locale);
+
   useEffect(() => {
     dispatch(fetchProfile());
   }, [dispatch]);
 
   useEffect(() => {
+    fadeAnim.setValue(0);
+    featureAnims.forEach((anim) => anim.setValue(0));
+    testimonialAnims.forEach((anim) => anim.setValue(0));
+
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 1000,
@@ -59,7 +63,7 @@ const LandingPage = () => {
         })
       )
     ).start();
-  }, [currentLanguage]);
+  }, [isRTL]);
 
   const headerHeight = scrollY.interpolate({
     inputRange: [0, 200],
@@ -67,14 +71,6 @@ const LandingPage = () => {
     extrapolate: "clamp",
   });
 
-  const changeLanguage = (lang) => {
-    i18n.locale = lang;
-    const isRTL = lang === "ar";
-    if (I18nManager.isRTL !== isRTL) {
-      I18nManager.forceRTL(isRTL);
-    }
-    setCurrentLanguage(lang);
-  };
   return (
     <View style={styles.container}>
       <Animated.ScrollView
@@ -87,17 +83,15 @@ const LandingPage = () => {
       >
         <Animated.View style={[styles.heroContainer, { height: headerHeight }]}>
           <LinearGradient
-            colors={COLORS.primaryGradient}
+            colors={COLORS.primaryGradient || ["#6366F1", "#8B5CF6"]}
             style={styles.gradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
             <Animated.View style={[styles.heroContent, { opacity: fadeAnim }]}>
-              <Text style={styles.heroTitle}>
-                {i18n.t("Find Your Perfect Match")}
-              </Text>
+              <Text style={styles.heroTitle}>{t("home.find_match")}</Text>
               <Text style={styles.heroSubtitle}>
-                {i18n.t("Where Meaningful Connections Begin")}
+                {t("home.connections_begin")}
               </Text>
               <TouchableOpacity
                 style={styles.heroButton}
@@ -107,7 +101,7 @@ const LandingPage = () => {
               >
                 <View style={styles.buttonBlur}>
                   <Text style={styles.heroButtonText}>
-                    {i18n.t("Get Started")}
+                    {t("home.get_started")}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -119,23 +113,23 @@ const LandingPage = () => {
           <View style={styles.statsCard}>
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>2M+</Text>
-              <Text style={styles.statLabel}>{i18n.t("Active Users")}</Text>
+              <Text style={styles.statLabel}>{t("home.active_users")}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>150K</Text>
-              <Text style={styles.statLabel}>{i18n.t("Daily Matches")}</Text>
+              <Text style={styles.statLabel}>{t("home.daily_matches")}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={styles.statNumber}>95%</Text>
-              <Text style={styles.statLabel}>{i18n.t("Success Rate")}</Text>
+              <Text style={styles.statLabel}>{t("home.success_rate")}</Text>
             </View>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{i18n.t("Premium Features")}</Text>
+          <Text style={styles.sectionTitle}>{t("home.premium_features")}</Text>
           <View style={styles.featuresGrid}>
             {features.map((feature, index) => (
               <Animated.View
@@ -163,9 +157,11 @@ const LandingPage = () => {
                     <View style={styles.featureIcon}>
                       <feature.icon />
                     </View>
-                    <Text style={styles.featureTitle}>{feature.title}</Text>
+                    <Text style={styles.featureTitle}>
+                      {t(`home.features.${feature.key}.title`)}
+                    </Text>
                     <Text style={styles.featureDescription}>
-                      {feature.description}
+                      {t(`home.features.${feature.key}.description`)}
                     </Text>
                   </LinearGradient>
                 </View>
@@ -175,7 +171,7 @@ const LandingPage = () => {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{i18n.t("Success Stories")}</Text>
+          <Text style={styles.sectionTitle}>{t("home.success_stories")}</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -189,6 +185,7 @@ const LandingPage = () => {
                   {
                     opacity: testimonialAnims[index],
                     transform: [
+                      { scaleX: isRTL ? -1 : 1 },
                       {
                         translateX: testimonialAnims[index].interpolate({
                           inputRange: [0, 1],
@@ -206,30 +203,19 @@ const LandingPage = () => {
                       style={styles.testimonialImageStyle}
                     />
                   </View>
-                  <Text style={styles.testimonialText}>{testimonial.text}</Text>
-                  <Text style={styles.testimonialName}>{testimonial.name}</Text>
+                  <Text style={styles.testimonialText}>
+                    {t(`home.testimonials.${testimonial.key}.text`)}
+                  </Text>
+                  <Text style={styles.testimonialName}>
+                    {t(`home.testimonials.${testimonial.key}.name`)}
+                  </Text>
                   <Text style={styles.testimonialLocation}>
-                    {testimonial.location}
+                    {t(`home.testimonials.${testimonial.key}.location`)}
                   </Text>
                 </View>
               </Animated.View>
             ))}
           </ScrollView>
-        </View>
-
-        <View style={styles.languageButtons}>
-          <TouchableOpacity
-            onPress={() => changeLanguage("en")}
-            style={styles.languageButton}
-          >
-            <Text>English</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => changeLanguage("ar")}
-            style={styles.languageButton}
-          >
-            <Text>العربية</Text>
-          </TouchableOpacity>
         </View>
       </Animated.ScrollView>
     </View>
@@ -244,49 +230,39 @@ const FeatureIcon = ({ name }) => (
 
 const features = [
   {
+    key: "values_based",
     icon: () => <FeatureIcon name="Values" />,
-    title: "Values-Based Matching",
-    description: "Find partners who share your Islamic values",
     height: 200,
   },
   {
+    key: "privacy",
     icon: () => <FeatureIcon name="Privacy" />,
-    title: "Privacy Protection",
-    description: "Maintain modesty with privacy features",
     height: 200,
   },
   {
+    key: "guardian",
     icon: () => <FeatureIcon name="Guardian" />,
-    title: "Guardian Involvement",
-    description: "Include your wali in the process",
     height: 180,
   },
   {
+    key: "compatibility",
     icon: () => <FeatureIcon name="Compatibility" />,
-    title: "Compatibility Quiz",
-    description: "Questions on deen, family and lifestyle",
     height: 180,
   },
 ];
 
 const testimonials = [
   {
+    key: "aisha",
     image: require("../../assets/images/11.jpg"),
-    text: "This app helped me find someone who truly shares my Islamic values. The guardian feature was especially helpful for my family.",
-    name: "Aisha Rahman",
-    location: "London, UK",
   },
   {
+    key: "muhammad",
     image: require("../../assets/images/222.jpg"),
-    text: "I appreciated how the app let me filter by prayer habits and other important religious practices. I found my husband here!",
-    name: "Muhammad Qasim",
-    location: "Dubai, UAE",
   },
   {
+    key: "fatima",
     image: require("../../assets/images/5555.jpg"),
-    text: "The values-based matching helped me connect with sisters who share my commitment to the deen. Alhamdulillah!",
-    name: "Fatima Hassan",
-    location: "Toronto, Canada",
   },
 ];
 

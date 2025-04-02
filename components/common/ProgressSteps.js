@@ -17,7 +17,7 @@ const ProgressSteps = ({ steps, currentStep, style }) => {
       <View style={styles.stepsContainer}>
         {steps.map((step, index) => (
           <View
-            key={step.id}
+            key={step.id || index}
             style={[
               styles.step,
               currentStep > index && styles.stepCompleted,

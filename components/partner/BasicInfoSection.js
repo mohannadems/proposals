@@ -1,12 +1,11 @@
 import React, { memo, useEffect } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { useSelector } from "react-redux";
-import styles from "../../styles/SearchScreen";
+import createSearchStyles from "../../styles/SearchScreen";
 import ModernDropdown from "../search/ModernDropdown";
 import RangeSlider from "../search/RangeSlider";
 import { selectCities } from "../../store/slices/profileAttributesSlice";
 
-// Age range presets for easier selection
 const AGE_RANGE_PRESETS = [
   { label: "18-25", min: 18, max: 25 },
   { label: "26-35", min: 26, max: 35 },
@@ -21,11 +20,13 @@ const BasicInfoSection = ({
   geographic,
   personalAttributes,
   onComplete,
+  isRTL = false,
+  t,
 }) => {
-  // Get cities directly from the store
+  const styles = createSearchStyles(isRTL);
+
   const cities = useSelector(selectCities);
 
-  // Log cities for debugging
   useEffect(() => {
     console.log(
       `Cities available for country ${preferences.preferred_country_id}:`,
@@ -33,75 +34,107 @@ const BasicInfoSection = ({
     );
   }, [cities, preferences.preferred_country_id]);
 
-  // Handle age range preset selection
   const handleAgeRangePreset = (min, max) => {
     onChange("preferred_age_min", min);
     onChange("preferred_age_max", max);
+  };
+
+  const getPresetLabel = (preset) => {
+    if (!t) return preset.label;
+
+    if (preset.label === "All Ages") {
+      return t("search.age_ranges.all_ages");
+    }
+    return preset.label;
   };
 
   return (
     <View style={styles.sectionCard}>
       <View style={styles.sectionDescription}>
         <Text style={styles.descriptionText}>
-          Tell us about the basic attributes you're looking for in a partner
+          {t
+            ? t("search.basic_info.description")
+            : "Tell us about the basic attributes you're looking for in a partner"}
         </Text>
       </View>
 
       <ModernDropdown
-        label="Nationality"
+        label={t ? t("search.basic_info.nationality") : "Nationality"}
         value={preferences.preferred_nationality_id}
         items={geographic.nationalities.map((item) => ({
           label: item.name,
           value: item.id,
         }))}
         onValueChange={(value) => onChange("preferred_nationality_id", value)}
-        placeholder="Select nationality (optional)"
+        placeholder={
+          t
+            ? t("search.basic_info.select_nationality")
+            : "Select nationality (optional)"
+        }
+        isRTL={isRTL}
       />
 
       <ModernDropdown
-        label="Origin"
+        label={t ? t("search.basic_info.origin") : "Origin"}
         value={preferences.preferred_origin_id}
         items={personalAttributes.origins.map((item) => ({
           label: item.name,
           value: item.id,
         }))}
         onValueChange={(value) => onChange("preferred_origin_id", value)}
-        placeholder="Select origin (optional)"
+        placeholder={
+          t ? t("search.basic_info.select_origin") : "Select origin (optional)"
+        }
+        isRTL={isRTL}
       />
 
       <ModernDropdown
-        label="Country"
+        label={t ? t("search.basic_info.country") : "Country"}
         value={preferences.preferred_country_id}
         items={geographic.countries.map((item) => ({
           label: item.name,
           value: item.id,
         }))}
         onValueChange={(value) => onChange("preferred_country_id", value)}
-        placeholder="Select country (optional)"
+        placeholder={
+          t
+            ? t("search.basic_info.select_country")
+            : "Select country (optional)"
+        }
+        isRTL={isRTL}
       />
 
       {preferences.preferred_country_id && cities && cities.length > 0 && (
         <ModernDropdown
-          label="City"
+          label={t ? t("search.basic_info.city") : "City"}
           value={preferences.preferred_city_id}
           items={cities.map((item) => ({
             label: item.name,
             value: item.id,
           }))}
           onValueChange={(value) => onChange("preferred_city_id", value)}
-          placeholder="Select city (optional)"
+          placeholder={
+            t ? t("search.basic_info.select_city") : "Select city (optional)"
+          }
+          isRTL={isRTL}
         />
       )}
 
       <View style={styles.ageRangeContainer}>
-        <Text style={styles.inputLabel}>Age Range</Text>
+        <Text style={styles.inputLabel}>
+          {t ? t("search.basic_info.age_range") : "Age Range"}
+        </Text>
         <Text style={styles.ageRangeDisplay}>
           {preferences.preferred_age_min} - {preferences.preferred_age_max}{" "}
-          years
+          {t ? t("search.basic_info.years") : "years"}
         </Text>
 
         <View style={styles.agePresets}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ flexDirection: isRTL ? "row-reverse" : "row" }}
+          >
             {AGE_RANGE_PRESETS.map((preset, index) => (
               <TouchableOpacity
                 key={index}
@@ -121,7 +154,7 @@ const BasicInfoSection = ({
                       styles.activeAgePresetText,
                   ]}
                 >
-                  {preset.label}
+                  {getPresetLabel(preset)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -137,6 +170,7 @@ const BasicInfoSection = ({
             onChange("preferred_age_min", low);
             onChange("preferred_age_max", high);
           }}
+          isRTL={isRTL}
         />
       </View>
 
@@ -145,7 +179,9 @@ const BasicInfoSection = ({
         onPress={onComplete}
       >
         <Text style={styles.completeSectionButtonText}>
-          Save & Complete This Section
+          {t
+            ? t("search.basic_info.save_complete")
+            : "Save & Complete This Section"}
         </Text>
       </TouchableOpacity>
     </View>

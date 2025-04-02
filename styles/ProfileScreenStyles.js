@@ -1,6 +1,7 @@
 import { StyleSheet } from "react-native";
 import { COLORS } from "../constants/colors";
 import { Platform } from "react-native";
+
 export default StyleSheet.create({
   container: {
     flex: 1,
@@ -32,6 +33,22 @@ export default StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.2)",
     padding: 8,
     borderRadius: 20,
+  },
+  languageButton: {
+    position: "absolute",
+    top: 230,
+    right: 20,
+    zIndex: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    padding: 8,
+    borderRadius: 20,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  languageButtonText: {
+    color: COLORS.white,
+    marginLeft: 4,
+    fontSize: 14,
   },
   profileHeader: {
     alignItems: "center",
@@ -134,7 +151,7 @@ export default StyleSheet.create({
     padding: 10,
     borderRadius: 8,
   },
-  profileItemContent: {
+  profileprofileItemContent: {
     marginLeft: 15,
     flex: 1,
     borderLeftWidth: 1,
@@ -178,8 +195,19 @@ export default StyleSheet.create({
     marginTop: 15,
     lineHeight: 24,
   },
+  retryButton: {
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: COLORS.primary,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: COLORS.white,
+    fontWeight: "bold",
+  },
   statusContainer: {
-    flexDirection: "row",
+    flexDirection: "row", // Will be dynamically adjusted based on RTL
     alignItems: "center",
   },
   greenDot: {

@@ -1,0 +1,244 @@
+{
+  "common": {
+    "welcome": "Welcome",
+    "home": "Home",
+    "settings": "Settings",
+    "profile": "Profile",
+    "logout": "Logout",
+    "changeLanguage": "Change Language",
+    "cancel": "Cancel",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "retry": "Retry",
+    "pull_to_refresh": "Pull to refresh",
+    "error": "Error",
+    "success": "Success",
+    "back": "Go back",
+    "done": "Done",
+    "previous": "Previous",
+    "next": "Next",
+    "submit": "Submit",
+    "select_date": "Select Date",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "date_error": "Please select a valid date"
+  },
+  "auth": {
+    "login": "Login",
+    "signup": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot Password?"
+  },
+  "profile": {
+    "update_photo": "Update profile photo",
+    "update_photo_hint": "Double tap to choose a new profile photo",
+    "logout_title": "Logout",
+    "logout_message": "Are you sure you want to log out?",
+    "logout": "Logout",
+    "logout_failed": "Logout Failed",
+    "logout_error": "Unable to logout. Please try again.",
+    "photo_upload_error": "Failed to update profile photo. Please try again.",
+    "error_occurred": "An error occurred:",
+    "no_data": "No profile data available.",
+    "completion": "Profile Completion:",
+    "complete": "Profile Complete!",
+    "not_provided": "Not provided",
+    "complete_profile": "Complete Your Profile",
+    "profile_description": "Create a profile that truly represents you",
+    "loading_profile": "Loading your profile...",
+    "form_steps": {
+      "personal": {
+        "title": "Personal Information",
+        "description": "Tell us about yourself"
+      },
+      "lifestyle": {
+        "title": "Lifestyle",
+        "description": "Your habits and preferences"
+      },
+      "education": {
+        "title": "Education & Work",
+        "description": "Professional information"
+      },
+      "photos": {
+        "title": "Profile Photos",
+        "description": "Upload your best pictures"
+      }
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "pending": "Pending"
+    },
+
+    "sections": {
+      "basic_information": "Basic Information",
+      "demographics": "Demographics",
+      "professional_information": "Professional Information",
+      "personal_details": "Personal Details",
+      "appearance": "Appearance",
+      "lifestyle": "Lifestyle",
+      "contact": "Contact"
+    },
+    "first_name": "First Name",
+    "last_name": "Last Name",
+    "email": "Email",
+    "phone_number": "Phone Number",
+    "gender": "Gender",
+    "nationality": "Nationality",
+    "origin": "Origin",
+    "religion": "Religion",
+    "country_of_residence": "Country",
+    "city": "City",
+    "date_of_birth": "Date of Birth",
+    "zodiac_sign": "Zodiac Sign",
+    "educational_level": "Education",
+    "specialization": "Specialization",
+    "employment_status": "Employment Status",
+    "job_title": "Job Title",
+    "position_level": "Position Level",
+    "financial_status": "Financial Status",
+    "housing_status": "Housing Status",
+    "car_ownership": "Car Ownership",
+    "height": "Height",
+    "weight": "Weight",
+    "marital_status": "Marital Status",
+    "children": "Children",
+    "skin_color": "Skin Color",
+    "hair_color": "Hair Color",
+    "hijab_status": "Hijab Status",
+    "smoking_status": "Smoking Status",
+    "drinking_status": "Drinking Status",
+    "sports_activity": "Sports Activity",
+    "social_media_presence": "Social Media",
+    "hobbies": "Hobbies",
+    "pets": "Pets",
+    "guardian_contact": "Guardian Contact",
+    "personal": {
+      "title": "Tell us about yourself",
+      "subtitle": "Let's start with your basic information",
+      "bio_en": "About You (English)",
+      "bio_en_placeholder": "Share a brief introduction about yourself...",
+      "bio_ar": "About You (Arabic)",
+      "bio_ar_placeholder": "Share a brief introduction about yourself...",
+      "gender": "Gender",
+      "hijab_preference": "Hijab Preference",
+      "wears_hijab": "Wears Hijab",
+      "no_hijab": "No Hijab",
+      "hijab_error": "Please select your hijab preference",
+      "date_of_birth": "Date of Birth",
+      "guardian_contact": "Guardian Contact",
+      "guardian_contact_placeholder": "Enter phone number"
+    },
+    "gender": {
+      "male": "Male",
+      "female": "Female",
+      "error": "Please select your gender"
+    }
+  },
+  "tabs": {
+    "home": "Home",
+    "matches": "Matches",
+    "Partner": "Partner",
+    "profile": "Profile"
+  },
+  "home": {
+    "find_match": "Find Your Perfect Match",
+    "connections_begin": "Where Meaningful Connections Begin",
+    "get_started": "Get Started",
+    "active_users": "Active Users",
+    "daily_matches": "Daily Matches",
+    "success_rate": "Success Rate",
+    "premium_features": "Premium Features",
+    "success_stories": "Success Stories",
+    "features": {
+      "values_based": {
+        "title": "Values-Based Matching",
+        "description": "Find partners who share your Islamic values"
+      },
+      "privacy": {
+        "title": "Privacy Protection",
+        "description": "Maintain modesty with privacy features"
+      },
+      "guardian": {
+        "title": "Guardian Involvement",
+        "description": "Include your wali in the process"
+      },
+      "compatibility": {
+        "title": "Compatibility Quiz",
+        "description": "Questions on deen, family and lifestyle"
+      }
+    },
+    "testimonials": {
+      "aisha": {
+        "text": "This app helped me find someone who truly shares my Islamic values. The guardian feature was especially helpful for my family.",
+        "name": "Aisha Rahman",
+        "location": "London, UK"
+      },
+      "muhammad": {
+        "text": "I appreciated how the app let me filter by prayer habits and other important religious practices. I found my husband here!",
+        "name": "Muhammad Qasim",
+        "location": "Dubai, UAE"
+      },
+      "fatima": {
+        "text": "The values-based matching helped me connect with sisters who share my commitment to the deen. Alhamdulillah!",
+        "name": "Fatima Hassan",
+        "location": "Toronto, Canada"
+      }
+    }
+  },
+  "search": {
+    "loading_preferences": "Loading preferences...",
+    "errors": {
+      "preferences_load": "Failed to load preferences. Please try again.",
+      "data_load": "Failed to load search data. Please try again.",
+      "submit_preferences": "Failed to submit search preferences. Please try again."
+    },
+    "reset_title": "Reset Preferences",
+    "reset_message": "Are you sure you want to reset all search preferences to default values?",
+    "reset_button": "Reset",
+    "reset_success": "Preferences have been reset to default values.",
+    "sections": {
+      "basic": {
+        "title": "Basic Information",
+        "subtitle": "Nationality, location, age range"
+      },
+      "education": {
+        "title": "Education & Career",
+        "subtitle": "Education, job, financial status"
+      },
+      "personal": {
+        "title": "Personal Attributes",
+        "subtitle": "Height, weight, marital status"
+      },
+      "lifestyle": {
+        "title": "Lifestyle",
+        "subtitle": "Habits, pets, religiosity"
+      }
+    },
+    "preferences_saved": {
+      "title": "Your filters are saved!",
+      "message": "These preferences will be automatically applied each time you return to the search screen."
+    },
+    "find_match": "Find Your Match",
+    "complete_sections": "Complete the sections below to find your perfect partner",
+    "basic_info": {
+      "description": "Tell us about the basic attributes you're looking for in a partner",
+      "nationality": "Nationality",
+      "select_nationality": "Select nationality (optional)",
+      "origin": "Origin",
+      "select_origin": "Select origin (optional)",
+      "country": "Country",
+      "select_country": "Select country (optional)",
+      "city": "City",
+      "select_city": "Select city (optional)",
+      "age_range": "Age Range",
+      "years": "years",
+      "save_complete": "Save & Complete This Section"
+    },
+    "age_ranges": {
+      "all_ages": "All Ages"
+    }
+  }
+}

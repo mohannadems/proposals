@@ -1,0 +1,15 @@
+{
+  "build": {
+    "android": {
+      "release": {
+        "workflow": "managed",
+        "keystore": {
+          "keystorePath": "./my-release-key.jks",
+          "keystoreAlias": "my-key-alias",
+          "keystorePassword": "112020Sm",
+          "keyPassword": "112020Sm"
+        }
+      }
+    }
+  }
+}

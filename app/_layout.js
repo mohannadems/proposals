@@ -1,3 +1,4 @@
+// app/_layout.js
 import { useEffect } from "react";
 import { Provider } from "react-redux";
 import { store } from "../store/store";
@@ -7,6 +8,7 @@ import { useFonts } from "expo-font";
 import { ActivityIndicator, View } from "react-native";
 import { globalStyles } from "../styles/GlobalStyles";
 import * as SplashScreen from "expo-splash-screen";
+import { LanguageProvider } from "../contexts/LanguageContext";
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -34,49 +36,51 @@ export default function RootLayout() {
   }
 
   return (
-    <Provider store={store}>
-      <SafeAreaProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen
-            name="index"
-            options={{
-              headerShown: false,
-            }}
-          />
-          <Stack.Screen
-            name="welcome"
-            options={{
-              headerShown: false,
-            }}
-          />
-          <Stack.Screen
-            name="(auth)"
-            options={{
-              headerShown: false,
-              gestureEnabled: false,
-            }}
-          />
-          <Stack.Screen
-            name="(tabs)"
-            options={{
-              headerShown: false,
-              gestureEnabled: false,
-            }}
-          />
-          <Stack.Screen
-            name="(profile)"
-            options={{
-              gestureEnabled: true,
-            }}
-          />
-          <Stack.Screen
-            name="(subscription)"
-            options={{
-              gestureEnabled: true,
-            }}
-          />
-        </Stack>
-      </SafeAreaProvider>
-    </Provider>
+    <LanguageProvider>
+      <Provider store={store}>
+        <SafeAreaProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen
+              name="index"
+              options={{
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
+              name="welcome"
+              options={{
+                headerShown: false,
+              }}
+            />
+            <Stack.Screen
+              name="(auth)"
+              options={{
+                headerShown: false,
+                gestureEnabled: false,
+              }}
+            />
+            <Stack.Screen
+              name="(tabs)"
+              options={{
+                headerShown: false,
+                gestureEnabled: false,
+              }}
+            />
+            <Stack.Screen
+              name="(profile)"
+              options={{
+                gestureEnabled: true,
+              }}
+            />
+            <Stack.Screen
+              name="(subscription)"
+              options={{
+                gestureEnabled: true,
+              }}
+            />
+          </Stack>
+        </SafeAreaProvider>
+      </Provider>
+    </LanguageProvider>
   );
 }

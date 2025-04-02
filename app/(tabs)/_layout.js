@@ -1,15 +1,27 @@
-import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import React, { useContext } from "react";
+import { View, Text, StyleSheet, I18nManager } from "react-native";
 import { Tabs } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { COLORS } from "../../constants/colors";
 import * as Haptics from "expo-haptics";
+import { LanguageContext } from "../../contexts/LanguageContext";
 
 export default function TabsLayout() {
+  const { isRTL, t } = useContext(LanguageContext);
+
   const handleTabPress = (focused) => {
     if (focused) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
+  };
+
+  // Get tab names based on current language
+  const getTabName = (name) => {
+    if (t) {
+      return t(`tabs.${name}`);
+    }
+    // Fallback if translation isn't available
+    return name.charAt(0).toUpperCase() + name.slice(1);
   };
 
   return (
@@ -46,15 +58,18 @@ export default function TabsLayout() {
               <Text
                 style={[
                   styles.tabBarLabel,
-                  { color: focused ? COLORS.white : COLORS.text },
+                  {
+                    color: focused ? COLORS.white : COLORS.text,
+                    textAlign: "center",
+                  },
                 ]}
               >
-                {route.name.charAt(0).toUpperCase() + route.name.slice(1)}
+                {getTabName(route.name)}
               </Text>
             </View>
           );
         },
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: [styles.tabBar, { direction: isRTL ? "rtl" : "ltr" }],
         tabBarItemStyle: styles.tabBarItem,
         tabBarLabel: () => null,
       })}
@@ -62,28 +77,28 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: "Home",
+          title: getTabName("home"),
           headerShown: false,
         }}
       />
       <Tabs.Screen
         name="matches"
         options={{
-          title: "Matches",
+          title: getTabName("matches"),
           headerShown: false,
         }}
       />
       <Tabs.Screen
         name="Partner"
         options={{
-          title: "Partner",
+          title: getTabName("partner"),
           headerShown: false,
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profile",
+          title: getTabName("profile"),
           headerShown: false,
         }}
       />
@@ -97,6 +112,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: COLORS.border,
     height: 80,
+    flexDirection: I18nManager.isRTL ? "row-reverse" : "row",
   },
   tabBarItem: {
     paddingVertical: 15,

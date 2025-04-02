@@ -1,0 +1,243 @@
+{
+  "common": {
+    "welcome": "مرحبا",
+    "home": "الرئيسية",
+    "settings": "الإعدادات",
+    "profile": "الملف الشخصي",
+    "logout": "تسجيل الخروج",
+    "changeLanguage": "تغيير اللغة",
+    "cancel": "إلغاء",
+    "save": "حفظ",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "retry": "إعادة المحاولة",
+    "pull_to_refresh": "اسحب للتحديث",
+    "error": "خطأ",
+    "success": "نجاح",
+    "back": "رجوع",
+    "done": "تم",
+    "previous": "السابق",
+    "next": "التالي",
+    "submit": "إرسال",
+    "select_date": "اختر التاريخ",
+    "cancel": "إلغاء",
+    "confirm": "تأكيد",
+    "date_error": "الرجاء اختيار تاريخ صالح"
+  },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "signup": "التسجيل",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "forgotPassword": "نسيت كلمة المرور؟"
+  },
+  "profile": {
+    "update_photo": "تحديث صورة الملف الشخصي",
+    "update_photo_hint": "انقر مرتين لاختيار صورة جديدة",
+    "logout_title": "تسجيل الخروج",
+    "logout_message": "هل أنت متأكد أنك تريد تسجيل الخروج؟",
+    "logout": "تسجيل الخروج",
+    "logout_failed": "فشل تسجيل الخروج",
+    "logout_error": "غير قادر على تسجيل الخروج. يرجى المحاولة مرة أخرى.",
+    "photo_upload_error": "فشل في تحديث صورة الملف الشخصي. يرجى المحاولة مرة أخرى.",
+    "error_occurred": "حدث خطأ:",
+    "no_data": "لا توجد بيانات متاحة للملف الشخصي.",
+    "completion": "اكتمال الملف الشخصي:",
+    "complete": "تم اكتمال الملف الشخصي!",
+    "not_provided": "غير متوفر",
+    "status": {
+      "active": "نشط",
+      "inactive": "غير نشط",
+      "pending": "قيد الانتظار"
+    },
+    "sections": {
+      "basic_information": "المعلومات الأساسية",
+      "demographics": "البيانات الديموغرافية",
+      "professional_information": "المعلومات المهنية",
+      "personal_details": "التفاصيل الشخصية",
+      "appearance": "المظهر",
+      "lifestyle": "نمط الحياة",
+      "contact": "معلومات الاتصال"
+    },
+    "first_name": "الاسم الأول",
+    "last_name": "اسم العائلة",
+    "email": "البريد الإلكتروني",
+    "phone_number": "رقم الهاتف",
+    "gender": "الجنس",
+    "nationality": "الجنسية",
+    "origin": "الأصل",
+    "religion": "الديانة",
+    "country_of_residence": "البلد",
+    "city": "المدينة",
+    "date_of_birth": "تاريخ الميلاد",
+    "zodiac_sign": "برج الأبراج",
+    "educational_level": "التعليم",
+    "specialization": "التخصص",
+    "employment_status": "حالة التوظيف",
+    "job_title": "المسمى الوظيفي",
+    "position_level": "مستوى المنصب",
+    "financial_status": "الوضع المالي",
+    "housing_status": "وضع السكن",
+    "car_ownership": "ملكية السيارة",
+    "height": "الطول",
+    "weight": "الوزن",
+    "marital_status": "الحالة الاجتماعية",
+    "children": "الأطفال",
+    "skin_color": "لون البشرة",
+    "hair_color": "لون الشعر",
+    "hijab_status": "حالة الحجاب",
+    "smoking_status": "حالة التدخين",
+    "drinking_status": "حالة شرب الكحول",
+    "sports_activity": "النشاط الرياضي",
+    "social_media_presence": "وسائل التواصل الاجتماعي",
+    "hobbies": "الهوايات",
+    "pets": "الحيوانات الأليفة",
+    "guardian_contact": "معلومات الاتصال بالولي",
+    "complete_profile": "أكمل ملفك الشخصي",
+    "profile_description": "أنشئ ملفًا يمثلك بحق",
+    "loading_profile": "جاري تحميل ملفك الشخصي...",
+    "form_steps": {
+      "personal": {
+        "title": "المعلومات الشخصية",
+        "description": "أخبرنا عن نفسك"
+      },
+      "lifestyle": {
+        "title": "نمط الحياة",
+        "description": "عاداتك وتفضيلاتك"
+      },
+      "education": {
+        "title": "التعليم والعمل",
+        "description": "المعلومات المهنية"
+      },
+      "photos": {
+        "title": "صور الملف الشخصي",
+        "description": "قم بتحميل أفضل صورك"
+      }
+    },
+    "personal": {
+      "title": "أخبرنا عن نفسك",
+      "subtitle": "لنبدأ بمعلوماتك الأساسية",
+      "bio_en": "عنك (بالإنجليزية)",
+      "bio_en_placeholder": "شارك نبذة مختصرة عن نفسك...",
+      "bio_ar": "عنك (بالعربية)",
+      "bio_ar_placeholder": "شارك نبذة مختصرة عن نفسك...",
+      "gender": "الجنس",
+      "hijab_preference": "تفضيل الحجاب",
+      "wears_hijab": "ترتدي الحجاب",
+      "no_hijab": "بدون حجاب",
+      "hijab_error": "الرجاء اختيار تفضيل الحجاب",
+      "date_of_birth": "تاريخ الميلاد",
+      "guardian_contact": "معلومات الاتصال بالولي",
+      "guardian_contact_placeholder": "أدخل رقم الهاتف"
+    },
+    "gender": {
+      "male": "ذكر",
+      "female": "أنثى",
+      "error": "الرجاء اختيار الجنس"
+    }
+  },
+  "tabs": {
+    "home": "الرئيسية",
+    "matches": "المطابقات",
+    "Partner": "شريك",
+    "profile": "الملف الشخصي"
+  },
+  "home": {
+    "find_match": "ابحث عن شريكك المثالي",
+    "connections_begin": "حيث تبدأ العلاقات الهادفة",
+    "get_started": "ابدأ الآن",
+    "active_users": "مستخدم نشط",
+    "daily_matches": "تطابق يومي",
+    "success_rate": "معدل النجاح",
+    "premium_features": "المميزات المتقدمة",
+    "success_stories": "قصص النجاح",
+    "features": {
+      "values_based": {
+        "title": "تطابق مبني على القيم",
+        "description": "ابحث عن شركاء يشاركونك قيمك الإسلامية"
+      },
+      "privacy": {
+        "title": "حماية الخصوصية",
+        "description": "حافظ على الحياء مع ميزات الخصوصية"
+      },
+      "guardian": {
+        "title": "مشاركة الولي",
+        "description": "أشرك ولي أمرك في العملية"
+      },
+      "compatibility": {
+        "title": "اختبار التوافق",
+        "description": "أسئلة عن الدين والعائلة ونمط الحياة"
+      }
+    },
+    "testimonials": {
+      "aisha": {
+        "text": "ساعدني هذا التطبيق في العثور على شخص يشاركني حقًا قيمي الإسلامية. كانت ميزة الولي مفيدة بشكل خاص لعائلتي.",
+        "name": "عائشة رحمن",
+        "location": "لندن، المملكة المتحدة"
+      },
+      "muhammad": {
+        "text": "أقدر كيف سمح لي التطبيق بالتصفية حسب عادات الصلاة وممارسات دينية مهمة أخرى. لقد وجدت زوجي هنا!",
+        "name": "محمد قاسم",
+        "location": "دبي، الإمارات العربية المتحدة"
+      },
+      "fatima": {
+        "text": "ساعدني التطابق القائم على القيم في التواصل مع الأخوات اللواتي يشاركنني التزامي بالدين. الحمد لله!",
+        "name": "فاطمة حسن",
+        "location": "تورونتو، كندا"
+      }
+    }
+  },
+  "search": {
+    "loading_preferences": "جاري تحميل التفضيلات...",
+    "errors": {
+      "preferences_load": "فشل في تحميل التفضيلات. يرجى المحاولة مرة أخرى.",
+      "data_load": "فشل في تحميل بيانات البحث. يرجى المحاولة مرة أخرى.",
+      "submit_preferences": "فشل في إرسال تفضيلات البحث. يرجى المحاولة مرة أخرى."
+    },
+    "reset_title": "إعادة تعيين التفضيلات",
+    "reset_message": "هل أنت متأكد أنك تريد إعادة تعيين جميع تفضيلات البحث إلى القيم الافتراضية؟",
+    "reset_button": "إعادة تعيين",
+    "reset_success": "تمت إعادة تعيين التفضيلات إلى القيم الافتراضية.",
+    "sections": {
+      "basic": {
+        "title": "المعلومات الأساسية",
+        "subtitle": "الجنسية، الموقع، النطاق العمري"
+      },
+      "education": {
+        "title": "التعليم والمهنة",
+        "subtitle": "التعليم، الوظيفة، الحالة المالية"
+      },
+      "personal": {
+        "title": "السمات الشخصية",
+        "subtitle": "الطول، الوزن، الحالة الاجتماعية"
+      },
+      "lifestyle": {
+        "title": "نمط الحياة",
+        "subtitle": "العادات، الحيوانات الأليفة، مستوى التدين"
+      }
+    },
+    "preferences_saved": {
+      "title": "تم حفظ الفلاتر الخاصة بك!",
+      "message": "سيتم تطبيق هذه التفضيلات تلقائيًا في كل مرة تعود فيها إلى شاشة البحث."
+    },
+    "find_match": "ابحث عن شريكك",
+    "complete_sections": "أكمل الأقسام أدناه للعثور على شريكك المثالي",
+    "basic_info": {
+      "description": "أخبرنا عن السمات الأساسية التي تبحث عنها في شريك",
+      "nationality": "الجنسية",
+      "select_nationality": "اختر الجنسية (اختياري)",
+      "origin": "الأصل",
+      "select_origin": "اختر الأصل (اختياري)",
+      "country": "البلد",
+      "select_country": "اختر البلد (اختياري)",
+      "city": "المدينة",
+      "select_city": "اختر المدينة (اختياري)",
+      "age_range": "الفئة العمرية",
+      "years": "سنوات",
+      "save_complete": "حفظ وإكمال هذا القسم"
+    },
+    "age_ranges": {
+      "all_ages": "جميع الأعمار"
+    }
+  }
+}

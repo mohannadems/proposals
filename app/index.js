@@ -12,7 +12,6 @@ export default function SplashScreen() {
   const [authChecked, setAuthChecked] = useState(false);
   const [error, setError] = useState(null);
 
-  // Memoize the auth initialization function
   const initializeAuth = useCallback(async () => {
     try {
       await dispatch(checkAuthState()).unwrap();
@@ -20,41 +19,35 @@ export default function SplashScreen() {
     } catch (error) {
       console.error("Auth check failed:", error);
       setError(error.message || "Authentication check failed");
-      setAuthChecked(true); // Proceed even if check fails
+      setAuthChecked(true);
     }
   }, [dispatch]);
 
-  // Handle authentication check on mount
   useEffect(() => {
     initializeAuth();
   }, [initializeAuth]);
 
-  // Handle navigation after auth check is complete
   useEffect(() => {
     if (!authChecked) return;
 
     let navigationTimer;
 
-    // Start fade-in animation
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 1000,
       useNativeDriver: true,
     }).start();
 
-    // Navigate to appropriate screen
     navigationTimer = setTimeout(() => {
       try {
         const initialRoute = isAuthenticated ? "/(tabs)/home" : "/welcome";
         router.replace(initialRoute);
       } catch (navError) {
         console.error("Navigation failed:", navError);
-        // Fallback to welcome screen if navigation fails
         router.replace("/welcome");
       }
     }, 2000);
 
-    // Cleanup function
     return () => {
       if (navigationTimer) clearTimeout(navigationTimer);
     };

@@ -4,6 +4,7 @@ import React, {
   useState,
   useCallback,
   useRef,
+  useContext,
 } from "react";
 import {
   View,
@@ -15,6 +16,7 @@ import {
   RefreshControl,
   Platform,
   Alert,
+  I18nManager,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -29,6 +31,9 @@ import styles from "../../styles/ProfileScreenStyles";
 import { useRouter } from "expo-router";
 import PhotoUploader from "../../components/profile/PhotoUploader";
 import ModernLoadingScreen from "../../components/common/ModernLoader";
+import LanguageSelector from "../../components/Language/LanguageSelector";
+import RTLWrapper from "../../components/common/RTLWrapper";
+import { LanguageContext } from "../../contexts/LanguageContext";
 
 const getProgressColor = (value) => {
   if (value >= 100) return COLORS.primary || "#4CAF50";
@@ -38,10 +43,15 @@ const getProgressColor = (value) => {
 };
 
 const ProfileItem = ({ icon, label, value, isRequired = false }) => {
+  const { isRTL, t } = useContext(LanguageContext);
   const isComplete = value !== null && value !== undefined && value !== "";
   const isArray = Array.isArray(value);
   const displayValue = isArray ? value.join(", ") : value;
-
+  const labelText = t
+    ? t(`profile.${label.toLowerCase().replace(/\s+/g, "_")}`) || label
+    : label;
+  const valueText =
+    displayValue || (t ? t("profile.not_provided") : "Not provided");
   return (
     <View
       style={[
@@ -49,35 +59,59 @@ const ProfileItem = ({ icon, label, value, isRequired = false }) => {
         isComplete && { backgroundColor: COLORS.primary + "10" },
       ]}
     >
-      <MaterialIcons
-        name={icon}
-        size={24}
-        color={isComplete ? COLORS.primary : COLORS.primary}
-      />
-      <View style={styles.profileItemContent}>
-        <Text style={styles.itemLabel}>
-          {label}
-          {isRequired && <Text style={{ color: COLORS.error }}> *</Text>}
-        </Text>
-        <Text
-          style={[styles.itemValue, isComplete && { color: COLORS.primary }]}
-        >
-          {displayValue || "Not provided"}
-        </Text>
-      </View>
-      {isComplete && (
+      <RTLWrapper style={{ alignItems: "center", width: "100%" }}>
         <MaterialIcons
-          name="check"
-          size={16}
-          color={COLORS.primary}
-          style={{ marginLeft: 8 }}
+          name={icon}
+          size={24}
+          color={isComplete ? COLORS.primary : COLORS.primary}
         />
-      )}
+        <View
+          style={[
+            styles.profileItemContent,
+            {
+              marginLeft: isRTL ? 0 : 15,
+              marginRight: isRTL ? 15 : 0,
+              borderLeftWidth: isRTL ? 0 : 1,
+              borderRightWidth: isRTL ? 1 : 0,
+              borderLeftColor: COLORS.border,
+              borderRightColor: COLORS.border,
+              paddingLeft: isRTL ? 15 : 15,
+              paddingRight: isRTL ? 15 : 0,
+            },
+          ]}
+        >
+          <Text
+            style={[styles.itemLabel, { textAlign: isRTL ? "right" : "left" }]}
+          >
+            {labelText}
+            {isRequired && <Text style={{ color: COLORS.error }}> *</Text>}
+          </Text>
+          <Text
+            style={[
+              styles.itemValue,
+              isComplete && { color: COLORS.primary },
+              { textAlign: isRTL ? "right" : "left" },
+            ]}
+          >
+            {valueText}
+          </Text>
+        </View>
+        {isComplete && (
+          <MaterialIcons
+            name="check"
+            size={16}
+            color={COLORS.primary}
+            style={{ marginLeft: isRTL ? 8 : 0, marginRight: isRTL ? 0 : 8 }}
+          />
+        )}
+      </RTLWrapper>
     </View>
   );
 };
 
 const ProfileSection = ({ title, children, fields, profile }) => {
+  const { isRTL, t } = useContext(LanguageContext);
+
   const calculateSectionCompletion = () => {
     if (!profile) return 0;
     const filledFields = fields.filter((field) => {
@@ -96,25 +130,38 @@ const ProfileSection = ({ title, children, fields, profile }) => {
       style={[
         styles.section,
         completion >= 100 && {
-          borderLeftWidth: 4,
+          marginLeft: isRTL ? 15 : 0,
+          borderLeftWidth: isRTL ? 0 : 4,
+          borderRightWidth: isRTL ? 4 : 0,
           borderLeftColor: COLORS.primary,
+          borderRightColor: COLORS.primary,
         },
       ]}
     >
-      <View
+      <RTLWrapper
         style={{
-          flexDirection: "row",
           justifyContent: "space-between",
           alignItems: "center",
+          width: "100%",
         }}
       >
-        <Text style={styles.sectionTitle}>{title}</Text>
+        <Text
+          style={[styles.sectionTitle, { textAlign: isRTL ? "right" : "left" }]}
+        >
+          {title}
+        </Text>
         {completion > 0 && (
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <View
+            style={{
+              flexDirection: isRTL ? "row-reverse" : "row",
+              alignItems: "center",
+            }}
+          >
             <Text
               style={{
                 color: getProgressColor(completion),
-                marginRight: 8,
+                marginLeft: isRTL ? 8 : 0,
+                marginRight: isRTL ? 0 : 8,
                 fontSize: 12,
                 fontWeight: "500",
               }}
@@ -130,13 +177,14 @@ const ProfileSection = ({ title, children, fields, profile }) => {
             )}
           </View>
         )}
-      </View>
+      </RTLWrapper>
       {children}
     </View>
   );
 };
 
 const ProfileScreen = () => {
+  const { isRTL, t } = useContext(LanguageContext);
   const fetchedRef = useRef(false);
   const isFirstMount = useRef(true);
 
@@ -220,30 +268,37 @@ const ProfileScreen = () => {
   }, [dispatch, refreshing]);
 
   const handleLogout = useCallback(() => {
-    Alert.alert("Logout", "Are you sure you want to log out?", [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await dispatch(logout()).unwrap();
-            setTimeout(() => {
-              router.push("/(auth)/login");
-            }, 100);
-          } catch (error) {
-            Alert.alert(
-              "Logout Failed",
-              error?.message || "Unable to logout. Please try again."
-            );
-          }
+    Alert.alert(
+      t ? t("profile.logout_title") : "Logout",
+      t ? t("profile.logout_message") : "Are you sure you want to log out?",
+      [
+        {
+          text: t ? t("common.cancel") : "Cancel",
+          style: "cancel",
         },
-      },
-    ]);
-  }, [dispatch, router]);
+        {
+          text: t ? t("profile.logout") : "Logout",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await dispatch(logout()).unwrap();
+              setTimeout(() => {
+                router.push("/(auth)/login");
+              }, 100);
+            } catch (error) {
+              Alert.alert(
+                t ? t("profile.logout_failed") : "Logout Failed",
+                error?.message ||
+                  (t
+                    ? t("profile.logout_error")
+                    : "Unable to logout. Please try again.")
+              );
+            }
+          },
+        },
+      ]
+    );
+  }, [dispatch, router, t]);
 
   const calculateProgress = () => {
     if (!profile) return 0;
@@ -289,7 +344,11 @@ const ProfileScreen = () => {
       }
     } catch (error) {
       console.error("Upload error:", error);
-      setPhotoUploadError("Failed to update profile photo. Please try again.");
+      setPhotoUploadError(
+        t
+          ? t("profile.photo_upload_error")
+          : "Failed to update profile photo. Please try again."
+      );
     } finally {
       setIsUploading(false);
     }
@@ -303,7 +362,9 @@ const ProfileScreen = () => {
     return (
       <View style={styles.errorContainer}>
         <MaterialIcons name="error-outline" size={48} color={COLORS.error} />
-        <Text style={styles.errorText}>An error occurred: {error}</Text>
+        <Text style={styles.errorText}>
+          {t ? t("profile.error_occurred") : "An error occurred:"} {error}
+        </Text>
         <TouchableOpacity
           onPress={() => {
             fetchedRef.current = false;
@@ -315,7 +376,7 @@ const ProfileScreen = () => {
             style={styles.retryButtonText}
             onPress={() => router.push("/(auth)/login")}
           >
-            Retry
+            {t ? t("common.retry") : "Retry"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -326,7 +387,9 @@ const ProfileScreen = () => {
     return (
       <View style={styles.errorContainer}>
         <MaterialIcons name="person-off" size={48} color={COLORS.text} />
-        <Text style={styles.errorText}>No profile data available.</Text>
+        <Text style={styles.errorText}>
+          {t ? t("profile.no_data") : "No profile data available."}
+        </Text>
       </View>
     );
   }
@@ -336,7 +399,7 @@ const ProfileScreen = () => {
   return (
     <>
       <ScrollView
-        style={styles.container}
+        style={[styles.container, { direction: isRTL ? "rtl" : "ltr" }]}
         contentContainerStyle={{
           flexGrow: 1,
           paddingTop: Platform.OS === "ios" ? 0 : -50,
@@ -347,7 +410,7 @@ const ProfileScreen = () => {
             onRefresh={onRefresh}
             colors={[COLORS.primary]}
             tintColor={COLORS.primary}
-            title="Pull to refresh"
+            title={t ? t("common.pull_to_refresh") : "Pull to refresh"}
             titleColor={COLORS.primary}
             progressViewOffset={Platform.OS === "ios" ? 50 : 50}
           />
@@ -357,11 +420,25 @@ const ProfileScreen = () => {
           colors={[COLORS.primary, COLORS.secondary]}
           style={styles.header}
         >
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <TouchableOpacity
+            style={[
+              styles.logoutButton,
+              { right: isRTL ? "auto" : 20, left: isRTL ? 20 : "auto" },
+            ]}
+            onPress={handleLogout}
+          >
             <MaterialIcons name="logout" size={24} color={COLORS.white} />
           </TouchableOpacity>
+
           <TouchableOpacity
-            style={styles.logoutButtonn}
+            style={[
+              styles.logoutButtonn,
+              {
+                right: isRTL ? "auto" : 20,
+                left: isRTL ? 20 : "auto",
+                top: isRTL ? 170 : 170,
+              },
+            ]}
             onPress={() =>
               router.push({
                 pathname: "../(profile)/seeMyProfile",
@@ -375,6 +452,9 @@ const ProfileScreen = () => {
               color={COLORS.white}
             />
           </TouchableOpacity>
+
+          <LanguageSelector />
+
           <View
             style={styles.profileHeader}
             accessibilityLabel="Profile Header"
@@ -387,8 +467,14 @@ const ProfileScreen = () => {
               }}
               isUploading={isUploading}
               uploadError={photoUploadError}
-              accessibilityLabel="Update profile photo"
-              accessibilityHint="Double tap to choose a new profile photo"
+              accessibilityLabel={
+                t ? t("profile.update_photo") : "Update profile photo"
+              }
+              accessibilityHint={
+                t
+                  ? t("profile.update_photo_hint")
+                  : "Double tap to choose a new profile photo"
+              }
             />
             <Text style={styles.userName}>
               {profile.first_name} {profile.last_name}
@@ -402,7 +488,11 @@ const ProfileScreen = () => {
                     : styles.grayDot
                 }
               />
-              <Text style={styles.userStatus}>{profile.profile_status}</Text>
+              <Text style={styles.userStatus}>
+                {t
+                  ? t(`profile.status.${profile.profile_status.toLowerCase()}`)
+                  : profile.profile_status}
+              </Text>
             </View>
             {profile.profile?.bio && (
               <Text style={styles.userBio}>{profile.profile.bio}</Text>
@@ -413,7 +503,8 @@ const ProfileScreen = () => {
           </View>
           <View style={styles.progressContainer}>
             <Text style={styles.progressText}>
-              Profile Completion: {progress}%{progress === 100 && " ✨"}
+              {t ? t("profile.completion") : "Profile Completion:"} {progress}%
+              {progress === 100 && " ✨"}
             </Text>
             <View style={styles.progressBar}>
               <Animated.View
@@ -462,12 +553,12 @@ const ProfileScreen = () => {
               value={profile.phone_number}
               isRequired={true}
             />
-            <ProfileItem
+            {/* <ProfileItem
               icon="wc"
               label="Gender"
-              value={profile.gender}
+              value={t(`profile.gender.${profile.gender}`)} // Ensure correct translation
               isRequired={true}
-            />
+            /> */}
           </ProfileSection>
 
           <ProfileSection
@@ -682,15 +773,13 @@ const ProfileScreen = () => {
           </ProfileSection>
 
           {progress === 100 && (
-            <View
+            <RTLWrapper
               style={{
                 backgroundColor: COLORS.primary + "15",
                 padding: 16,
                 borderRadius: 12,
                 marginTop: 8,
                 marginBottom: 20,
-                flexDirection: "row",
-                alignItems: "center",
                 justifyContent: "center",
               }}
             >
@@ -698,7 +787,10 @@ const ProfileScreen = () => {
                 name="check-circle"
                 size={24}
                 color={COLORS.primary}
-                style={{ marginRight: 8 }}
+                style={{
+                  marginRight: isRTL ? 0 : 8,
+                  marginLeft: isRTL ? 8 : 0,
+                }}
               />
               <Text
                 style={{
@@ -707,9 +799,9 @@ const ProfileScreen = () => {
                   fontWeight: "500",
                 }}
               >
-                Profile Complete! ✨
+                {t ? t("profile.complete") : "Profile Complete!"} ✨
               </Text>
-            </View>
+            </RTLWrapper>
           )}
         </ScrollView>
       </ScrollView>

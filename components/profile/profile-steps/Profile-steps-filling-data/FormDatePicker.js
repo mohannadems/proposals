@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import {
   View,
   Text,
@@ -18,6 +18,8 @@ const FormDatePicker = ({
   maximumDate,
   minimumDate,
   required,
+  isRTL = false,
+  t,
 }) => {
   const {
     setValue,
@@ -28,6 +30,86 @@ const FormDatePicker = ({
   const [isModalVisible, setModalVisible] = useState(false);
   const [tempDate, setTempDate] = useState(null);
   const selectedDate = watch(name);
+
+  // Create dynamic styles based on RTL
+  const dynamicStyles = {
+    container: {
+      marginBottom: 16,
+    },
+    label: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: COLORS.text,
+      marginBottom: 8,
+      textAlign: isRTL ? "right" : "left",
+    },
+    required: {
+      color: COLORS.error,
+    },
+    dateButton: {
+      backgroundColor: COLORS.white,
+      borderRadius: 12,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: COLORS.border,
+    },
+    dateButtonError: {
+      borderColor: COLORS.error,
+    },
+    dateText: {
+      color: COLORS.text,
+      fontSize: 16,
+      textAlign: isRTL ? "right" : "left",
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.5)",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    modalContent: {
+      width: "85%",
+      backgroundColor: Platform.OS === "ios" ? COLORS.background : COLORS.white,
+      borderRadius: 16,
+      padding: 16,
+      alignItems: "center",
+    },
+    datePicker: {
+      width: "100%",
+      height: 200,
+      backgroundColor: Platform.OS === "ios" ? COLORS.background : COLORS.white,
+    },
+    buttonContainer: {
+      flexDirection: isRTL ? "row-reverse" : "row",
+      justifyContent: "space-between",
+      width: "100%",
+      marginTop: 16,
+    },
+    button: {
+      flex: 1,
+      paddingVertical: 12,
+      borderRadius: 8,
+      marginHorizontal: 8,
+    },
+    cancelButton: {
+      backgroundColor: COLORS.border,
+    },
+    confirmButton: {
+      backgroundColor: COLORS.primary,
+    },
+    buttonText: {
+      color: COLORS.white,
+      fontSize: 16,
+      fontWeight: "600",
+      textAlign: "center",
+    },
+    errorText: {
+      color: COLORS.error,
+      fontSize: 12,
+      marginTop: 8,
+      textAlign: isRTL ? "right" : "left",
+    },
+  };
 
   const handleDateChange = (event, selectedDate) => {
     if (Platform.OS === "android") {
@@ -54,7 +136,7 @@ const FormDatePicker = ({
   };
 
   const formatDate = (date) => {
-    if (!date) return "Select Date";
+    if (!date) return t ? t("common.select_date") : "Select Date";
 
     const options = {
       year: "numeric",
@@ -62,9 +144,12 @@ const FormDatePicker = ({
       day: "numeric",
     };
 
+    // Use the correct locale based on current language
+    const locale = isRTL ? "ar-SA" : "en-US";
+
     return Platform.OS === "android"
-      ? date.toLocaleDateString("en-US", options)
-      : date.toLocaleDateString(undefined, options);
+      ? date.toLocaleDateString(locale, options)
+      : date.toLocaleDateString(locale, options);
   };
 
   const renderDatePicker = () => {
@@ -90,8 +175,8 @@ const FormDatePicker = ({
         animationType="slide"
         onRequestClose={handleCancel}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+        <View style={dynamicStyles.modalOverlay}>
+          <View style={dynamicStyles.modalContent}>
             <DateTimePicker
               mode="date"
               display="spinner"
@@ -100,20 +185,24 @@ const FormDatePicker = ({
               minimumDate={minimumDate}
               onChange={handleDateChange}
               textColor={COLORS.text}
-              style={styles.datePicker}
+              style={dynamicStyles.datePicker}
             />
-            <View style={styles.buttonContainer}>
+            <View style={dynamicStyles.buttonContainer}>
               <TouchableOpacity
-                style={[styles.button, styles.cancelButton]}
+                style={[dynamicStyles.button, dynamicStyles.cancelButton]}
                 onPress={handleCancel}
               >
-                <Text style={styles.buttonText}>Cancel</Text>
+                <Text style={dynamicStyles.buttonText}>
+                  {t ? t("common.cancel") : "Cancel"}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.button, styles.confirmButton]}
+                style={[dynamicStyles.button, dynamicStyles.confirmButton]}
                 onPress={handleConfirm}
               >
-                <Text style={styles.buttonText}>Confirm</Text>
+                <Text style={dynamicStyles.buttonText}>
+                  {t ? t("common.confirm") : "Confirm"}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -123,104 +212,37 @@ const FormDatePicker = ({
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.label}>
+    <View style={dynamicStyles.container}>
+      <Text style={dynamicStyles.label}>
         {label}
-        {required && <Text style={styles.required}> *</Text>}
+        {required && <Text style={dynamicStyles.required}> *</Text>}
       </Text>
 
       <TouchableOpacity
-        style={[styles.dateButton, errors[name] && styles.dateButtonError]}
+        style={[
+          dynamicStyles.dateButton,
+          errors[name] && dynamicStyles.dateButtonError,
+        ]}
         onPress={() => setModalVisible(true)}
       >
-        <Text style={styles.dateText}>
-          {selectedDate ? formatDate(selectedDate) : "Select Date"}
+        <Text style={dynamicStyles.dateText}>
+          {selectedDate
+            ? formatDate(selectedDate)
+            : t
+            ? t("common.select_date")
+            : "Select Date"}
         </Text>
       </TouchableOpacity>
 
       {renderDatePicker()}
 
       {errors[name] && (
-        <Text style={styles.errorText}>{errors[name].message}</Text>
+        <Text style={dynamicStyles.errorText}>
+          {t ? t("common.date_error") : errors[name].message}
+        </Text>
       )}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: COLORS.text,
-    marginBottom: 8,
-  },
-  required: {
-    color: COLORS.error,
-  },
-  dateButton: {
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  dateButtonError: {
-    borderColor: COLORS.error,
-  },
-  dateText: {
-    color: COLORS.text,
-    fontSize: 16,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContent: {
-    width: "85%",
-    backgroundColor: Platform.OS === "ios" ? COLORS.background : COLORS.white,
-    borderRadius: 16,
-    padding: 16,
-    alignItems: "center",
-  },
-  datePicker: {
-    width: "100%",
-    height: 200,
-    backgroundColor: Platform.OS === "ios" ? COLORS.background : COLORS.white,
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-    marginTop: 16,
-  },
-  button: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    marginHorizontal: 8,
-  },
-  cancelButton: {
-    backgroundColor: COLORS.border,
-  },
-  confirmButton: {
-    backgroundColor: COLORS.primary,
-  },
-  buttonText: {
-    color: COLORS.white,
-    fontSize: 16,
-    fontWeight: "600",
-    textAlign: "center",
-  },
-  errorText: {
-    color: COLORS.error,
-    fontSize: 12,
-    marginTop: 8,
-  },
-});
 
 export default FormDatePicker;
