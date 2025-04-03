@@ -55,7 +55,7 @@ export default function createHomeStyles(isRTL) {
       shadowRadius: 15,
       elevation: 12,
       shadowColor: COLORS.text,
-      alignSelf: isRTL ? "flex-start  " : "flex-end",
+      alignSelf: isRTL ? "flex-end   " : "flex-start",
     },
     buttonBlur: {
       flex: 1,

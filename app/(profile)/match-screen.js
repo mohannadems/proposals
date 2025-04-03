@@ -125,12 +125,8 @@ const ProfileImages = memo(
       <View style={styles.profileCard}>
         <Image
           source={{ uri: matchImageUrl }}
-          style={[styles.profileImage, { backgroundColor: "#e1e1e1" }]} // Add a background color
-          defaultSource={require("../../assets/images/11.jpg")}
-          resizeMode="cover" // Ensure proper sizing
-          // Add these to handle errors more explicitly
-          onError={() => console.log("Error loading image:", matchImageUrl)}
-          onLoad={() => console.log("Successfully loaded image")}
+          style={[styles.profileImage, { backgroundColor: "#e1e1e1" }]}
+          resizeMode="cover"
         />
         <BlurView intensity={80} style={styles.profileInfo}>
           <Text style={styles.profileName}>
@@ -431,7 +427,6 @@ const MatchScreen = () => {
         3
       )}****${matchProfile.matched_user_phone.slice(-3)}`
     : "Not Available";
-  console.log("FINAL IMAGE URL:", matchImageUrl);
   return (
     <View style={styles.container}>
       <StatusBar barStyle="light-content" />

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import {
   View,
   Text,
@@ -22,6 +22,7 @@ import Reanimated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
+import { LanguageContext } from "../../../../contexts/LanguageContext";
 
 const AnimatedView = Reanimated.createAnimatedComponent(View);
 const AnimatedTouchableOpacity =
@@ -33,34 +34,83 @@ const SPRING_CONFIG = {
   stiffness: 200,
 };
 
-const CardHeader = ({ title, subtitle }) => (
+const CardHeader = ({ title, subtitle, isRTL }) => (
   <AnimatedView
     entering={FadeInDown.duration(600).springify()}
     style={styles.headerContainer}
   >
-    <Text style={styles.headerTitle}>{title}</Text>
-    <Text style={styles.headerSubtitle}>{subtitle}</Text>
+    <Text style={[styles.headerTitle, { textAlign: isRTL ? "right" : "left" }]}>
+      {title}
+    </Text>
+    <Text
+      style={[styles.headerSubtitle, { textAlign: isRTL ? "right" : "left" }]}
+    >
+      {subtitle}
+    </Text>
   </AnimatedView>
 );
 
-const ProfileImageSection = () => {
+const ProfileImageSection = ({ isRTL = false, t }) => {
+  const { isRTL: contextRTL, t: contextT } = useContext(LanguageContext) || {};
+  // Use props if provided, otherwise use context
+  const _isRTL = isRTL !== undefined ? isRTL : contextRTL;
+  const _t = t || contextT;
+
   const dispatch = useDispatch();
   const { setValue, watch } = useFormContext();
   const profileImage = watch("profile_image");
   const [imageError, setImageError] = useState("");
   const scale = useSharedValue(1);
 
-  // Fixed: Safely access profile state properties with fallbacks
   const profileState = useSelector((state) => state.profile) || {};
   const loading = profileState.loading || false;
   const error = profileState.error || null;
 
-  // Fixed: Safely access avatar_url with optional chaining
   const currentAvatar = profileState.data?.profile?.avatar_url || null;
 
   const animatedImageStyle = useAnimatedStyle(() => ({
     transform: [{ scale: withSpring(scale.value, SPRING_CONFIG) }],
   }));
+
+  // Create dynamic styles based on RTL
+  const dynamicStyles = {
+    container: {
+      flex: 1,
+      padding: 20,
+      backgroundColor: "#f8f9fa",
+    },
+    buttonContainer: {
+      flexDirection: _isRTL ? "row-reverse" : "row",
+      justifyContent: "space-between",
+      width: "100%",
+      marginTop: 16,
+      gap: 12,
+    },
+    actionButtonText: {
+      color: COLORS.white,
+      marginLeft: _isRTL ? 0 : 12,
+      marginRight: _isRTL ? 12 : 0,
+      fontSize: 16,
+      fontWeight: "600",
+    },
+    errorContainer: {
+      flexDirection: _isRTL ? "row-reverse" : "row",
+      alignItems: "center",
+      backgroundColor: "rgba(255, 59, 48, 0.1)",
+      borderRadius: 12,
+      padding: 12,
+      marginTop: 16,
+      width: "100%",
+    },
+    errorText: {
+      color: COLORS.error,
+      marginLeft: _isRTL ? 0 : 8,
+      marginRight: _isRTL ? 8 : 0,
+      fontSize: 14,
+      flex: 1,
+      textAlign: _isRTL ? "right" : "left",
+    },
+  };
 
   const requestPermission = async () => {
     if (Platform.OS !== "web") {
@@ -68,8 +118,10 @@ const ProfileImageSection = () => {
         await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
         Alert.alert(
-          "Permission Required",
-          "Sorry, we need camera roll permissions to make this work!"
+          _t ? _t("profile.images.permission_title") : "Permission Required",
+          _t
+            ? _t("profile.images.permission_message")
+            : "Sorry, we need camera roll permissions to make this work!"
         );
         return false;
       }
@@ -104,7 +156,9 @@ const ProfileImageSection = () => {
       setImageError(
         error.message ||
           error.errors?.profile_photo?.[0] ||
-          "Failed to upload image. Please try again."
+          (_t
+            ? _t("profile.images.upload_error")
+            : "Failed to upload image. Please try again.")
       );
     }
   };
@@ -118,7 +172,14 @@ const ProfileImageSection = () => {
       if (type === "camera") {
         const { status } = await ImagePicker.requestCameraPermissionsAsync();
         if (status !== "granted") {
-          Alert.alert("Permission needed", "Camera permission is required");
+          Alert.alert(
+            _t
+              ? _t("profile.images.camera_permission_title")
+              : "Permission needed",
+            _t
+              ? _t("profile.images.camera_permission_message")
+              : "Camera permission is required"
+          );
           return;
         }
         result = await ImagePicker.launchCameraAsync({
@@ -141,7 +202,11 @@ const ProfileImageSection = () => {
         const imageSize = selectedImage.fileSize || 0;
 
         if (imageSize > 5 * 1024 * 1024) {
-          setImageError("Image size should be less than 5MB");
+          setImageError(
+            _t
+              ? _t("profile.images.size_error")
+              : "Image size should be less than 5MB"
+          );
           return;
         }
 
@@ -154,7 +219,11 @@ const ProfileImageSection = () => {
       }
     } catch (error) {
       console.error("Image picking error:", error);
-      setImageError("Failed to pick image. Please try again.");
+      setImageError(
+        _t
+          ? _t("profile.images.pick_error")
+          : "Failed to pick image. Please try again."
+      );
     }
   };
 
@@ -182,7 +251,9 @@ const ProfileImageSection = () => {
       setImageError(
         error.message ||
           error.errors?.profile_photo?.[0] ||
-          "Failed to remove image. Please try again."
+          (_t
+            ? _t("profile.images.remove_error")
+            : "Failed to remove image. Please try again.")
       );
     }
   };
@@ -190,11 +261,16 @@ const ProfileImageSection = () => {
   return (
     <AnimatedView
       entering={FadeInUp.duration(600).springify()}
-      style={styles.container}
+      style={dynamicStyles.container}
     >
       <CardHeader
-        title="Profile Picture 📸"
-        subtitle="Make a great first impression with your best photo"
+        title={_t ? _t("profile.images.title") : "Profile Picture 📸"}
+        subtitle={
+          _t
+            ? _t("profile.images.subtitle")
+            : "Make a great first impression with your best photo"
+        }
+        isRTL={_isRTL}
       />
 
       <AnimatedView
@@ -213,14 +289,23 @@ const ProfileImageSection = () => {
               />
               <View style={styles.imageOverlay}>
                 <Feather name="camera" size={24} color={COLORS.white} />
-                <Text style={styles.overlayText}>Change Photo</Text>
+                <Text style={styles.overlayText}>
+                  {_t ? _t("profile.images.change_photo") : "Change Photo"}
+                </Text>
               </View>
             </View>
           ) : (
             <View style={styles.placeholderContainer}>
               <Feather name="camera" size={50} color={COLORS.primary} />
-              <Text style={styles.placeholderText}>
-                Tap to add your profile picture ✨
+              <Text
+                style={[
+                  styles.placeholderText,
+                  { textAlign: _isRTL ? "right" : "center" },
+                ]}
+              >
+                {_t
+                  ? _t("profile.images.tap_to_add")
+                  : "Tap to add your profile picture ✨"}
               </Text>
             </View>
           )}
@@ -229,26 +314,29 @@ const ProfileImageSection = () => {
         {(imageError || error) && (
           <AnimatedView
             entering={FadeIn.duration(300)}
-            style={styles.errorContainer}
+            style={dynamicStyles.errorContainer}
           >
             <Feather name="alert-circle" size={20} color={COLORS.error} />
-            <Text style={styles.errorText}>{imageError || error}</Text>
+            <Text style={dynamicStyles.errorText}>{imageError || error}</Text>
           </AnimatedView>
         )}
 
-        <View style={styles.buttonContainer}>
+        <View style={dynamicStyles.buttonContainer}>
           <AnimatedTouchableOpacity
             entering={FadeInUp.delay(400).duration(600)}
             style={[
               styles.actionButton,
               styles.cameraButton,
               loading && styles.disabledButton,
+              { flexDirection: _isRTL ? "row-reverse" : "row" },
             ]}
             onPress={() => pickImage("camera")}
             disabled={loading}
           >
             <Feather name="camera" size={20} color={COLORS.white} />
-            <Text style={styles.actionButtonText}>Take Photo</Text>
+            <Text style={dynamicStyles.actionButtonText}>
+              {_t ? _t("profile.images.take_photo") : "Take Photo"}
+            </Text>
           </AnimatedTouchableOpacity>
 
           <AnimatedTouchableOpacity
@@ -257,12 +345,15 @@ const ProfileImageSection = () => {
               styles.actionButton,
               styles.galleryButton,
               loading && styles.disabledButton,
+              { flexDirection: _isRTL ? "row-reverse" : "row" },
             ]}
             onPress={() => pickImage("gallery")}
             disabled={loading}
           >
             <Feather name="image" size={20} color={COLORS.white} />
-            <Text style={styles.actionButtonText}>Choose from Gallery</Text>
+            <Text style={dynamicStyles.actionButtonText}>
+              {_t ? _t("profile.images.choose_gallery") : "Choose from Gallery"}
+            </Text>
           </AnimatedTouchableOpacity>
         </View>
 
@@ -273,12 +364,15 @@ const ProfileImageSection = () => {
               styles.actionButton,
               styles.removeButton,
               loading && styles.disabledButton,
+              { flexDirection: _isRTL ? "row-reverse" : "row" },
             ]}
             onPress={removeImage}
             disabled={loading}
           >
             <Feather name="trash-2" size={20} color={COLORS.white} />
-            <Text style={styles.actionButtonText}>Remove Photo</Text>
+            <Text style={dynamicStyles.actionButtonText}>
+              {_t ? _t("profile.images.remove_photo") : "Remove Photo"}
+            </Text>
           </AnimatedTouchableOpacity>
         ) : null}
       </AnimatedView>
@@ -287,11 +381,6 @@ const ProfileImageSection = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 20,
-    backgroundColor: "#f8f9fa",
-  },
   headerContainer: {
     marginBottom: 24,
     backgroundColor: "rgba(255, 255, 255, 0.9)",
@@ -314,12 +403,10 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: COLORS.text,
     marginBottom: 8,
-    textAlign: "center",
   },
   headerSubtitle: {
     fontSize: 16,
     color: COLORS.grayDark,
-    textAlign: "center",
     lineHeight: 24,
   },
   imagePickerContainer: {
@@ -402,16 +489,8 @@ const styles = StyleSheet.create({
     marginTop: 16,
     fontSize: 16,
     color: COLORS.primary,
-    textAlign: "center",
     fontWeight: "600",
     paddingHorizontal: 20,
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-    marginTop: 16,
-    gap: 12,
   },
   actionButton: {
     flexDirection: "row",
@@ -443,27 +522,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.error,
     marginTop: 16,
     width: "100%",
-  },
-  actionButtonText: {
-    color: COLORS.white,
-    marginLeft: 12,
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  errorContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(255, 59, 48, 0.1)",
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 16,
-    width: "100%",
-  },
-  errorText: {
-    color: COLORS.error,
-    marginLeft: 8,
-    fontSize: 14,
-    flex: 1,
   },
   disabledButton: {
     opacity: 0.6,

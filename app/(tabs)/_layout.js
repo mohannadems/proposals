@@ -15,12 +15,10 @@ export default function TabsLayout() {
     }
   };
 
-  // Get tab names based on current language
   const getTabName = (name) => {
     if (t) {
       return t(`tabs.${name}`);
     }
-    // Fallback if translation isn't available
     return name.charAt(0).toUpperCase() + name.slice(1);
   };
 
@@ -40,7 +38,6 @@ export default function TabsLayout() {
             iconName = "user";
           }
 
-          // Trigger haptic feedback when tab is focused
           handleTabPress(focused);
 
           return (

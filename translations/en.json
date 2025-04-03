@@ -22,7 +22,9 @@
     "select_date": "Select Date",
     "cancel": "Cancel",
     "confirm": "Confirm",
-    "date_error": "Please select a valid date"
+    "date_error": "Please select a valid date",
+    "yes": "Yes",
+    "no": "No"
   },
   "auth": {
     "login": "Login",
@@ -135,6 +137,163 @@
       "male": "Male",
       "female": "Female",
       "error": "Please select your gender"
+    },
+    "lifestyle": {
+      "loading": "Loading profile attributes...",
+      "nationality": "Nationality",
+      "country": "Country of Residence",
+      "city": "City",
+      "origin": "Origin",
+      "marital_status": "Marital Status",
+      "children_label": "Children",
+      "height": "Height",
+      "weight": "Weight",
+      "hair_color": "Hair Color",
+      "skin_color": "Skin Color",
+      "marriage_budget": "Marriage Budget",
+      "religiosity": "Religiosity Level",
+      "sleep_habits": "Sleep Habits",
+      "sports": "Sports Activity",
+      "smoking_status": "Smoking Status",
+      "smoking_tools": "Smoking Tools",
+      "smoking_preferences": "Smoking Preferences (Required)",
+      "smoking_tools_required": "Please select at least one smoking tool",
+      "drinking_status": "Drinking Status",
+      "religion": "Religion",
+      "children": {
+        "none": "No Children 🚫",
+        "one": "1 Child 👶",
+        "two": "2 Children 🧒👧",
+        "three": "3 Children 👧🧒👦",
+        "four_plus": "4 or More Children 👨‍👩‍👧‍👦"
+      },
+      "smoking": {
+        "non_smoker": "Non-smoker",
+        "regular": "Regular smoker",
+        "social": "Social smoker"
+      },
+      "smoking_tool": {
+        "cigarettes": "Cigarettes",
+        "cigarette": "Cigarette",
+        "shisha": "Shisha",
+        "hookah": "Hookah",
+        "e_cigarettes": "E-cigarettes",
+        "vape": "Vape",
+        "other": "Other"
+      }
+    },
+    "cards": {
+      "origin": {
+        "title": "Origin & Residence",
+        "description": "Roots and current home that shape you"
+      },
+      "personal": {
+        "title": "Personal Information",
+        "description": "Basic details about yourself"
+      },
+      "employment": {
+        "title": "Employment & Financial",
+        "description": "Career and financial status"
+      },
+      "preferences": {
+        "title": "Personal Preferences",
+        "description": "Your lifestyle choices and preferences"
+      },
+      "physical": {
+        "title": "Physical Attributes",
+        "description": "Your unique physical characteristics"
+      },
+      "hobbies": {
+        "title": "Hobbies & Interests",
+        "description": "Explore the passions that define you"
+      },
+      "lifestyle": {
+        "title": "Lifestyle Choices",
+        "description": "Your personal preferences and habits"
+      },
+      "pets": {
+        "title": "Pets",
+        "description": "Your furry or feathered companions"
+      },
+      "spiritual": {
+        "title": "Spiritual Beliefs",
+        "description": "Your spiritual perspective"
+      }
+    },
+    "hobbies": {
+      "photography": "Photography",
+      "gardening": "Gardening",
+      "painting": "Painting",
+      "cycling": "Cycling",
+      "hiking": "Hiking",
+      "reading": "Reading",
+      "cooking": "Cooking",
+      "music": "Music",
+      "travel": "Travel",
+      "gaming": "Gaming",
+      "writing": "Writing",
+      "dancing": "Dancing",
+      "shopping": "Shopping",
+      "sports": "Sports",
+      "movies": "Movies"
+    },
+    "pets": {
+      "cat": "Cat",
+      "dog": "Dog",
+      "bird": "Bird",
+      "fish": "Fish",
+      "hamster": "Hamster",
+      "rabbit": "Rabbit",
+      "reptile": "Reptile",
+      "other": "Other"
+    },
+    "education": {
+      "loading": "Loading professional data...",
+      "section_title": "Your Professional Journey",
+      "section_subtitle": "Craft the story of your educational and career path 🚀",
+      "education_level": "Education Level 📚",
+      "field_of_study": "Field of Study 📖",
+      "employment_status": "Employment Status",
+      "employed": "Employed",
+      "not_employed": "Not Employed",
+      "job_title": "Job Title 💼",
+      "job_title_required": "Job title is required",
+      "position_level": "Position Level 📈",
+      "position_level_required": "Position level is required",
+      "financial_status": "Financial Status 💵",
+      "housing_status": "Housing Status 🏠",
+      "social_media": "Social Media Presence 📱",
+      "zodiac_sign": "Zodiac Sign ✨",
+      "car_ownership": "Car Ownership 🚗",
+      "cards": {
+        "educational_background": "Educational Background",
+        "your_academic_achievements_and_specialization": "Your academic achievements and specialization",
+        "job_details": "Job Details",
+        "your_professional_information": "Your professional information",
+        "financial_information": "Financial Information",
+        "your_financial_stability_and_housing": "Your financial stability and housing",
+        "online_presence": "Online Presence",
+        "your_social_media_and_digital_footprint": "Your social media and digital footprint",
+        "cosmic_identity": "Cosmic Identity",
+        "your_astrological_sign": "Your astrological sign"
+      }
+    },
+    "images": {
+      "title": "Profile Picture 📸",
+      "subtitle": "Make a great first impression with your best photo",
+      "change_photo": "Change Photo",
+      "tap_to_add": "Tap to add your profile picture ✨",
+      "take_photo": "Take Photo",
+      "choose_gallery": "Choose from Gallery",
+      "remove_photo": "Remove Photo",
+      "permission_title": "Permission Required",
+      "permission_message": "Sorry, we need camera roll permissions to make this work!",
+      "camera_permission_title": "Permission needed",
+      "camera_permission_message": "Camera permission is required",
+      "upload_error": "Failed to upload image. Please try again.",
+      "pick_error": "Failed to pick image. Please try again.",
+      "remove_error": "Failed to remove image. Please try again.",
+      "size_error": "Image size should be less than 5MB"
     }
   },
   "tabs": {

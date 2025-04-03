@@ -179,13 +179,9 @@ const MatchProfileScreen = () => {
       if (debugMode && userId) {
         try {
           if (!hasBeenLiked) {
-            console.log("🔍 DEBUG: Checking for match with user ID:", userId);
             const result = await matchesService.checkForMatch(userId);
 
             if (result && result.isMatch) {
-              console.log(
-                "✅ DEBUG: Match found! Can navigate to match screen."
-              );
             }
           }
         } catch (err) {

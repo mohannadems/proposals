@@ -1,7 +1,7 @@
 import React, { memo, useEffect } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { useSelector } from "react-redux";
-import createSearchStyles from "../../styles/SearchScreen";
+import styles from "../../styles/SearchScreen";
 import ModernDropdown from "../search/ModernDropdown";
 import RangeSlider from "../search/RangeSlider";
 import { selectCities } from "../../store/slices/profileAttributesSlice";
@@ -23,16 +23,9 @@ const BasicInfoSection = ({
   isRTL = false,
   t,
 }) => {
-  const styles = createSearchStyles(isRTL);
-
   const cities = useSelector(selectCities);
 
-  useEffect(() => {
-    console.log(
-      `Cities available for country ${preferences.preferred_country_id}:`,
-      cities
-    );
-  }, [cities, preferences.preferred_country_id]);
+  useEffect(() => {}, [cities, preferences.preferred_country_id]);
 
   const handleAgeRangePreset = (min, max) => {
     onChange("preferred_age_min", min);

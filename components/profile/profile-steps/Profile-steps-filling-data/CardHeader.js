@@ -1,20 +1,75 @@
-import React from "react";
+import React, { useContext } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import MaterialIcon from "react-native-vector-icons/MaterialIcons";
-import Reanimated, { FadeInRight, FadeInDown } from "react-native-reanimated";
+import Reanimated, {
+  FadeInRight,
+  FadeInLeft,
+  FadeInDown,
+} from "react-native-reanimated";
 import { LayoutAnimatedView } from "./AnimatedBase";
 import { COLORS } from "../../../../constants/colors";
-export const CardHeader = ({ title, iconName, description, emoji }) => {
+import { LanguageContext } from "../../../../contexts/LanguageContext";
+import { getTranslatedCardConfigs } from "./constants";
+
+export const CardHeader = ({
+  title,
+  iconName,
+  description,
+  emoji,
+  isRTL,
+  t,
+}) => {
+  const { isRTL: contextRTL, t: contextT } = useContext(LanguageContext) || {};
+  // Use props if provided, otherwise use context
+  const _isRTL = isRTL !== undefined ? isRTL : contextRTL;
+  const _t = t || contextT;
+
   // Replace 'lifestyle' with 'style' icon if needed
   const safeIconName = iconName === "lifestyle" ? "style" : iconName;
+
+  // Get translations if available
+  const translatedConfigs = _t ? getTranslatedCardConfigs(_t) : null;
+
+  // Find matching config based on title to get translations
+  let translatedTitle = title;
+  let translatedDescription = description;
+
+  if (translatedConfigs) {
+    for (const key in translatedConfigs) {
+      if (
+        translatedConfigs[key].title === title ||
+        translatedConfigs[key].iconName === iconName
+      ) {
+        translatedTitle = translatedConfigs[key].title;
+        translatedDescription = translatedConfigs[key].description;
+        break;
+      }
+    }
+  }
+
+  // Choose the correct animation based on RTL setting
+  const TextAnimation = _isRTL ? FadeInLeft : FadeInRight;
 
   return (
     <LayoutAnimatedView
       entering={FadeInDown.duration(600)}
       style={styles.cardHeader}
     >
-      <View style={styles.cardHeaderContent}>
-        <View style={styles.iconContainer}>
+      <View
+        style={[
+          styles.cardHeaderContent,
+          { flexDirection: _isRTL ? "row-reverse" : "row" },
+        ]}
+      >
+        <View
+          style={[
+            styles.iconContainer,
+            {
+              marginRight: _isRTL ? 0 : 12,
+              marginLeft: _isRTL ? 12 : 0,
+            },
+          ]}
+        >
           <MaterialIcon
             name={safeIconName}
             size={30}
@@ -25,16 +80,19 @@ export const CardHeader = ({ title, iconName, description, emoji }) => {
         </View>
         <View style={styles.cardHeaderText}>
           <Reanimated.Text
-            entering={FadeInRight.duration(800)}
-            style={styles.cardTitle}
+            entering={TextAnimation.duration(800)}
+            style={[styles.cardTitle, { textAlign: _isRTL ? "right" : "left" }]}
           >
-            {title}
+            {translatedTitle}
           </Reanimated.Text>
           <Reanimated.Text
-            entering={FadeInRight.delay(200).duration(800)}
-            style={styles.cardSubtitle}
+            entering={TextAnimation.delay(200).duration(800)}
+            style={[
+              styles.cardSubtitle,
+              { textAlign: _isRTL ? "right" : "left" },
+            ]}
           >
-            {description}
+            {translatedDescription}
           </Reanimated.Text>
         </View>
       </View>

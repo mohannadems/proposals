@@ -140,7 +140,7 @@ export default StyleSheet.create({
   errorContainer: {
     marginHorizontal: 16,
     padding: 12,
-    backgroundColor: COLORS.error + "20", // 20% opacity
+    backgroundColor: COLORS.error + "20",
     borderRadius: 8,
     marginBottom: 16,
     flexDirection: "row",
@@ -304,7 +304,7 @@ export default StyleSheet.create({
     flexDirection: "row",
   },
   disabledSearchButton: {
-    backgroundColor: COLORS.primary + "80", // 50% opacity
+    backgroundColor: COLORS.primary + "80",
   },
   searchIcon: {
     marginRight: 8,

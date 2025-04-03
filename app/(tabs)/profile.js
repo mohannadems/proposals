@@ -553,12 +553,12 @@ const ProfileScreen = () => {
               value={profile.phone_number}
               isRequired={true}
             />
-            {/* <ProfileItem
+            <ProfileItem
               icon="wc"
               label="Gender"
-              value={t(`profile.gender.${profile.gender}`)} // Ensure correct translation
+              value={t(`profile.gender.${profile.gender}`)}
               isRequired={true}
-            /> */}
+            />
           </ProfileSection>
 
           <ProfileSection
@@ -615,7 +615,7 @@ const ProfileScreen = () => {
           >
             <ProfileItem
               icon="school"
-              label="Education"
+              label="educational_level"
               value={profile.profile?.educational_level}
               isRequired={true}
             />
@@ -749,12 +749,12 @@ const ProfileScreen = () => {
             />
             <ProfileItem
               icon="local-activity"
-              label="Hobbies"
+              label="hobbies_profile"
               value={profile.profile?.hobbies}
             />
             <ProfileItem
               icon="pets"
-              label="Pets"
+              label="pets_profile"
               value={profile.profile?.pets}
             />
           </ProfileSection>

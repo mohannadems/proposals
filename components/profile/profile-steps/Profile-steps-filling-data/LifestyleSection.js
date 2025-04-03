@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useContext } from "react";
 import {
   ScrollView,
   View,
@@ -13,7 +13,6 @@ import FeatherIcon from "react-native-vector-icons/Feather";
 import MaterialIcon from "react-native-vector-icons/MaterialIcons";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
-// Import components
 import { AnimatedCard } from "./AnimatedBase";
 import { CardHeader } from "./CardHeader";
 import { SectionHeader } from "./SectionHeader";
@@ -25,8 +24,8 @@ import {
   PreferencesContainer,
   FormRow,
 } from "./FormComponents";
+import { LanguageContext } from "../../../../contexts/LanguageContext";
 
-// Import Redux actions and selectors
 import {
   fetchAllProfileData,
   fetchCitiesByCountry,
@@ -42,7 +41,11 @@ import { cardConfigs } from "./constants";
 import { COLORS } from "../../../../constants/colors";
 import SelectableGrid from "./SelectableGrid";
 
-const LifestyleSection = () => {
+const LifestyleSection = ({ isRTL = false, t }) => {
+  const { isRTL: contextRTL, t: contextT } = useContext(LanguageContext) || {};
+  const _isRTL = isRTL !== undefined ? isRTL : contextRTL;
+  const _t = t || contextT;
+
   const dispatch = useDispatch();
   const { control, watch, setValue } = useFormContext();
   const smoking_status = watch("smoking_status");
@@ -94,7 +97,6 @@ const LifestyleSection = () => {
     sleepHabits = [],
   } = personalAttributes;
 
-  // Get marriageBudget from the correct location
   const { marriageBudget = [] } = professionalEducational;
 
   const {
@@ -109,18 +111,42 @@ const LifestyleSection = () => {
   const { countries = [], religions = [], nationalities = [] } = geographic;
 
   const childNumbers = [
-    { id: 1, name: "No Children 🚫" },
-    { id: 2, name: "1 Child 👶" },
-    { id: 3, name: "2 Children 🧒👧" },
-    { id: 4, name: "3 Children 👧🧒👦" },
-    { id: 5, name: "4 or More Children 👨‍👩‍👧‍👦" },
+    {
+      id: 1,
+      name: _t ? _t("profile.lifestyle.children.none") : "No Children 🚫",
+    },
+    { id: 2, name: _t ? _t("profile.lifestyle.children.one") : "1 Child 👶" },
+    {
+      id: 3,
+      name: _t ? _t("profile.lifestyle.children.two") : "2 Children 🧒👧",
+    },
+    {
+      id: 4,
+      name: _t ? _t("profile.lifestyle.children.three") : "3 Children 👧🧒👦",
+    },
+    {
+      id: 5,
+      name: _t
+        ? _t("profile.lifestyle.children.four_plus")
+        : "4 or More Children 👨‍👩‍👧‍👦",
+    },
   ];
 
   const smokingStatuses = [
-    { id: 1, name: "Non-smoker" },
-    { id: 2, name: "Regular smoker" },
-    { id: 3, name: "Social smoker" },
+    {
+      id: 1,
+      name: _t ? _t("profile.lifestyle.smoking.non_smoker") : "Non-smoker",
+    },
+    {
+      id: 2,
+      name: _t ? _t("profile.lifestyle.smoking.regular") : "Regular smoker",
+    },
+    {
+      id: 3,
+      name: _t ? _t("profile.lifestyle.smoking.social") : "Social smoker",
+    },
   ];
+
   const smokingIcons = {
     Cigarettes: "cafe",
     Cigarette: "cafe",
@@ -130,12 +156,88 @@ const LifestyleSection = () => {
     Vape: "cloud",
     Other: "help-circle",
   };
+
   const hobbyIcons = {
     Photography: "camera",
     Gardening: "leaf",
     Painting: "color-palette",
     Cycling: "bicycle",
     Hiking: "walk",
+  };
+
+  const dynamicStyles = {
+    container: {
+      flex: 1,
+      backgroundColor: "#f8f9fa",
+    },
+    scrollContent: {
+      paddingVertical: 20,
+      paddingHorizontal: 16,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: "#f8f9fa",
+      padding: 20,
+    },
+    loadingText: {
+      fontSize: 16,
+      color: COLORS.primary,
+      fontWeight: "500",
+      marginTop: 10,
+      textAlign: _isRTL ? "right" : "left",
+    },
+    preferenceItem: {
+      flexDirection: _isRTL ? "row-reverse" : "row",
+      alignItems: "center",
+      backgroundColor: COLORS.grayLight,
+      borderRadius: 24,
+      margin: 4,
+      borderWidth: 2,
+      borderColor: "transparent",
+      minHeight: 48,
+      ...Platform.select({
+        ios: {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+        },
+        android: {
+          elevation: 2,
+        },
+      }),
+    },
+    preferenceItemSelected: {
+      backgroundColor: COLORS.primary,
+      borderColor: "transparent",
+      transform: [{ scale: 1.02 }],
+      ...Platform.select({
+        ios: {
+          shadowColor: COLORS.primaryDark,
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.2,
+          shadowRadius: 4,
+        },
+        android: {
+          elevation: 4,
+        },
+      }),
+    },
+    preferenceText: {
+      flex: 1,
+      fontSize: 14,
+      lineHeight: 20,
+      fontWeight: "500",
+      color: COLORS.text,
+      textAlign: _isRTL ? "right" : "left",
+      paddingHorizontal: 8,
+    },
+    preferenceTextSelected: {
+      color: COLORS.white,
+      fontWeight: "600",
+    },
   };
 
   if (
@@ -145,86 +247,99 @@ const LifestyleSection = () => {
     loading.geographic
   ) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={dynamicStyles.loadingContainer}>
         <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>Loading profile attributes...</Text>
+        <Text style={dynamicStyles.loadingText}>
+          {_t
+            ? _t("profile.lifestyle.loading")
+            : "Loading profile attributes..."}
+        </Text>
       </View>
     );
   }
 
   return (
     <ScrollView
-      style={styles.container}
+      style={dynamicStyles.container}
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.scrollContent}
+      contentContainerStyle={dynamicStyles.scrollContent}
     >
-      <SectionHeader />
+      <SectionHeader isRTL={_isRTL} t={_t} />
       <AnimatedCard delay={100}>
-        <CardHeader {...cardConfigs.origin} />
-        <AnimatedFormContainer>
+        <CardHeader {...cardConfigs.origin} isRTL={_isRTL} t={_t} />
+        <AnimatedFormContainer isRTL={_isRTL}>
           <AnimatedDropdown
             control={control}
             name="nationality_id"
-            label="Nationality"
+            label={_t ? _t("profile.lifestyle.nationality") : "Nationality"}
             items={nationalities}
             leftIcon={
               <FeatherIcon name="flag" size={20} color={COLORS.primary} />
             }
             required
+            isRTL={_isRTL}
           />
           <AnimatedDropdown
             control={control}
             name="country_of_residence_id"
-            label="Country of Residence "
+            label={
+              _t ? _t("profile.lifestyle.country") : "Country of Residence"
+            }
             items={countries}
             leftIcon={
               <FeatherIcon name="map-pin" size={20} color={COLORS.primary} />
             }
             required
+            isRTL={_isRTL}
           />
           <AnimatedDropdown
             control={control}
             name="city_id"
-            label="City"
+            label={_t ? _t("profile.lifestyle.city") : "City"}
             items={cities}
             isLoading={loading.cities}
             leftIcon={
               <FeatherIcon name="map" size={20} color={COLORS.primary} />
             }
             required
+            isRTL={_isRTL}
           />
           <AnimatedDropdown
             control={control}
             name="origin_id"
-            label="Origin "
+            label={_t ? _t("profile.lifestyle.origin") : "Origin"}
             items={origins}
             leftIcon={
               <FeatherIcon name="home" size={20} color={COLORS.primary} />
             }
             required
+            isRTL={_isRTL}
           />
         </AnimatedFormContainer>
       </AnimatedCard>
-      {/* Personal Info */}
+
       <AnimatedCard delay={200}>
-        <CardHeader {...cardConfigs.personal} />
-        <AnimatedFormContainer>
-          <FormRow>
+        <CardHeader {...cardConfigs.personal} isRTL={_isRTL} t={_t} />
+        <AnimatedFormContainer isRTL={_isRTL}>
+          <FormRow isRTL={_isRTL}>
             <AnimatedDropdown
               control={control}
               name="marital_status_id"
-              label="Marital Status "
+              label={
+                _t ? _t("profile.lifestyle.marital_status") : "Marital Status"
+              }
               items={maritalStatuses}
               leftIcon={
                 <MaterialIcon name="people" size={20} color={COLORS.primary} />
               }
               required
+              isRTL={_isRTL}
             />
             <AnimatedDropdown
               required
               control={control}
               name="number_of_children"
-              label="Children "
+              label={_t ? _t("profile.lifestyle.children_label") : "Children"}
               items={childNumbers}
               leftIcon={
                 <MaterialIcon
@@ -233,29 +348,32 @@ const LifestyleSection = () => {
                   color={COLORS.primary}
                 />
               }
+              isRTL={_isRTL}
             />
           </FormRow>
         </AnimatedFormContainer>
       </AnimatedCard>
+
       {/* Physical Attributes */}
       <AnimatedCard delay={400}>
-        <CardHeader {...cardConfigs.physical} />
-        <AnimatedFormContainer>
-          <FormRow>
+        <CardHeader {...cardConfigs.physical} isRTL={_isRTL} t={_t} />
+        <AnimatedFormContainer isRTL={_isRTL}>
+          <FormRow isRTL={_isRTL}>
             <AnimatedDropdown
               control={control}
               name="height"
-              label="Height "
+              label={_t ? _t("profile.lifestyle.height") : "Height"}
               items={heights}
               leftIcon={
                 <FeatherIcon name="arrow-up" size={20} color={COLORS.primary} />
               }
               required
+              isRTL={_isRTL}
             />
             <AnimatedDropdown
               control={control}
               name="weight"
-              label="Weight "
+              label={_t ? _t("profile.lifestyle.weight") : "Weight"}
               items={weights}
               leftIcon={
                 <MaterialIcon
@@ -265,13 +383,14 @@ const LifestyleSection = () => {
                 />
               }
               required
+              isRTL={_isRTL}
             />
           </FormRow>
-          <FormRow>
+          <FormRow isRTL={_isRTL}>
             <AnimatedDropdown
               control={control}
               name="hair_color_id"
-              label="Hair Color "
+              label={_t ? _t("profile.lifestyle.hair_color") : "Hair Color"}
               items={hairColors}
               leftIcon={
                 <MaterialIcon
@@ -281,28 +400,33 @@ const LifestyleSection = () => {
                 />
               }
               required
+              isRTL={_isRTL}
             />
             <AnimatedDropdown
               required
               control={control}
               name="skin_color_id"
-              label="Skin Color "
+              label={_t ? _t("profile.lifestyle.skin_color") : "Skin Color"}
               items={skinColors}
               leftIcon={
                 <MaterialIcon name="palette" size={20} color={COLORS.primary} />
               }
+              isRTL={_isRTL}
             />
           </FormRow>
         </AnimatedFormContainer>
       </AnimatedCard>
+
       {/* Lifestyle & Preferences */}
       <AnimatedCard delay={500}>
-        <CardHeader {...cardConfigs.lifestyle} />
-        <AnimatedFormContainer>
+        <CardHeader {...cardConfigs.lifestyle} isRTL={_isRTL} t={_t} />
+        <AnimatedFormContainer isRTL={_isRTL}>
           <AnimatedDropdown
             control={control}
             name="marriage_budget_id"
-            label="Marriage Budget"
+            label={
+              _t ? _t("profile.lifestyle.marriage_budget") : "Marriage Budget"
+            }
             items={marriageBudget}
             leftIcon={
               <MaterialIcon
@@ -312,11 +436,14 @@ const LifestyleSection = () => {
               />
             }
             required
+            isRTL={_isRTL}
           />
           <AnimatedDropdown
             control={control}
             name="religiosity_level_id"
-            label="Religiosity Level "
+            label={
+              _t ? _t("profile.lifestyle.religiosity") : "Religiosity Level"
+            }
             items={religiosityLevels}
             leftIcon={
               <MaterialIcon
@@ -326,11 +453,12 @@ const LifestyleSection = () => {
               />
             }
             required
+            isRTL={_isRTL}
           />
           <AnimatedDropdown
             control={control}
             name="sleep_habit_id"
-            label="Sleep Habits "
+            label={_t ? _t("profile.lifestyle.sleep_habits") : "Sleep Habits"}
             items={sleepHabits}
             leftIcon={
               <MaterialIcon
@@ -340,45 +468,58 @@ const LifestyleSection = () => {
               />
             }
             required
+            isRTL={_isRTL}
           />
           <AnimatedDropdown
             required
             control={control}
             name="sports_activity_id"
-            label="Sports Activity "
+            label={_t ? _t("profile.lifestyle.sports") : "Sports Activity"}
             items={sportsActivities}
             leftIcon={
               <MaterialIcon name="sports" size={20} color={COLORS.primary} />
             }
+            isRTL={_isRTL}
           />
         </AnimatedFormContainer>
       </AnimatedCard>
+
       <AnimatedCard delay={500}>
-        <CardHeader {...cardConfigs.lifestyle} />
-        <AnimatedFormContainer>
+        <CardHeader {...cardConfigs.lifestyle} isRTL={_isRTL} t={_t} />
+        <AnimatedFormContainer isRTL={_isRTL}>
           {/* Add Smoking Status first */}
           <AnimatedDropdown
             control={control}
             name="smoking_status"
-            label="Smoking Status "
+            label={
+              _t ? _t("profile.lifestyle.smoking_status") : "Smoking Status"
+            }
             items={smokingStatuses}
             leftIcon={
               <FeatherIcon name="wind" size={20} color={COLORS.primary} />
             }
             required
+            isRTL={_isRTL}
           />
 
           {/* Conditional Smoking Preferences */}
           {smoking_status > 1 && (
-            <PreferencesContainer>
+            <PreferencesContainer isRTL={_isRTL}>
               <SelectableGrid
-                placeholder="Smoking Tools"
+                placeholder={
+                  _t ? _t("profile.lifestyle.smoking_tools") : "Smoking Tools"
+                }
                 control={control}
                 name="smoking_tools"
                 items={smokingTools}
-                label="Smoking Preferences (Required)"
+                label={
+                  _t
+                    ? _t("profile.lifestyle.smoking_preferences")
+                    : "Smoking Preferences (Required)"
+                }
                 multiple
                 required
+                isRTL={_isRTL}
                 rules={{
                   validate: (value) => {
                     // Check if smoking status requires tools but none are selected
@@ -386,7 +527,9 @@ const LifestyleSection = () => {
                       (smoking_status === 2 || smoking_status === 3) &&
                       (!value || value.length === 0)
                     ) {
-                      return "Please select at least one smoking tool";
+                      return _t
+                        ? _t("profile.lifestyle.smoking_tools_required")
+                        : "Please select at least one smoking tool";
                     }
                     return true;
                   },
@@ -394,24 +537,33 @@ const LifestyleSection = () => {
                 renderItem={(item, isSelected) => (
                   <View
                     style={[
-                      styles.preferenceItem,
-                      isSelected && styles.preferenceItemSelected,
+                      dynamicStyles.preferenceItem,
+                      isSelected && dynamicStyles.preferenceItemSelected,
                     ]}
                   >
                     <Ionicons
                       name={smokingIcons[item.name] || "alert-circle"}
                       size={20}
                       color={isSelected ? "white" : "#9e086c"}
-                      style={{ marginRight: 5 }}
+                      style={{
+                        marginRight: _isRTL ? 0 : 5,
+                        marginLeft: _isRTL ? 5 : 0,
+                      }}
                     />
 
                     <Text
                       style={[
-                        styles.preferenceText,
-                        isSelected && styles.preferenceTextSelected,
+                        dynamicStyles.preferenceText,
+                        isSelected && dynamicStyles.preferenceTextSelected,
                       ]}
                     >
-                      {item.name}
+                      {_t
+                        ? _t(
+                            `profile.lifestyle.smoking_tool.${item.name
+                              .toLowerCase()
+                              .replace(/[\s-]+/g, "_")}`
+                          ) || item.name
+                        : item.name}
                     </Text>
                   </View>
                 )}
@@ -423,139 +575,82 @@ const LifestyleSection = () => {
           <AnimatedDropdown
             control={control}
             name="drinking_status_id"
-            label="Drinking Status "
+            label={
+              _t ? _t("profile.lifestyle.drinking_status") : "Drinking Status"
+            }
             items={drinkingStatuses}
             leftIcon={
               <FeatherIcon name="coffee" size={20} color={COLORS.primary} />
             }
+            isRTL={_isRTL}
           />
         </AnimatedFormContainer>
       </AnimatedCard>
+
       {/* Hobbies & Interests */}
       <AnimatedCard delay={600}>
-        <CardHeader {...cardConfigs.hobbies} />
-        <AnimatedFormContainer>
+        <CardHeader {...cardConfigs.hobbies} isRTL={_isRTL} t={_t} />
+        <AnimatedFormContainer isRTL={_isRTL}>
           <SelectableGrid
             control={control}
             name="hobbies"
             items={hobbies}
             multiple
             numColumns={3}
+            isRTL={_isRTL}
             renderItem={(item, isSelected) => (
-              <HobbyItem item={item} isSelected={isSelected} />
+              <HobbyItem
+                item={item}
+                isSelected={isSelected}
+                isRTL={_isRTL}
+                t={_t}
+              />
             )}
           />
         </AnimatedFormContainer>
       </AnimatedCard>
+
       <AnimatedCard delay={700}>
-        <CardHeader {...cardConfigs.pets} />
-        <AnimatedFormContainer>
+        <CardHeader {...cardConfigs.pets} isRTL={_isRTL} t={_t} />
+        <AnimatedFormContainer isRTL={_isRTL}>
           <SelectableGrid
             control={control}
             name="pets"
             items={pets}
             multiple
             numColumns={3}
+            isRTL={_isRTL}
             renderItem={(item, isSelected) => (
-              <PetItem item={item} isSelected={isSelected} />
+              <PetItem
+                item={item}
+                isSelected={isSelected}
+                isRTL={_isRTL}
+                t={_t}
+              />
             )}
           />
         </AnimatedFormContainer>
       </AnimatedCard>
+
       {/* Religion */}
       <AnimatedCard delay={800}>
-        <CardHeader {...cardConfigs.spiritual} />
-        <AnimatedFormContainer>
+        <CardHeader {...cardConfigs.spiritual} isRTL={_isRTL} t={_t} />
+        <AnimatedFormContainer isRTL={_isRTL}>
           <AnimatedDropdown
             control={control}
             name="religion_id"
-            label="Religion "
+            label={_t ? _t("profile.lifestyle.religion") : "Religion"}
             items={religions}
             leftIcon={
               <FeatherIcon name="moon" size={20} color={COLORS.primary} />
             }
             required
+            isRTL={_isRTL}
           />
         </AnimatedFormContainer>
       </AnimatedCard>
     </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f8f9fa",
-  },
-  scrollContent: {
-    paddingVertical: 20,
-    paddingHorizontal: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f8f9fa",
-    padding: 20,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: COLORS.primary,
-    fontWeight: "500",
-    marginTop: 10,
-  },
-  preferenceItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: COLORS.grayLight,
-    borderRadius: 24,
-    margin: 4,
-    borderWidth: 2,
-    borderColor: "transparent",
-    minHeight: 48,
-
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
-  },
-  preferenceItemSelected: {
-    backgroundColor: COLORS.primary,
-    borderColor: "transparent",
-    transform: [{ scale: 1.02 }],
-    ...Platform.select({
-      ios: {
-        shadowColor: COLORS.primaryDark,
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
-  },
-  preferenceText: {
-    flex: 1,
-    fontSize: 15,
-    lineHeight: 20,
-    fontWeight: "500",
-    color: COLORS.text,
-    textAlign: "left",
-    paddingHorizontal: 8,
-    fontSize: 14,
-  },
-  preferenceTextSelected: {
-    color: COLORS.white,
-    fontWeight: "600",
-  },
-});
 
 export default LifestyleSection;

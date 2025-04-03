@@ -3,10 +3,7 @@ import { View, Text, TouchableOpacity } from "react-native";
 import { useSelector, useDispatch } from "react-redux";
 import styles from "../../styles/SearchScreen";
 import ModernDropdown from "../search/ModernDropdown";
-import {
-  selectDirectMarriageBudget,
-  debugState,
-} from "../../store/slices/profileAttributesSlice";
+import { selectDirectMarriageBudget } from "../../store/slices/profileAttributesSlice";
 
 const EducationSection = ({
   preferences,
@@ -18,9 +15,7 @@ const EducationSection = ({
   const marriageBudget = useSelector(selectDirectMarriageBudget);
   const dispatch = useDispatch();
 
-  useEffect(() => {
-    dispatch(debugState());
-  }, [
+  useEffect(() => {}, [
     marriageBudget,
     professionalEducational,
     preferences.preferred_employment_status,

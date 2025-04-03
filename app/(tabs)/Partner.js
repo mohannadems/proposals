@@ -122,9 +122,6 @@ const SearchScreen = () => {
   useEffect(() => {
     if (isLoading) {
       const fallbackTimer = setTimeout(() => {
-        console.log(
-          "Fallback timer triggered - forcing exit from loading state"
-        );
         dispatch(manuallySetLoading(false));
         setIsLoading(false);
       }, 10000);
@@ -192,11 +189,7 @@ const SearchScreen = () => {
   }, [isLoading]);
 
   const initializeScreen = async () => {
-    console.log("[SearchScreen] Starting initializeScreen");
     if (!isMounted) {
-      console.log(
-        "[SearchScreen] Component not mounted, exiting initializeScreen"
-      );
       return;
     }
 
@@ -205,33 +198,22 @@ const SearchScreen = () => {
     dispatch(clearError());
 
     try {
-      console.log("[SearchScreen] Fetching user ID");
       const userId = await authService.getUserId();
       setPreferencesUserId(userId);
-      console.log("[SearchScreen] User ID fetched:", userId);
 
-      console.log("[SearchScreen] Fetching profile attributes");
       await dispatch(fetchAllProfileData()).unwrap();
-      console.log("[SearchScreen] Profile attributes fetched successfully");
 
       try {
-        console.log("[SearchScreen] Fetching saved preferences");
         await dispatch(getSavedPreferences()).unwrap();
-        console.log("[SearchScreen] Preferences fetched successfully");
 
         dispatch(setInitialLoadComplete(true));
 
         if (preferences.preferred_country_id) {
-          console.log(
-            "[SearchScreen] Fetching cities for country:",
-            preferences.preferred_country_id
-          );
           dispatch(fetchCitiesByCountry(preferences.preferred_country_id));
         }
 
         setTimeout(() => {
           if (isMounted) {
-            console.log("[SearchScreen] Updating section status after timeout");
             updateSectionStatus();
           }
         }, 300);
@@ -247,9 +229,6 @@ const SearchScreen = () => {
         dispatch(setInitialLoadComplete(true));
       }
     } finally {
-      console.log(
-        "[SearchScreen] Completing initializeScreen, setting loading to false"
-      );
       if (isMounted) {
         setIsLoading(false);
         dispatch(manuallySetLoading(false));
@@ -410,7 +389,6 @@ const SearchScreen = () => {
       <LoadingScreen
         message="Loading preferences..."
         onRetry={() => {
-          console.log("[SearchScreen] Manual retry initiated");
           setIsLoading(false);
           dispatch(manuallySetLoading(false));
           setTimeout(() => {

@@ -14,7 +14,6 @@ import Reanimated, {
 } from "react-native-reanimated";
 import { COLORS } from "../../../../constants/colors";
 
-// Base animation wrapper component
 export const LayoutAnimatedView = ({ children, style, entering, ...props }) => {
   return (
     <Reanimated.View
@@ -28,7 +27,6 @@ export const LayoutAnimatedView = ({ children, style, entering, ...props }) => {
   );
 };
 
-// Card component with proper animation
 export const AnimatedCard = ({ children, delay = 0 }) => {
   return (
     <LayoutAnimatedView
@@ -40,7 +38,6 @@ export const AnimatedCard = ({ children, delay = 0 }) => {
   );
 };
 
-// Section Header component
 export const SectionHeader = ({ title, subtitle, emoji }) => {
   return (
     <LayoutAnimatedView
@@ -54,7 +51,6 @@ export const SectionHeader = ({ title, subtitle, emoji }) => {
   );
 };
 
-// Toggle Button Component
 export const ToggleButton = ({ options, value, onChange, label }) => {
   return (
     <LayoutAnimatedView

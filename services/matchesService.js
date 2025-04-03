@@ -53,25 +53,15 @@ export const matchesService = {
     }
   },
 
-  // Check if there's a mutual match with a user after liking them
-  // Improved checkForMatch method
-  // Updated checkForMatch method to handle actual API response format
   checkForMatch: async (userId) => {
-    // Validate input
     if (userId === undefined || userId === null) {
       console.error("No user ID provided to checkForMatch");
       return { isMatch: false, error: "No user ID provided" };
     }
 
     try {
-      // Use the standard MATCHES endpoint
       const response = await api.get(ENDPOINTS.MATCHES);
 
-      // Log the response for debugging
-      console.log("Matches response:", response.data);
-
-      // Ensure we have data and it's in the expected format
-      // The actual response has a 'matches' array instead of 'data.data'
       if (
         !response.data ||
         !response.data.matches ||
@@ -81,37 +71,28 @@ export const matchesService = {
         return { isMatch: false, error: "Invalid response structure" };
       }
 
-      // Convert userId to a string for consistent comparison
       const userIdString = String(userId);
 
-      // Find the match in the 'matches' array (not 'data.data')
       const matchData = response.data.matches.find(
         (match) => String(match.matched_user_id) === userIdString
       );
 
-      // Return match result
       if (matchData) {
-        console.log("Match found:", matchData);
         return {
           isMatch: true,
           matchData,
         };
       }
 
-      // No match found
-      console.log("No match found for userId:", userId);
       return { isMatch: false };
     } catch (error) {
       console.error("Error fetching mutual matches:", error);
 
-      // Provide more detailed error logging
       if (error.response) {
         console.error("Response error:", error.response.data);
       }
 
-      // For development/testing purposes, return a test match
       if (__DEV__) {
-        console.log("DEV MODE: Returning test match result");
         return {
           isMatch: true,
           matchData: {
@@ -122,7 +103,6 @@ export const matchesService = {
         };
       }
 
-      // Throw a more informative error
       throw {
         message:
           error.response?.data?.message || "Error fetching mutual matches",

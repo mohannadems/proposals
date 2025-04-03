@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useContext } from "react";
 import {
   ScrollView,
   View,
@@ -13,6 +13,7 @@ import MaterialIcon from "react-native-vector-icons/MaterialIcons";
 
 import { COLORS } from "../../../../constants/colors";
 import FormDropdown from "../../../common/FormDropdown";
+import { LanguageContext } from "../../../../contexts/LanguageContext";
 
 import {
   fetchAllProfileData,
@@ -26,6 +27,7 @@ import { AnimatedCard, SectionHeader, ToggleButton } from "./AnimatedBase";
 import { CardHeader } from "./CardHeader";
 import { AnimatedFormContainer } from "./FormComponents";
 
+// Original card configs for reference
 const cardConfigs = {
   education: {
     title: "Educational Background",
@@ -59,7 +61,12 @@ const cardConfigs = {
   },
 };
 
-const EducationWorkSection = () => {
+const EducationWorkSection = ({ isRTL = false, t }) => {
+  const { isRTL: contextRTL, t: contextT } = useContext(LanguageContext) || {};
+  // Use props if provided, otherwise use context
+  const _isRTL = isRTL !== undefined ? isRTL : contextRTL;
+  const _t = t || contextT;
+
   const { control, watch, setValue } = useFormContext();
   const dispatch = useDispatch();
   const employment_status = watch("employment_status");
@@ -83,38 +90,107 @@ const EducationWorkSection = () => {
   const { jobTitles = [] } = useSelector(selectProfessionalEducational);
   const { housingStatuses = [], financialStatuses = [] } = geographic;
 
+  // Create dynamic styles based on RTL
+  const dynamicStyles = {
+    container: {
+      flex: 1,
+      backgroundColor: "#f8f9fa",
+      borderRadius: 15,
+    },
+    scrollContent: {
+      paddingVertical: 24,
+      paddingHorizontal: 16,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: "#f8f9fa",
+      padding: 20,
+    },
+    loadingText: {
+      fontSize: 16,
+      color: COLORS.primary,
+      fontWeight: "500",
+      marginTop: 10,
+      textAlign: _isRTL ? "right" : "left",
+    },
+  };
+
   if (
     loading.personalAttributes ||
     loading.professionalEducational ||
     loading.geographic
   ) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={dynamicStyles.loadingContainer}>
         <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>Loading professional data...</Text>
+        <Text style={dynamicStyles.loadingText}>
+          {_t
+            ? _t("profile.education.loading")
+            : "Loading professional data..."}
+        </Text>
       </View>
     );
   }
 
+  // Helper function to get translated card configs
+  const getTranslatedCardConfig = (config) => {
+    if (!_t) return config;
+
+    return {
+      ...config,
+      title:
+        _t(
+          `profile.education.cards.${config.title
+            .toLowerCase()
+            .replace(/\s+/g, "_")}`
+        ) || config.title,
+      description:
+        _t(
+          `profile.education.cards.${config.description
+            .toLowerCase()
+            .replace(/\s+/g, "_")
+            .replace(/[^\w_]/g, "")}`
+        ) || config.description,
+    };
+  };
+
   return (
     <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
+      style={dynamicStyles.container}
+      contentContainerStyle={dynamicStyles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
       <SectionHeader
-        title="Your Professional Journey"
-        subtitle="Craft the story of your educational and career path 🚀"
+        title={
+          _t
+            ? _t("profile.education.section_title")
+            : "Your Professional Journey"
+        }
+        subtitle={
+          _t
+            ? _t("profile.education.section_subtitle")
+            : "Craft the story of your educational and career path 🚀"
+        }
         emoji="✨"
+        isRTL={_isRTL}
       />
 
       <AnimatedCard delay={100}>
-        <CardHeader {...cardConfigs.education} />
-        <AnimatedFormContainer>
+        <CardHeader
+          {...getTranslatedCardConfig(cardConfigs.education)}
+          isRTL={_isRTL}
+        />
+        <AnimatedFormContainer isRTL={_isRTL}>
           <FormDropdown
             control={control}
             name="educational_level_id"
-            label="Education Level 📚"
+            label={
+              _t
+                ? _t("profile.education.education_level")
+                : "Education Level 📚"
+            }
             items={educationalLevels}
             leftIcon={
               <FeatherIcon
@@ -123,15 +199,19 @@ const EducationWorkSection = () => {
                 color={COLORS.primary}
               />
             }
+            isRTL={_isRTL}
           />
           <FormDropdown
             control={control}
             name="specialization_id"
-            label="Field of Study 📖"
+            label={
+              _t ? _t("profile.education.field_of_study") : "Field of Study 📖"
+            }
             items={specializations}
             leftIcon={
               <FeatherIcon name="book-open" size={20} color={COLORS.primary} />
             }
+            isRTL={_isRTL}
           />
         </AnimatedFormContainer>
       </AnimatedCard>
@@ -141,7 +221,11 @@ const EducationWorkSection = () => {
         name="employment_status"
         render={({ field: { value, onChange } }) => (
           <ToggleButton
-            label="Employment Status"
+            label={
+              _t
+                ? _t("profile.education.employment_status")
+                : "Employment Status"
+            }
             value={value}
             onChange={(newValue) => {
               onChange(newValue);
@@ -153,7 +237,7 @@ const EducationWorkSection = () => {
             options={[
               {
                 value: true,
-                label: "Employed",
+                label: _t ? _t("profile.education.employed") : "Employed",
                 icon: (
                   <FeatherIcon
                     name="briefcase"
@@ -164,7 +248,9 @@ const EducationWorkSection = () => {
               },
               {
                 value: false,
-                label: "Not Employed",
+                label: _t
+                  ? _t("profile.education.not_employed")
+                  : "Not Employed",
                 icon: (
                   <FeatherIcon
                     name="x-circle"
@@ -174,18 +260,22 @@ const EducationWorkSection = () => {
                 ),
               },
             ]}
+            isRTL={_isRTL}
           />
         )}
       />
 
       {employment_status === true && (
         <AnimatedCard delay={200}>
-          <CardHeader {...cardConfigs.jobDetails} />
-          <AnimatedFormContainer>
+          <CardHeader
+            {...getTranslatedCardConfig(cardConfigs.jobDetails)}
+            isRTL={_isRTL}
+          />
+          <AnimatedFormContainer isRTL={_isRTL}>
             <FormDropdown
               control={control}
               name="job_title_id"
-              label="Job Title 💼"
+              label={_t ? _t("profile.education.job_title") : "Job Title 💼"}
               items={jobTitles}
               leftIcon={
                 <FeatherIcon
@@ -195,13 +285,20 @@ const EducationWorkSection = () => {
                 />
               }
               rules={{
-                required: "Job title is required",
+                required: _t
+                  ? _t("profile.education.job_title_required")
+                  : "Job title is required",
               }}
+              isRTL={_isRTL}
             />
             <FormDropdown
               control={control}
               name="position_level_id"
-              label="Position Level 📈"
+              label={
+                _t
+                  ? _t("profile.education.position_level")
+                  : "Position Level 📈"
+              }
               items={positionLevels}
               leftIcon={
                 <FeatherIcon
@@ -211,20 +308,30 @@ const EducationWorkSection = () => {
                 />
               }
               rules={{
-                required: "Position level is required",
+                required: _t
+                  ? _t("profile.education.position_level_required")
+                  : "Position level is required",
               }}
+              isRTL={_isRTL}
             />
           </AnimatedFormContainer>
         </AnimatedCard>
       )}
 
       <AnimatedCard delay={300}>
-        <CardHeader {...cardConfigs.financial} />
-        <AnimatedFormContainer>
+        <CardHeader
+          {...getTranslatedCardConfig(cardConfigs.financial)}
+          isRTL={_isRTL}
+        />
+        <AnimatedFormContainer isRTL={_isRTL}>
           <FormDropdown
             control={control}
             name="financial_status_id"
-            label="Financial Status 💵"
+            label={
+              _t
+                ? _t("profile.education.financial_status")
+                : "Financial Status 💵"
+            }
             items={financialStatuses}
             leftIcon={
               <FeatherIcon
@@ -233,47 +340,63 @@ const EducationWorkSection = () => {
                 color={COLORS.primary}
               />
             }
+            isRTL={_isRTL}
           />
           <FormDropdown
             control={control}
             name="housing_status_id"
-            label="Housing Status 🏠"
+            label={
+              _t ? _t("profile.education.housing_status") : "Housing Status 🏠"
+            }
             items={housingStatuses}
             leftIcon={
               <FeatherIcon name="home" size={20} color={COLORS.primary} />
             }
+            isRTL={_isRTL}
           />
         </AnimatedFormContainer>
       </AnimatedCard>
 
       <AnimatedCard delay={400}>
-        <CardHeader {...cardConfigs.social} />
-        <AnimatedFormContainer>
+        <CardHeader
+          {...getTranslatedCardConfig(cardConfigs.social)}
+          isRTL={_isRTL}
+        />
+        <AnimatedFormContainer isRTL={_isRTL}>
           <FormDropdown
             required
             control={control}
             name="social_media_presence_id"
-            label="Social Media Presence 📱"
+            label={
+              _t
+                ? _t("profile.education.social_media")
+                : "Social Media Presence 📱"
+            }
             items={socialMediaPresence}
             leftIcon={
               <FeatherIcon name="share-2" size={20} color={COLORS.primary} />
             }
+            isRTL={_isRTL}
           />
         </AnimatedFormContainer>
       </AnimatedCard>
 
       <AnimatedCard delay={500}>
-        <CardHeader {...cardConfigs.zodiac} />
-        <AnimatedFormContainer>
+        <CardHeader
+          {...getTranslatedCardConfig(cardConfigs.zodiac)}
+          isRTL={_isRTL}
+        />
+        <AnimatedFormContainer isRTL={_isRTL}>
           <FormDropdown
             required
             control={control}
             name="zodiac_sign_id"
-            label="Zodiac Sign ✨"
+            label={_t ? _t("profile.education.zodiac_sign") : "Zodiac Sign ✨"}
             items={zodiacSigns}
             leftIcon={
               <MaterialIcon name="stars" size={20} color={COLORS.primary} />
             }
+            isRTL={_isRTL}
           />
         </AnimatedFormContainer>
       </AnimatedCard>
@@ -283,13 +406,15 @@ const EducationWorkSection = () => {
         name="car_ownership"
         render={({ field: { value, onChange } }) => (
           <ToggleButton
-            label="Car Ownership 🚗"
+            label={
+              _t ? _t("profile.education.car_ownership") : "Car Ownership 🚗"
+            }
             value={value}
             onChange={onChange}
             options={[
               {
                 value: true,
-                label: "Yes",
+                label: _t ? _t("common.yes") : "Yes",
                 icon: (
                   <FeatherIcon
                     name="check-circle"
@@ -300,7 +425,7 @@ const EducationWorkSection = () => {
               },
               {
                 value: false,
-                label: "No",
+                label: _t ? _t("common.no") : "No",
                 icon: (
                   <FeatherIcon
                     name="x-circle"
@@ -310,36 +435,12 @@ const EducationWorkSection = () => {
                 ),
               },
             ]}
+            isRTL={_isRTL}
           />
         )}
       />
     </ScrollView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#f8f9fa",
-    borderRadius: 15,
-  },
-  scrollContent: {
-    paddingVertical: 24,
-    paddingHorizontal: 16,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f8f9fa",
-    padding: 20,
-  },
-  loadingText: {
-    fontSize: 16,
-    color: COLORS.primary,
-    fontWeight: "500",
-    marginTop: 10,
-  },
-});
 
 export default EducationWorkSection;

@@ -461,9 +461,7 @@ const MatchesScreen = () => {
         if (isMounted) {
           if (retryCount < MAX_RETRIES) {
             retryCount++;
-            console.log(
-              `Retrying data fetch (${retryCount}/${MAX_RETRIES})...`
-            );
+
             setTimeout(fetchInitialData, 1000);
           } else {
             Alert.alert(

@@ -1,4 +1,4 @@
-import { StyleSheet, Platform, Dimensions } from "react-native";
+import { StyleSheet, Platform, Dimensions, StatusBar } from "react-native";
 import COLORS from "../constants/colors";
 const { width, height } = Dimensions.get("window");
 const HEADER_HEIGHT = Platform.OS === "ios" ? 520 : 280;

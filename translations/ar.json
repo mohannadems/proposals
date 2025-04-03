@@ -22,7 +22,9 @@
     "select_date": "اختر التاريخ",
     "cancel": "إلغاء",
     "confirm": "تأكيد",
-    "date_error": "الرجاء اختيار تاريخ صالح"
+    "date_error": "الرجاء اختيار تاريخ صالح",
+    "yes": "نعم",
+    "no": "لا"
   },
   "auth": {
     "login": "تسجيل الدخول",
@@ -50,6 +52,7 @@
       "inactive": "غير نشط",
       "pending": "قيد الانتظار"
     },
+
     "sections": {
       "basic_information": "المعلومات الأساسية",
       "demographics": "البيانات الديموغرافية",
@@ -63,7 +66,11 @@
     "last_name": "اسم العائلة",
     "email": "البريد الإلكتروني",
     "phone_number": "رقم الهاتف",
-    "gender": "الجنس",
+    "gender": {
+      "male": "ذكر",
+      "female": "أنثى",
+      "error": " الجنس"
+    },
     "nationality": "الجنسية",
     "origin": "الأصل",
     "religion": "الديانة",
@@ -90,8 +97,8 @@
     "drinking_status": "حالة شرب الكحول",
     "sports_activity": "النشاط الرياضي",
     "social_media_presence": "وسائل التواصل الاجتماعي",
-    "hobbies": "الهوايات",
-    "pets": "الحيوانات الأليفة",
+    "hobbies_profile": "الهوايات",
+    "pets_profile": "الحيوانات الأليفة",
     "guardian_contact": "معلومات الاتصال بالولي",
     "complete_profile": "أكمل ملفك الشخصي",
     "profile_description": "أنشئ ملفًا يمثلك بحق",
@@ -114,6 +121,50 @@
         "description": "قم بتحميل أفضل صورك"
       }
     },
+    "lifestyle": {
+      "loading": "جاري تحميل بيانات الملف الشخصي...",
+      "nationality": "الجنسية",
+      "country": "بلد الإقامة",
+      "city": "المدينة",
+      "origin": "الأصل",
+      "marital_status": "الحالة الاجتماعية",
+      "children_label": "الأطفال",
+      "height": "الطول",
+      "weight": "الوزن",
+      "hair_color": "لون الشعر",
+      "skin_color": "لون البشرة",
+      "marriage_budget": "ميزانية الزواج",
+      "religiosity": "مستوى التدين",
+      "sleep_habits": "عادات النوم",
+      "sports": "النشاط الرياضي",
+      "smoking_status": "حالة التدخين",
+      "smoking_tools": "أدوات التدخين",
+      "smoking_preferences": "تفضيلات التدخين (مطلوب)",
+      "smoking_tools_required": "الرجاء اختيار أداة تدخين واحدة على الأقل",
+      "drinking_status": "حالة شرب الكحول",
+      "religion": "الديانة",
+      "children": {
+        "none": "لا يوجد أطفال 🚫",
+        "one": "طفل واحد 👶",
+        "two": "طفلان 🧒👧",
+        "three": "ثلاثة أطفال 👧🧒👦",
+        "four_plus": "أربعة أطفال أو أكثر 👨‍👩‍👧‍👦"
+      },
+      "smoking": {
+        "non_smoker": "غير مدخن",
+        "regular": "مدخن منتظم",
+        "social": "مدخن اجتماعي"
+      },
+      "smoking_tool": {
+        "cigarettes": "سجائر",
+        "cigarette": "سيجارة",
+        "shisha": "شيشة",
+        "hookah": "أرجيلة",
+        "e_cigarettes": "سجائر إلكترونية",
+        "vape": "فيب",
+        "other": "أخرى"
+      }
+    },
     "personal": {
       "title": "أخبرنا عن نفسك",
       "subtitle": "لنبدأ بمعلوماتك الأساسية",
@@ -130,10 +181,119 @@
       "guardian_contact": "معلومات الاتصال بالولي",
       "guardian_contact_placeholder": "أدخل رقم الهاتف"
     },
-    "gender": {
-      "male": "ذكر",
-      "female": "أنثى",
-      "error": "الرجاء اختيار الجنس"
+
+    "cards": {
+      "origin": {
+        "title": "الأصل والإقامة",
+        "description": "الجذور والمنزل الحالي الذي يشكلك"
+      },
+      "personal": {
+        "title": "المعلومات الشخصية",
+        "description": "تفاصيل أساسية عن نفسك"
+      },
+      "employment": {
+        "title": "العمل والمالية",
+        "description": "الوظيفة والوضع المالي"
+      },
+      "preferences": {
+        "title": "التفضيلات الشخصية",
+        "description": "خيارات نمط حياتك وتفضيلاتك"
+      },
+      "physical": {
+        "title": "الصفات الجسدية",
+        "description": "خصائصك الجسدية الفريدة"
+      },
+      "hobbies": {
+        "title": "الهوايات والاهتمامات",
+        "description": "استكشف الشغف الذي يعرفك"
+      },
+      "lifestyle": {
+        "title": "خيارات نمط الحياة",
+        "description": "تفضيلاتك وعاداتك الشخصية"
+      },
+      "pets": {
+        "title": "الحيوانات الأليفة",
+        "description": "رفقاؤك ذوو الفراء أو الريش"
+      },
+      "spiritual": {
+        "title": "المعتقدات الروحية",
+        "description": "منظورك الروحي"
+      }
+    },
+    "hobbies": {
+      "photography": "التصوير الفوتوغرافي",
+      "gardening": "البستنة",
+      "painting": "الرسم",
+      "cycling": "ركوب الدراجات",
+      "hiking": "المشي لمسافات طويلة",
+      "reading": "القراءة",
+      "cooking": "الطبخ",
+      "music": "الموسيقى",
+      "travel": "السفر",
+      "gaming": "ألعاب الفيديو",
+      "writing": "الكتابة",
+      "dancing": "الرقص",
+      "shopping": "التسوق",
+      "sports": "الرياضة",
+      "movies": "الأفلام"
+    },
+    "pets": {
+      "cat": "قط",
+      "dog": "كلب",
+      "bird": "طائر",
+      "fish": "سمك",
+      "hamster": "هامستر",
+      "rabbit": "أرنب",
+      "reptile": "زواحف",
+      "other": "أخرى"
+    },
+    "education": {
+      "loading": "جاري تحميل البيانات المهنية...",
+      "section_title": "رحلتك المهنية",
+      "section_subtitle": "صمم قصة مسارك التعليمي والمهني 🚀",
+      "education_level": "المستوى التعليمي 📚",
+      "field_of_study": "مجال الدراسة 📖",
+      "employment_status": "حالة التوظيف",
+      "employed": "موظف",
+      "not_employed": "غير موظف",
+      "job_title": "المسمى الوظيفي 💼",
+      "job_title_required": "المسمى الوظيفي مطلوب",
+      "position_level": "مستوى المنصب 📈",
+      "position_level_required": "مستوى المنصب مطلوب",
+      "financial_status": "الوضع المالي 💵",
+      "housing_status": "وضع السكن 🏠",
+      "social_media": "وجود وسائل التواصل الاجتماعي 📱",
+      "zodiac_sign": "برج الأبراج ✨",
+      "car_ownership": "ملكية السيارة 🚗",
+      "cards": {
+        "educational_background": "الخلفية التعليمية",
+        "your_academic_achievements_and_specialization": "إنجازاتك الأكاديمية وتخصصك",
+        "job_details": "تفاصيل الوظيفة",
+        "your_professional_information": "معلوماتك المهنية",
+        "financial_information": "المعلومات المالية",
+        "your_financial_stability_and_housing": "استقرارك المالي والسكني",
+        "online_presence": "الوجود عبر الإنترنت",
+        "your_social_media_and_digital_footprint": "وسائل التواصل الاجتماعي والبصمة الرقمية الخاصة بك",
+        "cosmic_identity": "الهوية الكونية",
+        "your_astrological_sign": "برجك الفلكي"
+      }
+    },
+    "images": {
+      "title": "الصورة الشخصية 📸",
+      "subtitle": "اترك انطباعًا رائعًا بأفضل صورة لك",
+      "change_photo": "تغيير الصورة",
+      "tap_to_add": "انقر لإضافة صورتك الشخصية ✨",
+      "take_photo": "التقاط صورة",
+      "choose_gallery": "اختر من المعرض",
+      "remove_photo": "إزالة الصورة",
+      "permission_title": "الإذن مطلوب",
+      "permission_message": "نحتاج إلى أذونات معرض الكاميرا لجعل هذا يعمل!",
+      "camera_permission_title": "الإذن مطلوب",
+      "camera_permission_message": "إذن الكاميرا مطلوب",
+      "upload_error": "فشل في تحميل الصورة. يرجى المحاولة مرة أخرى.",
+      "pick_error": "فشل في اختيار الصورة. يرجى المحاولة مرة أخرى.",
+      "remove_error": "فشل في إزالة الصورة. يرجى المحاولة مرة أخرى.",
+      "size_error": "يجب أن يكون حجم الصورة أقل من 5 ميجابايت"
     }
   },
   "tabs": {
