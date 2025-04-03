@@ -2,7 +2,6 @@ import { StyleSheet, Dimensions } from "react-native";
 import COLORS from "../constants/colors";
 const { width } = Dimensions.get("window");
 
-// Create a function that returns the styles, allowing us to use the isRTL parameter
 export default function createHomeStyles(isRTL) {
   return StyleSheet.create({
     container: {
@@ -23,7 +22,7 @@ export default function createHomeStyles(isRTL) {
     },
     heroContent: {
       marginTop: 60,
-      alignItems: isRTL ? "flex-start" : "flex-end",
+      alignItems: isRTL ? "flex-end " : "flex-start ",
     },
     heroTitle: {
       fontSize: 48,
@@ -39,7 +38,7 @@ export default function createHomeStyles(isRTL) {
       color: COLORS.white,
       opacity: 0.8,
       marginBottom: 25,
-      textAlign: isRTL ? "right" : "left",
+      textAlign: isRTL ? "left" : " right",
       writingDirection: isRTL ? "rtl" : "ltr",
     },
     heroButton: {
@@ -56,7 +55,7 @@ export default function createHomeStyles(isRTL) {
       shadowRadius: 15,
       elevation: 12,
       shadowColor: COLORS.text,
-      alignSelf: isRTL ? "flex-start " : "flex-end",
+      alignSelf: isRTL ? "flex-start  " : "flex-end",
     },
     buttonBlur: {
       flex: 1,
