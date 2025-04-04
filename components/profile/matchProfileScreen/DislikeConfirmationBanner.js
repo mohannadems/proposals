@@ -10,8 +10,9 @@ import { BlurView } from "expo-blur";
 import { Feather } from "@expo/vector-icons";
 import { FadeInDown } from "react-native-reanimated";
 import { COLORS } from "../../../constants/colors";
-import styles from "../../../styles/matchProfileStyle";
-
+import createMatchProfileStyles from "../../../styles/matchProfileStyle";
+import { LanguageContext } from "../../../contexts/LanguageContext";
+import { useContext } from "react";
 const DislikeConfirmationBanner = ({
   visible,
   onConfirm,
@@ -19,6 +20,8 @@ const DislikeConfirmationBanner = ({
   userName,
   isLoading,
 }) => {
+  const { t, isRTL } = useContext(LanguageContext);
+  const styles = createMatchProfileStyles(isRTL);
   if (!visible) return null;
 
   return (

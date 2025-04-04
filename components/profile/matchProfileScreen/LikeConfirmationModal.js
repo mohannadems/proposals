@@ -1,12 +1,15 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Modal, View, Text, TouchableOpacity } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
 import { COLORS } from "../../../constants/colors";
-import styles from "../../../styles/matchProfileStyle";
+import createMatchProfileStyles from "../../../styles/matchProfileStyle";
+import { LanguageContext } from "../../../contexts/LanguageContext";
 import { StyleSheet } from "react-native";
 
 const LikeConfirmationModal = ({ visible, onConfirm, onCancel, userName }) => {
+  const { t, isRTL } = useContext(LanguageContext);
+  const styles = createMatchProfileStyles(isRTL);
   return (
     <Modal
       animationType="fade"

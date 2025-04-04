@@ -5,6 +5,7 @@ import React, {
   useEffect,
   memo,
   useMemo,
+  useContext,
 } from "react";
 import {
   View,
@@ -30,7 +31,7 @@ import { SharedElement } from "react-navigation-shared-element";
 import MaskedView from "@react-native-masked-view/masked-view";
 import { useDispatch, useSelector } from "react-redux";
 import { COLORS } from "../../constants/colors";
-import styles from "../../styles/matches";
+import createStyles from "../../styles/matches";
 import withProfileCompletion from "../../components/profile/withProfileCompletion";
 import { useImageUtils } from "../../hooks/useImageUtils";
 import { fetchProfileCompletionData } from "../../store/slices/profileCompletionSlice";
@@ -43,25 +44,25 @@ import {
   clearFilters,
   setActiveTab,
 } from "../../store/slices/userMatchesSlice";
+import { LanguageContext } from "../../contexts/LanguageContext";
 
-const EmptyStateCard = memo(({ type }) => {
+const EmptyStateCard = memo(({ type, styles }) => {
+  const { t } = useContext(LanguageContext);
+
   const messages = {
     preferences: {
-      title: "No Preference Matches",
-      description:
-        "We couldn't find exact matches for your preferences. Try adjusting your search criteria.",
+      title: t("matches.empty_states.preferences.title"),
+      description: t("matches.empty_states.preferences.description"),
       icon: "search",
     },
     suggested: {
-      title: "No Suggested Matches",
-      description:
-        "No suggested matches at the moment. Check back later or modify your filters.",
+      title: t("matches.empty_states.suggested.title"),
+      description: t("matches.empty_states.suggested.description"),
       icon: "search",
     },
     liked: {
-      title: "No Liked Profiles",
-      description:
-        "You haven't liked anyone yet. Browse matches and tap the heart icon to see them here.",
+      title: t("matches.empty_states.liked.title"),
+      description: t("matches.empty_states.liked.description"),
       icon: "heart",
     },
   };
@@ -79,7 +80,8 @@ const EmptyStateCard = memo(({ type }) => {
   );
 });
 
-const MatchCard = memo(({ user, onPress }) => {
+const MatchCard = memo(({ user, onPress, styles }) => {
+  const { t } = useContext(LanguageContext);
   const { getProfileImage } = useImageUtils();
   const scale = useRef(new Animated.Value(1)).current;
 
@@ -166,7 +168,7 @@ const MatchCard = memo(({ user, onPress }) => {
                 />
               </MaskedView>
               <Text style={styles.matchPercentage}>
-                {matchPercentage}% Match
+                {matchPercentage}% {t("matches.cards.match")}
               </Text>
             </View>
           </BlurView>
@@ -179,7 +181,7 @@ const MatchCard = memo(({ user, onPress }) => {
         <View style={styles.activeStatus}>
           <View style={styles.activeDot} />
           <Text style={styles.activeText}>
-            {user.last_active || "Just now"}
+            {user.last_active || t("matches.cards.active")}
           </Text>
         </View>
       </Animated.View>
@@ -187,7 +189,8 @@ const MatchCard = memo(({ user, onPress }) => {
   );
 });
 
-const QuickMatch = memo(({ user, onPress }) => {
+const QuickMatch = memo(({ user, onPress, styles }) => {
+  const { t } = useContext(LanguageContext);
   const { getProfileImage } = useImageUtils();
   const scale = useRef(new Animated.Value(1)).current;
 
@@ -216,8 +219,10 @@ const QuickMatch = memo(({ user, onPress }) => {
   );
 
   const distance = useMemo(
-    () => user.distance || `${Math.floor(Math.random() * 10) + 1} miles away`,
-    [user.distance]
+    () =>
+      user.distance ||
+      `${Math.floor(Math.random() * 10) + 1} ${t("matches.cards.miles_away")}`,
+    [user.distance, t]
   );
 
   return (
@@ -261,7 +266,7 @@ const QuickMatch = memo(({ user, onPress }) => {
   );
 });
 
-const FilterChip = memo(({ label, icon, active, onPress }) => (
+const FilterChip = memo(({ label, icon, active, onPress, styles }) => (
   <TouchableOpacity
     style={[styles.filterChip, active && styles.filterChipActive]}
     onPress={() => {
@@ -301,107 +306,135 @@ const FiltersPanel = memo(
     onClose,
     onApply,
     onReset,
-  }) => (
-    <Animated.View style={[styles.filtersPanel, { height: filtersHeight }]}>
-      <BlurView intensity={80} style={StyleSheet.absoluteFill}>
-        <ScrollView style={styles.filtersList}>
-          <Text style={styles.filtersTitle}>Filters</Text>
+    styles,
+  }) => {
+    const { t } = useContext(LanguageContext);
 
-          <View style={styles.filterSection}>
-            <Text style={styles.filterSectionTitle}>Age Range</Text>
-            <View style={styles.ageRangeInputContainer}>
-              <View style={styles.ageInputWrapper}>
-                <Text style={styles.ageInputLabel}>Min</Text>
-                <TextInput
-                  style={styles.ageInput}
-                  placeholder="18"
-                  placeholderTextColor="rgba(255,255,255,0.5)"
-                  keyboardType="number-pad"
-                  maxLength={2}
-                  value={
-                    activeFilters.age_min
-                      ? activeFilters.age_min.toString()
-                      : ""
-                  }
-                  onChangeText={(text) => {
-                    dispatch(
-                      setActiveFilters({
-                        age_min: text ? parseInt(text) : null,
-                      })
-                    );
-                  }}
-                />
-              </View>
-              <View style={styles.ageSeparator} />
-              <View style={styles.ageInputWrapper}>
-                <Text style={styles.ageInputLabel}>Max</Text>
-                <TextInput
-                  style={styles.ageInput}
-                  placeholder="50"
-                  placeholderTextColor="rgba(255,255,255,0.5)"
-                  keyboardType="number-pad"
-                  maxLength={2}
-                  value={
-                    activeFilters.age_max
-                      ? activeFilters.age_max.toString()
-                      : ""
-                  }
-                  onChangeText={(text) => {
-                    dispatch(
-                      setActiveFilters({
-                        age_max: text ? parseInt(text) : null,
-                      })
-                    );
-                  }}
-                />
+    return (
+      <Animated.View style={[styles.filtersPanel, { height: filtersHeight }]}>
+        <BlurView intensity={80} style={StyleSheet.absoluteFill}>
+          <ScrollView style={styles.filtersList}>
+            <Text style={styles.filtersTitle}>
+              {t("matches.filters.title")}
+            </Text>
+
+            <View style={styles.filterSection}>
+              <Text style={styles.filterSectionTitle}>
+                {t("matches.filters.age_range")}
+              </Text>
+              <View style={styles.ageRangeInputContainer}>
+                <View style={styles.ageInputWrapper}>
+                  <Text style={styles.ageInputLabel}>
+                    {t("matches.filters.min")}
+                  </Text>
+                  <TextInput
+                    style={styles.ageInput}
+                    placeholder="18"
+                    placeholderTextColor="rgba(255,255,255,0.5)"
+                    keyboardType="number-pad"
+                    maxLength={2}
+                    value={
+                      activeFilters.age_min
+                        ? activeFilters.age_min.toString()
+                        : ""
+                    }
+                    onChangeText={(text) => {
+                      dispatch(
+                        setActiveFilters({
+                          age_min: text ? parseInt(text) : null,
+                        })
+                      );
+                    }}
+                  />
+                </View>
+                <View style={styles.ageSeparator} />
+                <View style={styles.ageInputWrapper}>
+                  <Text style={styles.ageInputLabel}>
+                    {t("matches.filters.max")}
+                  </Text>
+                  <TextInput
+                    style={styles.ageInput}
+                    placeholder="50"
+                    placeholderTextColor="rgba(255,255,255,0.5)"
+                    keyboardType="number-pad"
+                    maxLength={2}
+                    value={
+                      activeFilters.age_max
+                        ? activeFilters.age_max.toString()
+                        : ""
+                    }
+                    onChangeText={(text) => {
+                      dispatch(
+                        setActiveFilters({
+                          age_max: text ? parseInt(text) : null,
+                        })
+                      );
+                    }}
+                  />
+                </View>
               </View>
             </View>
-          </View>
 
-          <TouchableOpacity style={styles.applyButton} onPress={onApply}>
-            <LinearGradient
-              colors={COLORS.primaryGradient}
-              style={StyleSheet.absoluteFill}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            />
-            <Text style={styles.applyButtonText}>Apply Filters</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.applyButton} onPress={onApply}>
+              <LinearGradient
+                colors={COLORS.primaryGradient}
+                style={StyleSheet.absoluteFill}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+              />
+              <Text style={styles.applyButtonText}>
+                {t("matches.filters.apply")}
+              </Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.resetButton} onPress={onReset}>
-            <Text style={styles.resetButtonText}>Reset Filters</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </BlurView>
-    </Animated.View>
-  )
+            <TouchableOpacity style={styles.resetButton} onPress={onReset}>
+              <Text style={styles.resetButtonText}>
+                {t("matches.filters.reset")}
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </BlurView>
+      </Animated.View>
+    );
+  }
 );
 
 const SectionHeader = memo(
-  ({ title, percentage, showPercentage, onSeeAllPress }) => (
-    <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-      <View style={styles.sectionHeaderRight}>
-        {showPercentage && percentage > 0 && (
-          <View style={styles.percentageContainer}>
-            <Text style={styles.percentageText}>{percentage}% match</Text>
-          </View>
-        )}
-        <TouchableOpacity onPress={onSeeAllPress}>
-          <Text style={styles.seeAllButton}>See All</Text>
-        </TouchableOpacity>
+  ({ title, percentage, showPercentage, onSeeAllPress, styles }) => {
+    const { t } = useContext(LanguageContext);
+
+    return (
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        <View style={styles.sectionHeaderRight}>
+          {showPercentage && percentage > 0 && (
+            <View style={styles.percentageContainer}>
+              <Text style={styles.percentageText}>
+                {percentage}% {t("matches.sections.match")}
+              </Text>
+            </View>
+          )}
+          <TouchableOpacity onPress={onSeeAllPress}>
+            <Text style={styles.seeAllButton}>
+              {t("matches.sections.see_all")}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </View>
-  )
+    );
+  }
 );
 
-const LoadingIndicator = memo(() => (
+const LoadingIndicator = memo(({ styles }) => (
   <View style={styles.loaderContainer}>
     <ActivityIndicator size="large" color={COLORS.primary} />
   </View>
 ));
 
 const MatchesScreen = () => {
+  const { t, isRTL } = useContext(LanguageContext);
+  const styles = createStyles(isRTL);
+
   const [activeFilter, setActiveFilter] = useState("All");
   const [scrollY] = useState(new Animated.Value(0));
   const [showFilters, setShowFilters] = useState(false);
@@ -464,10 +497,7 @@ const MatchesScreen = () => {
 
             setTimeout(fetchInitialData, 1000);
           } else {
-            Alert.alert(
-              "Data Load Error",
-              "There was a problem loading matches. Please try again later."
-            );
+            Alert.alert(t("common.error"), t("matches.errors.data_load"));
           }
         }
       }
@@ -478,7 +508,7 @@ const MatchesScreen = () => {
     return () => {
       isMounted = false;
     };
-  }, [dispatch]);
+  }, [dispatch, t]);
 
   const isFirstMount = useRef(true);
   useEffect(() => {
@@ -555,12 +585,9 @@ const MatchesScreen = () => {
       .catch((error) => {
         console.error("Error refreshing data:", error);
         setRefreshing(false);
-        Alert.alert(
-          "Refresh Failed",
-          "There was a problem refreshing your matches. Please try again."
-        );
+        Alert.alert(t("common.error"), t("matches.errors.refresh_failed"));
       });
-  }, [dispatch, activeFilter]);
+  }, [dispatch, activeFilter, t]);
 
   const handleMatchPress = useCallback(
     (user) => {
@@ -617,16 +644,18 @@ const MatchesScreen = () => {
 
   const preferenceSectionTitle = useMemo(
     () =>
-      activeFilter === "Liked" ? "Profiles You Liked" : "Preference Matches",
-    [activeFilter]
+      activeFilter === "Liked"
+        ? t("matches.sections.profiles_liked")
+        : t("matches.sections.preference_matches"),
+    [activeFilter, t]
   );
 
   const suggestedSectionTitle = useMemo(
     () =>
       activeFilter === "Liked"
-        ? "More Profiles You Liked"
-        : "Suggested Matches",
-    [activeFilter]
+        ? t("matches.sections.more_profiles_liked")
+        : t("matches.sections.suggested_matches"),
+    [activeFilter, t]
   );
 
   return (
@@ -646,7 +675,9 @@ const MatchesScreen = () => {
             end={{ x: 1, y: 1 }}
           >
             <View style={styles.headerContent}>
-              <Text style={styles.headerTitle}>Discover</Text>
+              <Text style={styles.headerTitle}>
+                {t("matches.header.discover")}
+              </Text>
               <TouchableOpacity
                 style={styles.filterButton}
                 onPress={() => {
@@ -654,7 +685,9 @@ const MatchesScreen = () => {
                   setShowFilters(!showFilters);
                 }}
                 accessibilityLabel={
-                  showFilters ? "Close filters" : "Open filters"
+                  showFilters
+                    ? t("matches.header.close_filters")
+                    : t("matches.header.open_filters")
                 }
                 accessibilityRole="button"
               >
@@ -677,6 +710,7 @@ const MatchesScreen = () => {
         onClose={() => setShowFilters(false)}
         onApply={handleApplyFilters}
         onReset={handleResetFilters}
+        styles={styles}
       />
 
       <ScrollView
@@ -704,16 +738,18 @@ const MatchesScreen = () => {
               contentContainerStyle={styles.filterScroll}
             >
               <FilterChip
-                label="All"
+                label={t("matches.filters.all")}
                 icon="map-pin"
                 active={activeFilter === "All"}
                 onPress={() => handleFilterChange("All")}
+                styles={styles}
               />
               <FilterChip
-                label="Liked"
+                label={t("matches.filters.liked")}
                 icon="heart"
                 active={activeFilter === "Liked"}
                 onPress={() => handleFilterChange("Liked")}
+                styles={styles}
               />
             </ScrollView>
           </View>
@@ -722,13 +758,14 @@ const MatchesScreen = () => {
             <SectionHeader
               title={preferenceSectionTitle}
               onSeeAllPress={() => {}}
+              styles={styles}
             />
 
             {activeFilter === "Liked" ? (
               loading.likes ? (
-                <LoadingIndicator />
+                <LoadingIndicator styles={styles} />
               ) : likedUsers.length === 0 ? (
-                <EmptyStateCard type="liked" />
+                <EmptyStateCard type="liked" styles={styles} />
               ) : (
                 <ScrollView
                   horizontal
@@ -740,14 +777,15 @@ const MatchesScreen = () => {
                       key={user.id ? `user-${user.id}` : `liked-${index}`}
                       user={user}
                       onPress={handleMatchPress}
+                      styles={styles}
                     />
                   ))}
                 </ScrollView>
               )
             ) : loading.preferences ? (
-              <LoadingIndicator />
+              <LoadingIndicator styles={styles} />
             ) : preferenceMatches.length === 0 ? (
-              <EmptyStateCard type="preferences" />
+              <EmptyStateCard type="preferences" styles={styles} />
             ) : (
               <ScrollView
                 horizontal
@@ -759,6 +797,7 @@ const MatchesScreen = () => {
                     key={user.id}
                     user={user}
                     onPress={handleMatchPress}
+                    styles={styles}
                   />
                 ))}
               </ScrollView>
@@ -771,13 +810,14 @@ const MatchesScreen = () => {
               percentage={suggestionPercentage}
               showPercentage={activeFilter !== "Liked"}
               onSeeAllPress={() => {}}
+              styles={styles}
             />
 
             {activeFilter === "Liked" ? (
               loading.likes ? (
-                <LoadingIndicator />
+                <LoadingIndicator styles={styles} />
               ) : likedUsers.length === 0 ? (
-                <EmptyStateCard type="liked" />
+                <EmptyStateCard type="liked" styles={styles} />
               ) : (
                 <View style={styles.quickMatchGrid}>
                   {likedUsers.map((user) => (
@@ -785,14 +825,15 @@ const MatchesScreen = () => {
                       key={user.id}
                       user={user}
                       onPress={handleMatchPress}
+                      styles={styles}
                     />
                   ))}
                 </View>
               )
             ) : loading.suggested ? (
-              <LoadingIndicator />
+              <LoadingIndicator styles={styles} />
             ) : suggestedMatches.length === 0 ? (
-              <EmptyStateCard type="suggested" />
+              <EmptyStateCard type="suggested" styles={styles} />
             ) : (
               <View style={styles.quickMatchGrid}>
                 {suggestedMatches.map((user) => (
@@ -800,6 +841,7 @@ const MatchesScreen = () => {
                     key={user.id}
                     user={user}
                     onPress={handleMatchPress}
+                    styles={styles}
                   />
                 ))}
               </View>

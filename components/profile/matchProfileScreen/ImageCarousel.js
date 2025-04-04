@@ -1,12 +1,13 @@
-import React, { useRef } from "react";
+import React, { useState, useRef, useContext } from "react";
 import { FlatList, Image, Dimensions, Platform } from "react-native";
-
+import createMatchProfileStyles from "../../../styles/matchProfileStyle";
+import { LanguageContext } from "../../../contexts/LanguageContext";
 const { width } = Dimensions.get("window");
 const HEADER_HEIGHT = Platform.OS === "ios" ? 520 : 280;
 
 const ImageCarousel = ({ photos, onPageChange }) => {
+  const { isRTL } = useContext(LanguageContext);
   const flatListRef = useRef(null);
-
   const renderItem = ({ item }) => {
     const imageSource = item.photo_url ? { uri: item.photo_url } : item;
 

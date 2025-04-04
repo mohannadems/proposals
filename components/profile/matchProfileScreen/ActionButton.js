@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useContext } from "react";
 import {
   TouchableOpacity,
   Animated,
@@ -10,9 +10,11 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { COLORS } from "../../../constants/colors";
-import styles from "../../../styles/matchProfileStyle";
-
+import createMatchProfileStyles from "../../../styles/matchProfileStyle";
+import { LanguageContext } from "../../../contexts/LanguageContext";
 const ActionButton = ({ icon, label, onPress, primary, loading }) => {
+  const { isRTL } = useContext(LanguageContext);
+  const styles = createMatchProfileStyles(isRTL);
   const scale = useRef(new Animated.Value(1)).current;
 
   const handlePressIn = () => {

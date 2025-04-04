@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useContext } from "react";
 import {
   View,
   Text,
@@ -11,12 +11,11 @@ import {
   Modal,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-
 import { Feather } from "@expo/vector-icons";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { COLORS } from "../../constants/colors";
-import styles from "../../styles/matchProfileStyle";
+import createMatchProfileStyles from "../../styles/matchProfileStyle";
 import { useProfileActions } from "../../components/profile/matchProfileScreen/useProfileActions";
 import { useProfileData } from "../../components/profile/matchProfileScreen/useProfileData";
 import ActionButton from "../../components/profile/matchProfileScreen/ActionButton";
@@ -30,10 +29,13 @@ import StatItem from "../../components/profile/matchProfileScreen/StatItem";
 import { useSelector, useDispatch } from "react-redux";
 import { matchesService } from "../../services/matchesService";
 import { setActiveTab } from "../../store/slices/userMatchesSlice";
+import { LanguageContext } from "../../contexts/LanguageContext";
 
 const HEADER_HEIGHT = Platform.OS === "ios" ? 520 : 280;
 
 const LoadingSpinner = ({ visible }) => {
+  const { t } = useContext(LanguageContext);
+
   if (!visible) return null;
 
   return (
@@ -63,7 +65,7 @@ const LoadingSpinner = ({ visible }) => {
               color: COLORS.text,
             }}
           >
-            Checking for a match...
+            {t("match_profile.checking_match")}
           </Text>
         </View>
       </View>
@@ -72,6 +74,8 @@ const LoadingSpinner = ({ visible }) => {
 };
 
 const MatchProfileScreen = () => {
+  const { t, isRTL } = useContext(LanguageContext);
+  const styles = createMatchProfileStyles(isRTL);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const scrollY = useRef(new Animated.Value(0)).current;
   const router = useRouter();
@@ -80,7 +84,6 @@ const MatchProfileScreen = () => {
   const dispatch = useDispatch();
 
   const [checkingMatch, setCheckingMatch] = useState(false);
-
   const [debugMode] = useState(true);
 
   const { likedUsers } = useSelector((state) => state.userMatches);
@@ -214,7 +217,7 @@ const MatchProfileScreen = () => {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>Loading profile...</Text>
+        <Text style={styles.loadingText}>{t("match_profile.loading")}</Text>
       </View>
     );
   }
@@ -223,12 +226,12 @@ const MatchProfileScreen = () => {
     return (
       <View style={styles.errorContainer}>
         <Feather name="alert-circle" size={50} color={COLORS.error} />
-        <Text style={styles.errorText}>Failed to load profile</Text>
+        <Text style={styles.errorText}>{t("match_profile.error")}</Text>
         <TouchableOpacity
           style={styles.retryButton}
           onPress={() => dispatch(fetchUserProfile(userId))}
         >
-          <Text style={styles.retryButtonText}>Retry</Text>
+          <Text style={styles.retryButtonText}>{t("match_profile.retry")}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -237,6 +240,11 @@ const MatchProfileScreen = () => {
   if (!userProfile) return null;
 
   const { firstName, fullName, age, city, bio, interests, stats } = profileData;
+
+  // Map stat labels to translated versions
+  const getStatLabel = (key) => {
+    return t(`match_profile.stats.${key}`);
+  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -274,7 +282,11 @@ const MatchProfileScreen = () => {
           >
             <View style={styles.headerContent}>
               <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-                <Feather name="arrow-left" size={24} color={COLORS.white} />
+                <Feather
+                  name={isRTL ? "arrow-right" : "arrow-left"}
+                  size={24}
+                  color={COLORS.white}
+                />
               </TouchableOpacity>
 
               <View style={styles.imageIndicators}>
@@ -342,7 +354,9 @@ const MatchProfileScreen = () => {
                 {hasBeenLiked && (
                   <View style={styles.likedBadge}>
                     <Feather name="heart" size={12} color={COLORS.white} />
-                    <Text style={styles.likedBadgeText}>You Liked</Text>
+                    <Text style={styles.likedBadgeText}>
+                      {t("match_profile.liked")}
+                    </Text>
                   </View>
                 )}
               </View>
@@ -358,7 +372,8 @@ const MatchProfileScreen = () => {
                     end={{ x: 1, y: 0 }}
                   >
                     <Text style={styles.matchText}>
-                      {userProfile.match_percentage}% Match
+                      {userProfile.match_percentage}%{" "}
+                      {t("match_profile.match_percentage")}
                     </Text>
                   </LinearGradient>
                 </View>
@@ -369,7 +384,7 @@ const MatchProfileScreen = () => {
               {!hasBeenLiked ? (
                 <ActionButton
                   icon="heart"
-                  label="Like"
+                  label={t("match_profile.like")}
                   onPress={handleLocalLike}
                   primary
                   loading={loading.like}
@@ -377,21 +392,23 @@ const MatchProfileScreen = () => {
               ) : (
                 <View style={styles.alreadyLikedButton}>
                   <Feather name="check" size={24} color="#9E9E9E" />
-                  <Text style={styles.alreadyLikedText}>Liked</Text>
+                  <Text style={styles.alreadyLikedText}>
+                    {t("match_profile.liked")}
+                  </Text>
                 </View>
               )}
 
               {!hasBeenLiked && (
                 <ActionButton
                   icon="x"
-                  label="Dislike"
+                  label={t("match_profile.dislike")}
                   onPress={handleDislike}
                   loading={loading.dislike}
                 />
               )}
             </View>
 
-            <InfoCard title="About" icon="user">
+            <InfoCard title={t("match_profile.about")} icon="user">
               <Text style={styles.bio}>{bio}</Text>
               <View style={styles.basicInfo}>
                 {profile.job_title && (
@@ -425,7 +442,7 @@ const MatchProfileScreen = () => {
             </InfoCard>
 
             {interests && interests.length > 0 && (
-              <InfoCard title="Interests" icon="heart">
+              <InfoCard title={t("match_profile.interests")} icon="heart">
                 <View style={styles.interests}>
                   {interests.map((interest, index) => (
                     <View key={index} style={styles.interestTag}>
@@ -440,7 +457,7 @@ const MatchProfileScreen = () => {
               </InfoCard>
             )}
 
-            <InfoCard title="Basic Info" icon="info">
+            <InfoCard title={t("match_profile.basic_info")} icon="info">
               <View style={styles.statsGrid}>
                 {Object.entries(stats).map(([key, value]) => {
                   if (!value) return null;
@@ -460,25 +477,10 @@ const MatchProfileScreen = () => {
                     sleep: "moon",
                   };
 
-                  const labels = {
-                    height: "Height",
-                    weight: "Weight",
-                    marital_status: "Marital Status",
-                    children: "Children",
-                    smoking: "Smoking",
-                    drinking: "Drinking",
-                    employment: "Employment",
-                    education: "Education",
-                    religion: "Religion",
-                    zodiac: "Zodiac",
-                    sports: "Sports Activity",
-                    sleep: "Sleep Habit",
-                  };
-
                   return (
                     <StatItem
                       key={key}
-                      label={labels[key]}
+                      label={getStatLabel(key)}
                       value={value}
                       icon={icons[key]}
                     />
@@ -487,7 +489,7 @@ const MatchProfileScreen = () => {
 
                 {profile.pets && profile.pets.length > 0 && (
                   <StatItem
-                    label="Pets"
+                    label={t("match_profile.stats.pets")}
                     value={profile.pets.join(", ")}
                     icon="github"
                   />
@@ -503,7 +505,9 @@ const MatchProfileScreen = () => {
                 }}
               >
                 <Feather name="flag" size={16} color={COLORS.text} />
-                <Text style={styles.reportText}>Report {firstName}</Text>
+                <Text style={styles.reportText}>
+                  {t("match_profile.report")} {firstName}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>

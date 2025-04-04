@@ -1,9 +1,12 @@
-import React from "react";
+import React, { useContext } from "react";
 import { View, Text } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import styles from "../../../styles/matchProfileStyle";
+import createMatchProfileStyles from "../../../styles/matchProfileStyle";
+import { LanguageContext } from "../../../contexts/LanguageContext";
 import COLORS from "../../../constants/colors";
 const LikeSuccessBanner = ({ userName }) => {
+  const { t, isRTL } = useContext(LanguageContext);
+  const styles = createMatchProfileStyles(isRTL);
   return (
     <View style={styles.successBanner}>
       <View style={styles.successBannerIcon}>

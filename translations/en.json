@@ -399,5 +399,99 @@
     "age_ranges": {
       "all_ages": "All Ages"
     }
+  },
+  "match_profile": {
+    "loading": "Loading profile...",
+    "error": "Failed to load profile",
+    "retry": "Retry",
+    "checking_match": "Checking for a match...",
+    "about": "About",
+    "interests": "Interests",
+    "basic_info": "Basic Info",
+    "report": "Report",
+    "like": "Like",
+    "liked": "Liked",
+    "dislike": "Dislike",
+    "match_percentage": "Match",
+    "stats": {
+      "height": "Height",
+      "weight": "Weight",
+      "marital_status": "Marital Status",
+      "children": "Children",
+      "smoking": "Smoking",
+      "drinking": "Drinking",
+      "employment": "Employment",
+      "education": "Education",
+      "religion": "Religion",
+      "zodiac": "Zodiac",
+      "sports": "Sports Activity",
+      "sleep": "Sleep Habit",
+      "pets": "Pets"
+    },
+    "dislike_confirmation": {
+      "title": "Are you sure?",
+      "message": "This will remove {name} from your matches.",
+      "confirm": "Yes, Dislike",
+      "cancel": "Cancel"
+    },
+    "like_confirmation": {
+      "title": "Confirm Like",
+      "message": "Do you want to like {name}?",
+      "confirm": "Yes, Like",
+      "cancel": "Cancel"
+    },
+    "like_success": {
+      "message": "You liked {name}! We'll notify you if it's a match."
+    }
+  },
+  "matches": {
+    "header": {
+      "discover": "Discover",
+      "open_filters": "Open filters",
+      "close_filters": "Close filters"
+    },
+    "filters": {
+      "title": "Filters",
+      "all": "All",
+      "liked": "Liked",
+      "age_range": "Age Range",
+      "min": "Min",
+      "max": "Max",
+      "apply": "Apply Filters",
+      "reset": "Reset Filters"
+    },
+    "sections": {
+      "preference_matches": "Preference Matches",
+      "suggested_matches": "Suggested Matches",
+      "profiles_liked": "Profiles You Liked",
+      "more_profiles_liked": "More Profiles You Liked",
+      "see_all": "See All",
+      "match": "match"
+    },
+    "cards": {
+      "verified": "Verified",
+      "premium": "Premium",
+      "match": "Match",
+      "active": "Just now",
+      "miles_away": "miles away"
+    },
+    "empty_states": {
+      "preferences": {
+        "title": "No Preference Matches",
+        "description": "We couldn't find exact matches for your preferences. Try adjusting your search criteria."
+      },
+      "suggested": {
+        "title": "No Suggested Matches",
+        "description": "No suggested matches at the moment. Check back later or modify your filters."
+      },
+      "liked": {
+        "title": "No Liked Profiles",
+        "description": "You haven't liked anyone yet. Browse matches and tap the heart icon to see them here."
+      }
+    },
+    "errors": {
+      "data_load": "There was a problem loading matches. Please try again later.",
+      "refresh_failed": "There was a problem refreshing your matches. Please try again."
+    }
   }
 }

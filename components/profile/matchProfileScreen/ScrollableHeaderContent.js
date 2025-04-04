@@ -1,13 +1,15 @@
-import React from "react";
+import React, { useContext } from "react";
 import { View, Text, Animated, Platform } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../../../constants/colors";
-import styles from "../../../styles/matchProfileStyle";
-
+import createMatchProfileStyles from "../../../styles/matchProfileStyle";
+import { LanguageContext } from "../../../contexts/LanguageContext";
 const HEADER_HEIGHT = Platform.OS === "ios" ? 520 : 280;
 
 const ScrollableHeaderContent = ({ scrollY, userProfile }) => {
+  const { isRTL } = useContext(LanguageContext);
+  const styles = createMatchProfileStyles(isRTL);
   const translateY = scrollY.interpolate({
     inputRange: [0, HEADER_HEIGHT - 200],
     outputRange: [HEADER_HEIGHT, 0],
