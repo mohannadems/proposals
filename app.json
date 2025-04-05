@@ -1,5 +1,6 @@
 {
   "expo": {
+    "excludedPlugins": ["expo-updates"],
     "name": "proposals-008",
     "slug": "proposals-008",
     "version": "1.0.0",

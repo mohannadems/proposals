@@ -4,6 +4,17 @@
     "appVersionSource": "remote"
   },
   "build": {
+    "minimal": {
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease",
+        "withoutCredentials": true
+      },
+      "env": {
+        "EXPO_NO_UPDATES": "1",
+        "EXPO_NO_SPLASH": "1"
+      }
+    },
     "development": {
       "developmentClient": true,
       "distribution": "internal",
