@@ -13,6 +13,9 @@ const LifestyleSection = ({
   lifestyleInterests,
   personalAttributes,
   onComplete,
+  styles,
+  isRTL = false,
+  t,
 }) => {
   const religiosityLevels = useSelector(selectDirectReligiosityLevels);
 
@@ -33,9 +36,11 @@ const LifestyleSection = ({
   const handleCompleteSection = () => {
     if (hasSmokingError) {
       Alert.alert(
-        "Missing Information",
-        "Please select at least one smoking tool since you've selected 'Smoker'.",
-        [{ text: "OK" }]
+        t ? t("search.lifestyle.errors.missing_info") : "Missing Information",
+        t
+          ? t("search.lifestyle.errors.smoking_tools_required")
+          : "Please select at least one smoking tool since you've selected 'Smoker'.",
+        [{ text: t ? t("common.ok") : "OK" }]
       );
       setValidationErrors({ smokingTools: true });
       return;
@@ -49,13 +54,17 @@ const LifestyleSection = ({
     <View style={styles.sectionCard}>
       <View style={styles.sectionDescription}>
         <Text style={styles.descriptionText}>
-          Set preferences for lifestyle habits and preferences
+          {t
+            ? t("search.lifestyle.description")
+            : "Set preferences for lifestyle habits and preferences"}
         </Text>
       </View>
 
       <View style={styles.toggleContainerWithLabel}>
         <View style={styles.toggleLabelRow}>
-          <Text style={styles.inputLabel}>Smoking Status</Text>
+          <Text style={styles.inputLabel}>
+            {t ? t("search.lifestyle.smoking_status") : "Smoking Status"}
+          </Text>
           <TouchableOpacity
             onPress={() => {
               onChange("preferred_smoking_status", null);
@@ -64,12 +73,16 @@ const LifestyleSection = ({
             }}
             style={styles.clearButton}
           >
-            <Text style={styles.clearButtonText}>Clear</Text>
+            <Text style={styles.clearButtonText}>
+              {t ? t("common.clear") : "Clear"}
+            </Text>
           </TouchableOpacity>
         </View>
 
         {preferences.preferred_smoking_status !== null ? (
-          <View style={styles.toggleButtons}>
+          <View
+            style={[styles.toggleButtons, isRTL && styles.toggleButtonsRTL]}
+          >
             <TouchableOpacity
               style={[
                 styles.toggleButton,
@@ -87,7 +100,7 @@ const LifestyleSection = ({
                     styles.activeToggleText,
                 ]}
               >
-                Smoker
+                {t ? t("search.lifestyle.smoker") : "Smoker"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -111,7 +124,11 @@ const LifestyleSection = ({
               }
             }}
           >
-            <Text style={styles.addPreferenceText}>Add smoking preference</Text>
+            <Text style={styles.addPreferenceText}>
+              {t
+                ? t("search.lifestyle.add_smoking_preference")
+                : "Add smoking preference"}
+            </Text>
           </TouchableOpacity>
         )}
       </View>
@@ -135,10 +152,13 @@ const LifestyleSection = ({
                 validationErrors.smokingTools && { color: "red" },
               ]}
             >
-              Smoking Tools <Text style={{ color: "red" }}>*</Text>
+              {t ? t("search.lifestyle.smoking_tools") : "Smoking Tools"}{" "}
+              <Text style={{ color: "red" }}>*</Text>
             </Text>
             {validationErrors.smokingTools && (
-              <Text style={{ color: "red", fontSize: 12 }}>Required</Text>
+              <Text style={{ color: "red", fontSize: 12 }}>
+                {t ? t("common.required") : "Required"}
+              </Text>
             )}
           </View>
           <MultiSelectChips
@@ -156,6 +176,7 @@ const LifestyleSection = ({
                 }));
               }
             }}
+            isRTL={isRTL}
           />
           {validationErrors.smokingTools && (
             <Text
@@ -163,16 +184,19 @@ const LifestyleSection = ({
                 color: "red",
                 fontSize: 12,
                 padding: 15,
+                textAlign: isRTL ? "right" : "left",
               }}
             >
-              Please select at least one smoking tool.
+              {t
+                ? t("search.lifestyle.errors.select_smoking_tool")
+                : "Please select at least one smoking tool."}
             </Text>
           )}
         </View>
       )}
 
       <ModernDropdown
-        label="Drinking Status"
+        label={t ? t("search.lifestyle.drinking_status") : "Drinking Status"}
         value={preferences.preferred_drinking_status_id}
         items={(lifestyleInterests.drinkingStatuses || []).map((item) => ({
           label: item.name,
@@ -181,11 +205,16 @@ const LifestyleSection = ({
         onValueChange={(value) =>
           onChange("preferred_drinking_status_id", value)
         }
-        placeholder="Select drinking status (optional)"
+        placeholder={
+          t
+            ? t("search.lifestyle.select_drinking_status")
+            : "Select drinking status (optional)"
+        }
+        isRTL={isRTL}
       />
 
       <ModernDropdown
-        label="Sports Activity"
+        label={t ? t("search.lifestyle.sports_activity") : "Sports Activity"}
         value={preferences.preferred_sports_activity_id}
         items={(lifestyleInterests.sportsActivities || []).map((item) => ({
           label: item.name,
@@ -194,29 +223,43 @@ const LifestyleSection = ({
         onValueChange={(value) =>
           onChange("preferred_sports_activity_id", value)
         }
-        placeholder="Select sports activity (optional)"
+        placeholder={
+          t
+            ? t("search.lifestyle.select_sports_activity")
+            : "Select sports activity (optional)"
+        }
+        isRTL={isRTL}
       />
 
       <ModernDropdown
-        label="Sleep Habit"
+        label={t ? t("search.lifestyle.sleep_habit") : "Sleep Habit"}
         value={preferences.preferred_sleep_habit_id}
         items={(personalAttributes.sleepHabits || []).map((item) => ({
           label: item.name,
           value: item.id,
         }))}
         onValueChange={(value) => onChange("preferred_sleep_habit_id", value)}
-        placeholder="Select sleep habit (optional)"
+        placeholder={
+          t
+            ? t("search.lifestyle.select_sleep_habit")
+            : "Select sleep habit (optional)"
+        }
+        isRTL={isRTL}
       />
 
       <View style={styles.chipSelectorContainer}>
         <View style={styles.toggleLabelRow}>
-          <Text style={styles.inputLabel}>Pets</Text>
+          <Text style={styles.inputLabel}>
+            {t ? t("search.lifestyle.pets") : "Pets"}
+          </Text>
           {preferences.preferred_pets_id?.length > 0 && (
             <TouchableOpacity
               onPress={() => onChange("preferred_pets_id", [])}
               style={styles.clearButton}
             >
-              <Text style={styles.clearButtonText}>Clear</Text>
+              <Text style={styles.clearButtonText}>
+                {t ? t("common.clear") : "Clear"}
+              </Text>
             </TouchableOpacity>
           )}
         </View>
@@ -227,11 +270,14 @@ const LifestyleSection = ({
           }))}
           selectedItems={preferences.preferred_pets_id || []}
           onSelectItem={(items) => onChange("preferred_pets_id", items)}
+          isRTL={isRTL}
         />
       </View>
 
       <ModernDropdown
-        label="Religiosity Level"
+        label={
+          t ? t("search.lifestyle.religiosity_level") : "Religiosity Level"
+        }
         value={preferences.preferred_religiosity_level_id}
         items={(religiosityLevels || []).map((item) => ({
           label: item.name,
@@ -240,7 +286,12 @@ const LifestyleSection = ({
         onValueChange={(value) =>
           onChange("preferred_religiosity_level_id", value)
         }
-        placeholder="Select religiosity level (optional)"
+        placeholder={
+          t
+            ? t("search.lifestyle.select_religiosity_level")
+            : "Select religiosity level (optional)"
+        }
+        isRTL={isRTL}
       />
 
       <TouchableOpacity
@@ -251,7 +302,9 @@ const LifestyleSection = ({
         onPress={handleCompleteSection}
       >
         <Text style={styles.completeSectionButtonText}>
-          Save & Complete This Section
+          {t
+            ? t("search.basic_info.save_complete")
+            : "Save & Complete This Section"}
         </Text>
       </TouchableOpacity>
     </View>

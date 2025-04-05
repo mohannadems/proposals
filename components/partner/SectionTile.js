@@ -1,9 +1,9 @@
-import React, { memo } from "react";
+import React, { memo, useContext } from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import COLORS from "../../constants/colors";
-import styles from "../../styles/SearchScreen";
-
+import createHomeStyles from "../../styles/SearchScreen";
+import { LanguageContext } from "../../contexts/LanguageContext";
 const SectionTile = ({
   title,
   subtitle,
@@ -12,6 +12,8 @@ const SectionTile = ({
   isComplete,
   onPress,
 }) => {
+  const { t, isRTL } = useContext(LanguageContext);
+  const styles = createHomeStyles(isRTL);
   return (
     <TouchableOpacity
       style={[styles.tile, isComplete && styles.completeTile]}

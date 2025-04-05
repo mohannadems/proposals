@@ -21,6 +21,7 @@ const BasicInfoSection = ({
   personalAttributes,
   onComplete,
   isRTL = false,
+  styles,
   t,
 }) => {
   const cities = useSelector(selectCities);

@@ -490,7 +490,7 @@ const ProfileScreen = () => {
               />
               <Text style={styles.userStatus}>
                 {t
-                  ? t(`profile.status.${profile.profile_status.toLowerCase()}`)
+                  ? t(`profile.status.${profile.profile_status}`)
                   : profile.profile_status}
               </Text>
             </View>

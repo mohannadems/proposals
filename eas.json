@@ -1,15 +1,37 @@
 {
+  "cli": {
+    "version": ">= 16.1.0",
+    "appVersionSource": "remote"
+  },
   "build": {
-    "android": {
-      "release": {
-        "workflow": "managed",
-        "keystore": {
-          "keystorePath": "./my-release-key.jks",
-          "keystoreAlias": "my-key-alias",
-          "keystorePassword": "112020Sm",
-          "keyPassword": "112020Sm"
-        }
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": false
       }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "development-simulator": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "production": {
+      "autoIncrement": true
     }
+  },
+  "submit": {
+    "production": {}
   }
 }

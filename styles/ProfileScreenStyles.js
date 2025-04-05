@@ -207,7 +207,7 @@ export default StyleSheet.create({
     fontWeight: "bold",
   },
   statusContainer: {
-    flexDirection: "row", // Will be dynamically adjusted based on RTL
+    flexDirection: "row",
     alignItems: "center",
   },
   greenDot: {

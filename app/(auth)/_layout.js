@@ -8,8 +8,8 @@ export default function AuthLayout() {
       <Stack.Screen
         name="verify-otp"
         options={{
-          headerLeft: () => null, // Removes the back button
-          gestureEnabled: false, // Disables swipe-back on iOS
+          headerLeft: () => null,
+          gestureEnabled: true,
         }}
       />
       <Stack.Screen name="subscriptionScreen" />

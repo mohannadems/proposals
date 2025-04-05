@@ -4,6 +4,7 @@ import React, {
   useRef,
   useCallback,
   useMemo,
+  useContext,
 } from "react";
 import {
   View,
@@ -27,7 +28,7 @@ import {
 } from "@expo/vector-icons";
 import { authService } from "../../services/auth.service";
 import { searchService } from "../../services/searchService";
-import styles from "../../styles/SearchScreen";
+import createHomeStyles from "../../styles/SearchScreen";
 import { COLORS } from "../../constants/colors";
 import withProfileCompletion from "../../components/profile/withProfileCompletion";
 import SectionTile from "../../components/partner/SectionTile";
@@ -60,8 +61,11 @@ import {
   selectLifestyleInterests,
   fetchCitiesByCountry,
 } from "../../store/slices/profileAttributesSlice";
+import { LanguageContext } from "../../contexts/LanguageContext";
 
 const SearchScreen = () => {
+  const { t, isRTL } = useContext(LanguageContext);
+  const styles = createHomeStyles(isRTL);
   const [preferencesUserId, setPreferencesUserId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -220,12 +224,12 @@ const SearchScreen = () => {
       } catch (prefsError) {
         console.error("[SearchScreen] Error loading preferences:", prefsError);
         dispatch(setInitialLoadComplete(true));
-        setError("Failed to load preferences. Please try again.");
+        setError(t("search.errors.preferences_load"));
       }
     } catch (error) {
       console.error("[SearchScreen] Error initializing search screen:", error);
       if (isMounted) {
-        setError("Failed to load search data. Please try again.");
+        setError(t("search.errors.data_load"));
         dispatch(setInitialLoadComplete(true));
       }
     } finally {
@@ -347,36 +351,26 @@ const SearchScreen = () => {
       router.push("/(tabs)/matches");
     } catch (error) {
       console.error("Error submitting search preferences:", error);
-      Alert.alert(
-        "Error",
-        "Failed to submit search preferences. Please try again."
-      );
+      Alert.alert(t("common.error"), t("search.errors.submit_preferences"));
     } finally {
       setIsLoading(false);
     }
-  }, [dispatch, preferences, router]);
+  }, [dispatch, preferences, router, t]);
 
   const handleReset = useCallback(() => {
-    Alert.alert(
-      "Reset Preferences",
-      "Are you sure you want to reset all search preferences to default values?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Reset",
-          style: "destructive",
-          onPress: () => {
-            dispatch(resetPreferences());
-            updateSectionStatus();
-            Alert.alert(
-              "Success",
-              "Preferences have been reset to default values."
-            );
-          },
+    Alert.alert(t("search.reset_title"), t("search.reset_message"), [
+      { text: t("common.cancel"), style: "cancel" },
+      {
+        text: t("search.reset_button"),
+        style: "destructive",
+        onPress: () => {
+          dispatch(resetPreferences());
+          updateSectionStatus();
+          Alert.alert(t("common.success"), t("search.reset_success"));
         },
-      ]
-    );
-  }, [dispatch, updateSectionStatus]);
+      },
+    ]);
+  }, [dispatch, updateSectionStatus, t]);
 
   const handleRetry = useCallback(() => {
     setRetryCount((prev) => prev + 1);
@@ -387,7 +381,7 @@ const SearchScreen = () => {
   if (isLoading && !initialLoadComplete) {
     return (
       <LoadingScreen
-        message="Loading preferences..."
+        message={t("search.loading_preferences")}
         onRetry={() => {
           setIsLoading(false);
           dispatch(manuallySetLoading(false));
@@ -431,17 +425,18 @@ const SearchScreen = () => {
         {!activeSection && (
           <View style={styles.tilesContainer}>
             <SectionTile
-              title="Basic Information"
-              subtitle="Nationality, location, age range"
+              title={t("search.sections.basic.title")}
+              subtitle={t("search.sections.basic.subtitle")}
               icon="person"
               IconComponent={Ionicons}
               isComplete={sectionStatus.basic}
               onPress={() => handleNavigateToSection("basic")}
+              styles={styles}
             />
 
             <SectionTile
-              title="Education & Career"
-              subtitle="Education, job, financial status"
+              title={t("search.sections.education.title")}
+              subtitle={t("search.sections.education.subtitle")}
               icon="school"
               IconComponent={Ionicons}
               isComplete={sectionStatus.education}
@@ -449,8 +444,8 @@ const SearchScreen = () => {
             />
 
             <SectionTile
-              title="Personal Attributes"
-              subtitle="Height, weight, marital status"
+              title={t("search.sections.personal.title")}
+              subtitle={t("search.sections.personal.subtitle")}
               icon="human-male-height"
               IconComponent={MaterialCommunityIcons}
               isComplete={sectionStatus.personal}
@@ -458,8 +453,8 @@ const SearchScreen = () => {
             />
 
             <SectionTile
-              title="Lifestyle"
-              subtitle="Habits, pets, religiosity"
+              title={t("search.sections.lifestyle.title")}
+              subtitle={t("search.sections.lifestyle.subtitle")}
               icon="coffee"
               IconComponent={FontAwesome5}
               isComplete={sectionStatus.lifestyle}
@@ -482,9 +477,11 @@ const SearchScreen = () => {
                 geographic={geographic}
                 personalAttributes={personalAttributes}
                 onComplete={handleCompleteSection}
+                styles={styles}
+                isRTL={isRTL}
+                t={t}
               />
             )}
-
             {activeSection === "education" && (
               <EducationSection
                 preferences={preferences}
@@ -492,6 +489,9 @@ const SearchScreen = () => {
                 professionalEducational={professionalEducational}
                 geographic={geographic}
                 onComplete={handleCompleteSection}
+                styles={styles}
+                isRTL={isRTL}
+                t={t}
               />
             )}
 
@@ -501,6 +501,9 @@ const SearchScreen = () => {
                 onChange={handlePreferenceChange}
                 personalAttributes={personalAttributes}
                 onComplete={handleCompleteSection}
+                styles={styles}
+                isRTL={isRTL}
+                t={t}
               />
             )}
 
@@ -511,6 +514,9 @@ const SearchScreen = () => {
                 lifestyleInterests={lifestyleInterests}
                 personalAttributes={personalAttributes}
                 onComplete={handleCompleteSection}
+                styles={styles}
+                isRTL={isRTL}
+                t={t}
               />
             )}
           </Animated.View>
@@ -536,11 +542,10 @@ const SearchScreen = () => {
         {hasSearched && !activeSection && (
           <View style={styles.savedPreferencesCard}>
             <Text style={styles.savedPreferencesTitle}>
-              Your filters are saved!
+              {t("search.preferences_saved.title")}
             </Text>
             <Text style={styles.savedPreferencesText}>
-              These preferences will be automatically applied each time you
-              return to the search screen.
+              {t("search.preferences_saved.message")}
             </Text>
           </View>
         )}

@@ -1,4 +1,93 @@
 {
+  "register": {
+    "welcome_title": "Join our Community",
+    "welcome_subtitle": "Create an account to start finding your perfect match",
+    "steps": {
+      "personal_info": "Personal Info",
+      "contact": "Contact",
+      "security": "Security"
+    },
+    "form": {
+      "first_name": "First Name",
+      "last_name": "Last Name",
+      "email": "Email",
+      "phone": "Phone Number",
+      "password": "Password",
+      "confirm_password": "Confirm Password",
+      "next": "Next",
+      "back": "Back",
+      "register": "Register",
+      "date_of_birth": "Date of Birth",
+      "gender": "Gender",
+      "male": "Male",
+      "female": "Female"
+    },
+    "errors": {
+      "title": "Registration Error",
+      "failed": "Registration failed. Please try again.",
+      "email_exists": "This email is already registered",
+      "phone_exists": "This phone number is already registered",
+      "passwords_not_match": "Passwords do not match",
+      "required_field": "This field is required"
+    },
+    "terms": {
+      "title": "Terms and Conditions",
+      "agree": "I Agree",
+      "decline": "Decline",
+      "content": "By creating an account, you agree to our Terms of Service and Privacy Policy."
+    },
+    "already_member": "Already have an account? Sign In",
+    "password_requirements": {
+      "title": "Password must:",
+      "length": "Be at least 8 characters long",
+      "uppercase": "Contain at least one uppercase letter",
+      "lowercase": "Contain at least one lowercase letter",
+      "number": "Contain at least one number",
+      "special": "Contain at least one special character"
+    }
+  },
+  "welcome": {
+    "title": "Find Your Perfect Match",
+    "subtitle": "Begin your journey to discover meaningful connections and lasting love",
+    "features": {
+      "safe": "Safe & Secure",
+      "verified": "Verified Profiles",
+      "quality": "Quality Matches"
+    }
+  },
+  "auth": {
+    "welcome_title": "Welcome back",
+    "welcome_subtitle": "Are you ready to continue your journey to love?",
+    "email": "Email",
+    "email_placeholder": "Enter your email",
+    "password": "Password",
+    "password_placeholder": "Enter your password",
+    "forgot_password": "Forgot password?",
+    "continue_journey": "Continue the journey",
+    "sign_in_with_face_id": "Sign in with Face ID",
+    "new_user": "New to the search for love?",
+    "sign_up": "Sign Up",
+    "invalid_credentials": "Invalid email or password",
+    "login": "Login",
+    "signup": "Sign Up",
+    "forgotPassword": "Forgot password?",
+    "register": "Register",
+    "already_have_account": "Already have an account?",
+    "sign_in": "Sign In",
+    "email_required": "Email is required",
+    "email_invalid": "Please enter a valid email",
+    "password_required": "Password is required",
+    "password_min_length": "Password must be at least 8 characters",
+    "password_confirmation": "Confirm Password",
+    "passwords_not_match": "Passwords do not match",
+    "reset_password": "Reset Password",
+    "reset_password_instructions": "Enter your email and we'll send you instructions to reset your password.",
+    "reset_password_success": "Check your email for password reset instructions",
+    "reset_link_sent": "Reset link sent!",
+    "biometric_auth": "Biometric Authentication",
+    "login": "Login",
+    "create_account": "Create New Account"
+  },
   "common": {
     "welcome": "Welcome",
     "home": "Home",
@@ -20,19 +109,15 @@
     "next": "Next",
     "submit": "Submit",
     "select_date": "Select Date",
-    "cancel": "Cancel",
     "confirm": "Confirm",
     "date_error": "Please select a valid date",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "ok": "OK",
+    "required": "Required",
+    "clear": "Clear"
   },
-  "auth": {
-    "login": "Login",
-    "signup": "Sign Up",
-    "email": "Email",
-    "password": "Password",
-    "forgotPassword": "Forgot Password?"
-  },
+
   "profile": {
     "update_photo": "Update profile photo",
     "update_photo_hint": "Double tap to choose a new profile photo",
@@ -348,11 +433,84 @@
     }
   },
   "search": {
+    "tips": {
+      "partially_completed": "Complete all sections to find your perfect match! You can search with partially completed preferences.",
+      "get_started": "Tap on a section to start setting your preferences. You don't need to complete all sections to search."
+    },
+    "lifestyle": {
+      "description": "Set preferences for lifestyle habits and preferences",
+      "smoking_status": "Smoking Status",
+      "smoker": "Smoker",
+      "add_smoking_preference": "Add smoking preference",
+      "smoking_tools": "Smoking Tools",
+      "drinking_status": "Drinking Status",
+      "select_drinking_status": "Select drinking status (optional)",
+      "sports_activity": "Sports Activity",
+      "select_sports_activity": "Select sports activity (optional)",
+      "sleep_habit": "Sleep Habit",
+      "select_sleep_habit": "Select sleep habit (optional)",
+      "pets": "Pets",
+      "religiosity_level": "Religiosity Level",
+      "select_religiosity_level": "Select religiosity level (optional)",
+      "errors": {
+        "missing_info": "Missing Information",
+        "smoking_tools_required": "Please select at least one smoking tool since you've selected 'Smoker'.",
+        "select_smoking_tool": "Please select at least one smoking tool."
+      }
+    },
+    "personal": {
+      "description": "Set preferences for physical and personal attributes",
+      "height": "Height",
+      "select_height": "Select height (optional)",
+      "weight": "Weight",
+      "select_weight": "Select weight (optional)",
+      "marital_status": "Marital Status",
+      "select_marital_status": "Select marital status (optional)",
+      "social_media": "Social Media Presence",
+      "select_social_media": "Select social media presence (optional)",
+      "social_media_options": {
+        "active": "Active on social media",
+        "moderate": "Moderate social media use",
+        "limited": "Limited social media use",
+        "none": "No social media presence"
+      }
+    },
+    "education": {
+      "description": "Specify educational and career preferences for your ideal match",
+      "educational_level": "Educational Level",
+      "select_educational_level": "Select educational level (optional)",
+      "specialization": "Specialization",
+      "select_specialization": "Select specialization (optional)",
+      "employment_status": "Employment Status",
+      "employed": "Employed",
+      "not_employed": "Unemployed",
+      "add_employment_preference": "Add employment preference",
+      "job_title": "Job Title",
+      "select_job_title": "Select job title (optional)",
+      "financial_status": "Financial Status",
+      "select_financial_status": "Select financial status (optional)",
+      "marriage_budget": "Marriage Budget",
+      "select_marriage_budget": "Select marriage budget (optional)"
+    },
     "loading_preferences": "Loading preferences...",
     "errors": {
       "preferences_load": "Failed to load preferences. Please try again.",
       "data_load": "Failed to load search data. Please try again.",
       "submit_preferences": "Failed to submit search preferences. Please try again."
+    },
+    "buttons": {
+      "done": "Done",
+      "search": "Search",
+      "reset": "Reset",
+      "continue": "Continue",
+      "view_results": "View Results",
+      "find_matches": "Find Matches ({{completed}}/4 completed)",
+      "find_matches_accessibility": "Find matches",
+      "view_results": "View Previous Results",
+      "view_results_accessibility": "View previous results",
+      "reset_filters": "Reset All Filters",
+      "reset_filters_accessibility": "Reset all filters",
+      "done": "Done"
     },
     "reset_title": "Reset Preferences",
     "reset_message": "Are you sure you want to reset all search preferences to default values?",

@@ -1,4 +1,93 @@
 {
+  "register": {
+    "welcome_title": "انضم إلى مجتمعنا",
+    "welcome_subtitle": "أنشئ حسابًا للبدء في العثور على شريك حياتك المثالي",
+    "steps": {
+      "personal_info": "المعلومات الشخصية",
+      "contact": "الاتصال",
+      "security": "الأمان"
+    },
+    "form": {
+      "first_name": "الاسم الأول",
+      "last_name": "اسم العائلة",
+      "email": "البريد الإلكتروني",
+      "phone": "رقم الهاتف",
+      "password": "كلمة المرور",
+      "confirm_password": "تأكيد كلمة المرور",
+      "next": "التالي",
+      "back": "الرجوع",
+      "register": "تسجيل",
+      "date_of_birth": "تاريخ الميلاد",
+      "gender": "الجنس",
+      "male": "ذكر",
+      "female": "أنثى"
+    },
+    "errors": {
+      "title": "خطأ في التسجيل",
+      "failed": "فشل التسجيل. يرجى المحاولة مرة أخرى.",
+      "email_exists": "هذا البريد الإلكتروني مسجل بالفعل",
+      "phone_exists": "رقم الهاتف هذا مسجل بالفعل",
+      "passwords_not_match": "كلمات المرور غير متطابقة",
+      "required_field": "هذا الحقل مطلوب"
+    },
+    "terms": {
+      "title": "الشروط والأحكام",
+      "agree": "أوافق",
+      "decline": "رفض",
+      "content": "بإنشاء حساب، فإنك توافق على شروط الخدمة وسياسة الخصوصية الخاصة بنا."
+    },
+    "already_member": "لديك حساب بالفعل؟ تسجيل الدخول",
+    "password_requirements": {
+      "title": "يجب أن تكون كلمة المرور:",
+      "length": "لا تقل عن 8 أحرف",
+      "uppercase": "تحتوي على حرف كبير واحد على الأقل",
+      "lowercase": "تحتوي على حرف صغير واحد على الأقل",
+      "number": "تحتوي على رقم واحد على الأقل",
+      "special": "تحتوي على حرف خاص واحد على الأقل"
+    }
+  },
+  "welcome": {
+    "title": "ابحث عن شريك حياتك المثالي",
+    "subtitle": "ابدأ رحلتك لاكتشاف علاقات هادفة وحب دائم",
+    "features": {
+      "safe": "آمن ومحمي",
+      "verified": "ملفات شخصية موثقة",
+      "quality": "تطابقات عالية الجودة"
+    }
+  },
+  "auth": {
+    "welcome_title": "مرحباً بعودتك",
+    "welcome_subtitle": "هل أنت مستعد لمواصلة رحلتك إلى الحب؟",
+    "email": "البريد الإلكتروني",
+    "email_placeholder": "أدخل بريدك الإلكتروني",
+    "password": "كلمة المرور",
+    "password_placeholder": "أدخل كلمة المرور",
+    "forgot_password": "نسيت كلمة المرور؟",
+    "continue_journey": "مواصلة الرحلة",
+    "sign_in_with_face_id": "تسجيل الدخول بـ Face ID",
+    "new_user": "جديد في البحث عن الحب؟",
+    "sign_up": "تسجيل جديد",
+    "invalid_credentials": "بريد إلكتروني أو كلمة مرور غير صحيحة",
+    "login": "تسجيل الدخول",
+    "signup": "التسجيل",
+    "forgotPassword": "نسيت كلمة المرور؟",
+    "register": "التسجيل",
+    "already_have_account": "هل لديك حساب بالفعل؟",
+    "sign_in": "تسجيل الدخول",
+    "email_required": "البريد الإلكتروني مطلوب",
+    "email_invalid": "يرجى إدخال بريد إلكتروني صالح",
+    "password_required": "كلمة المرور مطلوبة",
+    "password_min_length": "يجب أن تتكون كلمة المرور من 8 أحرف على الأقل",
+    "password_confirmation": "تأكيد كلمة المرور",
+    "passwords_not_match": "كلمات المرور غير متطابقة",
+    "reset_password": "إعادة تعيين كلمة المرور",
+    "reset_password_instructions": "أدخل بريدك الإلكتروني وسنرسل لك تعليمات لإعادة تعيين كلمة المرور الخاصة بك.",
+    "reset_password_success": "تحقق من بريدك الإلكتروني للحصول على تعليمات لإعادة تعيين كلمة المرور",
+    "reset_link_sent": "تم إرسال رابط إعادة التعيين!",
+    "biometric_auth": "المصادقة البيومترية",
+    "login": "تسجيل الدخول",
+    "create_account": "إنشاء حساب جديد"
+  },
   "common": {
     "welcome": "مرحبا",
     "home": "الرئيسية",
@@ -20,19 +109,15 @@
     "next": "التالي",
     "submit": "إرسال",
     "select_date": "اختر التاريخ",
-    "cancel": "إلغاء",
     "confirm": "تأكيد",
     "date_error": "الرجاء اختيار تاريخ صالح",
     "yes": "نعم",
-    "no": "لا"
+    "no": "لا",
+    "ok": "موافق",
+    "required": "مطلوب",
+    "clear": "مسح"
   },
-  "auth": {
-    "login": "تسجيل الدخول",
-    "signup": "التسجيل",
-    "email": "البريد الإلكتروني",
-    "password": "كلمة المرور",
-    "forgotPassword": "نسيت كلمة المرور؟"
-  },
+
   "profile": {
     "update_photo": "تحديث صورة الملف الشخصي",
     "update_photo_hint": "انقر مرتين لاختيار صورة جديدة",
@@ -348,11 +433,84 @@
     }
   },
   "search": {
+    "tips": {
+      "partially_completed": "أكمل جميع الأقسام للعثور على شريك حياتك المثالي! يمكنك البحث بتفضيلات مكتملة جزئيًا.",
+      "get_started": "انقر على قسم لبدء تعيين تفضيلاتك. لست بحاجة إلى إكمال جميع الأقسام للبحث."
+    },
+    "lifestyle": {
+      "description": "حدد تفضيلات لعادات ونمط الحياة",
+      "smoking_status": "حالة التدخين",
+      "smoker": "مدخن",
+      "add_smoking_preference": "أضف تفضيل التدخين",
+      "smoking_tools": "أدوات التدخين",
+      "drinking_status": "حالة شرب الكحول",
+      "select_drinking_status": "اختر حالة شرب الكحول (اختياري)",
+      "sports_activity": "النشاط الرياضي",
+      "select_sports_activity": "اختر النشاط الرياضي (اختياري)",
+      "sleep_habit": "عادة النوم",
+      "select_sleep_habit": "اختر عادة النوم (اختياري)",
+      "pets": "الحيوانات الأليفة",
+      "religiosity_level": "مستوى التدين",
+      "select_religiosity_level": "اختر مستوى التدين (اختياري)",
+      "errors": {
+        "missing_info": "معلومات ناقصة",
+        "smoking_tools_required": "الرجاء اختيار أداة تدخين واحدة على الأقل بما أنك اخترت 'مدخن'.",
+        "select_smoking_tool": "الرجاء اختيار أداة تدخين واحدة على الأقل."
+      }
+    },
+    "personal": {
+      "description": "حدد تفضيلات للسمات الجسدية والشخصية",
+      "height": "الطول",
+      "select_height": "اختر الطول (اختياري)",
+      "weight": "الوزن",
+      "select_weight": "اختر الوزن (اختياري)",
+      "marital_status": "الحالة الاجتماعية",
+      "select_marital_status": "اختر الحالة الاجتماعية (اختياري)",
+      "social_media": "وجود وسائل التواصل الاجتماعي",
+      "select_social_media": "اختر وجود وسائل التواصل الاجتماعي (اختياري)",
+      "social_media_options": {
+        "active": "نشط على وسائل التواصل الاجتماعي",
+        "moderate": "استخدام معتدل لوسائل التواصل الاجتماعي",
+        "limited": "استخدام محدود لوسائل التواصل الاجتماعي",
+        "none": "لا وجود على وسائل التواصل الاجتماعي"
+      }
+    },
+    "education": {
+      "description": "حدد تفضيلات التعليم والمهنة لشريك حياتك المثالي",
+      "educational_level": "المستوى التعليمي",
+      "select_educational_level": "اختر المستوى التعليمي (اختياري)",
+      "specialization": "التخصص",
+      "select_specialization": "اختر التخصص (اختياري)",
+      "employment_status": "حالة التوظيف",
+      "employed": "موظف",
+      "not_employed": "غير موظف",
+      "add_employment_preference": "أضف تفضيل التوظيف",
+      "job_title": "المسمى الوظيفي",
+      "select_job_title": "اختر المسمى الوظيفي (اختياري)",
+      "financial_status": "الوضع المالي",
+      "select_financial_status": "اختر الوضع المالي (اختياري)",
+      "marriage_budget": "ميزانية الزواج",
+      "select_marriage_budget": "اختر ميزانية الزواج (اختياري)"
+    },
     "loading_preferences": "جاري تحميل التفضيلات...",
     "errors": {
       "preferences_load": "فشل في تحميل التفضيلات. يرجى المحاولة مرة أخرى.",
       "data_load": "فشل في تحميل بيانات البحث. يرجى المحاولة مرة أخرى.",
       "submit_preferences": "فشل في إرسال تفضيلات البحث. يرجى المحاولة مرة أخرى."
+    },
+    "buttons": {
+      "done": "تم",
+      "search": "بحث",
+      "reset": "إعادة تعيين",
+      "continue": "استمرار",
+      "view_results": "عرض النتائج",
+      "find_matches": "البحث عن تطابقات ({{completed}}/4 مكتمل)",
+      "find_matches_accessibility": "البحث عن تطابقات",
+      "view_results": "عرض النتائج السابقة",
+      "view_results_accessibility": "عرض النتائج السابقة",
+      "reset_filters": "إعادة تعيين جميع الفلاتر",
+      "reset_filters_accessibility": "إعادة تعيين جميع الفلاتر",
+      "done": "تم"
     },
     "reset_title": "إعادة تعيين التفضيلات",
     "reset_message": "هل أنت متأكد أنك تريد إعادة تعيين جميع تفضيلات البحث إلى القيم الافتراضية؟",
