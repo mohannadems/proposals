@@ -433,6 +433,10 @@
     }
   },
   "search": {
+    "filter_message": {
+      "title": "Perfect Match Guide",
+      "content": "You've selected {{current}} of {{max}} filters. Choose {{remaining}} more for a 100% perfect match!"
+    },
     "tips": {
       "partially_completed": "Complete all sections to find your perfect match! You can search with partially completed preferences.",
       "get_started": "Tap on a section to start setting your preferences. You don't need to complete all sections to search."
@@ -556,7 +560,19 @@
     },
     "age_ranges": {
       "all_ages": "All Ages"
-    }
+    },
+    "unified": {
+      "title": "Partner Preferences",
+      "filter_count": "You have selected {{count}} / {{max}} filters",
+      "max_filters_title": "How Matching Works",
+      "max_filters_info": "Select up to 10 primary filters to find your ideal match. When you reach 10 filters, you'll have a 100% match potential with profiles that meet all your criteria. Choose your most important preferences wisely!"
+    },
+    "max_filters": {
+      "title": "Maximum Filters Reached",
+      "message": "You've selected the maximum of 10 filters for the perfect match. To add this filter, please remove another one first."
+    },
+    "perfect_match": "Perfect Match!",
+    "match": "Match"
   },
   "match_profile": {
     "loading": "Loading profile...",

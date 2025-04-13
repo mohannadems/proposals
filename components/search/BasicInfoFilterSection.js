@@ -2,7 +2,6 @@ import React from "react";
 import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
 import ModernDropdown from "../../components/search/ModernDropdown";
 import RangeSlider from "../../components/search/RangeSlider";
-import SectionHeader from "../../components/search/SectionHeader"; // Import the new SectionHeader component
 import { createSearchStyles } from "../../styles/SearchScreen";
 
 const AGE_RANGE_PRESETS = [
@@ -26,17 +25,13 @@ const BasicInfoFilterSection = ({
   isMaxFiltersSelected,
   getPresetLabel,
   styles: propStyles,
-  sectionRef, // Pass the ref from the parent component
 }) => {
   const styles = propStyles || createSearchStyles(isRTL);
   return (
     <View style={styles.sectionCard}>
-      {/* Use the SectionHeader component with the forwarded ref */}
-      <SectionHeader
-        title={t ? t("search.sections.basic.title") : "Basic Information"}
-        forwardRef={sectionRef}
-        isRTL={isRTL}
-      />
+      <Text style={styles.sectionTitle || styles.inputLabel}>
+        {t ? t("search.sections.basic.title") : "Basic Information"}
+      </Text>
 
       <ModernDropdown
         label={t ? t("search.basic_info.nationality") : "Nationality"}
@@ -174,7 +169,7 @@ const BasicInfoFilterSection = ({
                       styles.activeAgePresetText,
                   ]}
                 >
-                  {getPresetLabel(preset.min, preset.max)}
+                  {getPresetLabel(preset)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -216,4 +211,3 @@ const BasicInfoFilterSection = ({
 };
 
 export default BasicInfoFilterSection;
-import React from "react";

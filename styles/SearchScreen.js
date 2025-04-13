@@ -8,8 +8,10 @@ const createSearchStyles = (isRTL = I18nManager.isRTL) =>
   StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: COLORS.background,
+      backgroundColor: "COLORS.background",
+      padding: 15,
     },
+    FilterProgressTracker: {},
     loadingContainer: {
       flex: 1,
       justifyContent: "center",
@@ -30,25 +32,29 @@ const createSearchStyles = (isRTL = I18nManager.isRTL) =>
       textAlign: "center",
     },
     header: {
-      paddingTop: Platform.OS === "ios" ? 90 : 40,
-      paddingBottom: 24,
-      paddingHorizontal: 20,
+      paddingTop: Platform.OS === "ios" ? 100 : 50,
+      paddingBottom: 30,
+      paddingHorizontal: 24,
       borderBottomLeftRadius: 30,
       borderBottomRightRadius: 30,
+      backgroundColor: COLORS.primary,
     },
     headerTitle: {
-      fontSize: 28,
+      fontSize: 32,
       fontWeight: "bold",
       color: COLORS.white,
       textAlign: "center",
+      marginBottom: 8,
     },
     headerSubtitle: {
-      fontSize: 16,
+      fontSize: 18,
       color: COLORS.white,
       opacity: 0.9,
       textAlign: "center",
       marginTop: 8,
+      paddingHorizontal: 20,
     },
+
     sectionHeader: {
       flexDirection: isRTL ? "row-reverse" : "row",
       alignItems: "center",
@@ -164,10 +170,10 @@ const createSearchStyles = (isRTL = I18nManager.isRTL) =>
     sectionCard: {
       backgroundColor: COLORS.white,
       borderRadius: 16,
-      padding: 20,
-      marginBottom: 20,
+      padding: 15,
+      marginBottom: 15,
       shadowColor: COLORS.shadow,
-      shadowOffset: { width: 0, height: 4 },
+      shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.1,
       shadowRadius: 8,
       elevation: 3,
@@ -182,7 +188,7 @@ const createSearchStyles = (isRTL = I18nManager.isRTL) =>
       fontSize: 14,
       color: COLORS.primary,
       fontWeight: "500",
-      textAlign: isRTL ? "right" : "left",
+      textAlign: "center",
     },
     inputLabel: {
       fontSize: 16,
@@ -392,6 +398,57 @@ const createSearchStyles = (isRTL = I18nManager.isRTL) =>
       color: COLORS.text,
       marginBottom: 8,
       textAlign: isRTL ? "right" : "left",
+    },
+    sectionTitle: {
+      fontSize: 20, // Larger size for better hierarchy
+      fontWeight: "700",
+      color: COLORS.text,
+      marginBottom: 16,
+      textAlign: isRTL ? "right" : "left",
+      borderBottomWidth: 1,
+      borderBottomColor: COLORS.border,
+      paddingBottom: 12,
+    },
+    sectionSubtitle: {
+      fontSize: 16,
+      color: COLORS.primary,
+      marginBottom: 16,
+      textAlign: isRTL ? "right" : "left",
+    },
+
+    // Enhanced scrolling experience styles
+    scrollContent: {
+      paddingTop: 20,
+      paddingBottom: 100, // Extra padding at bottom
+      paddingHorizontal: 0, // Removed horizontal padding (handled by cards)
+    },
+
+    // Improved filter progress tracker
+    progressTrackerContainer: {
+      backgroundColor: COLORS.white,
+      paddingVertical: 16,
+      paddingHorizontal: 20,
+      borderRadius: 16,
+      marginHorizontal: 16,
+      marginBottom: 20,
+      shadowColor: COLORS.shadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 8,
+      elevation: 2,
+      zIndex: 10,
+    },
+    progressBarBackground: {
+      height: 8,
+      backgroundColor: COLORS.background,
+      borderRadius: 4,
+      marginVertical: 10,
+      overflow: "hidden",
+    },
+    progressBarFill: {
+      height: "100%",
+      backgroundColor: COLORS.primary,
+      borderRadius: 4,
     },
   });
 

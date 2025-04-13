@@ -16,7 +16,6 @@ const RangeSlider = ({
   ]);
 
   useEffect(() => {
-    // Update values if props change from outside
     const newValues = [...values];
     let changed = false;
 

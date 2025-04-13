@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -7,8 +7,6 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
-  ScrollView,
-  SafeAreaView,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { router } from "expo-router";
@@ -22,13 +20,10 @@ import { loginStyles } from "../../styles/auth.styles";
 import { AUTH_MESSAGES } from "../../constants/auth";
 import { StyleSheet } from "react-native";
 import { fetchProfile } from "../../store/slices/profile.slice";
-import { LanguageContext } from "../../contexts/LanguageContext";
-
 export default function LoginScreen() {
   const dispatch = useDispatch();
   const { loading } = useSelector((state) => state.auth);
   const form = useLoginForm();
-  const { isRTL, t } = useContext(LanguageContext);
 
   const handleLoginSuccess = async (credentials) => {
     try {
@@ -36,19 +31,16 @@ export default function LoginScreen() {
       if (result) {
         await biometric.saveBiometricCredentials(credentials);
         router.replace("/(tabs)/home");
-
         await dispatch(fetchProfile());
       }
       return result;
     } catch (error) {
+      // Set the error message in the form
       form.setValidationErrors((prev) => ({
         ...prev,
-        general:
-          error.message ||
-          t("auth.invalid_credentials") ||
-          AUTH_MESSAGES.INVALID_CREDENTIALS,
+        general: error.message || AUTH_MESSAGES.INVALID_CREDENTIALS,
       }));
-      throw error;
+      throw error; // Re-throw to be handled by handleLogin
     }
   };
 
@@ -64,74 +56,62 @@ export default function LoginScreen() {
     } catch (error) {
       form.setValidationErrors((prev) => ({
         ...prev,
-        general:
-          t("auth.invalid_credentials") || AUTH_MESSAGES.INVALID_CREDENTIALS,
+        general: AUTH_MESSAGES.INVALID_CREDENTIALS,
       }));
     }
   };
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: "#fff" }}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={loginStyles.container}
-        >
-          <LinearGradient
-            colors={["rgba(65, 105, 225, 0.1)", "rgba(212, 175, 55, 0.1)"]}
-            style={StyleSheet.absoluteFill}
-          />
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={loginStyles.container}
+      >
+        <LinearGradient
+          colors={["rgba(65, 105, 225, 0.1)", "rgba(212, 175, 55, 0.1)"]}
+          style={StyleSheet.absoluteFill}
+        />
 
-          <View style={loginStyles.topDecoration}>
-            <FontAwesome
-              name="heart"
-              size={24}
-              color="#9e086c"
-              style={loginStyles.decorationHeart}
-            />
+        <View style={loginStyles.topDecoration}>
+          <FontAwesome
+            name="heart"
+            size={24}
+            color="#B65165"
+            style={loginStyles.decorationHeart}
+          />
+        </View>
+
+        <View style={loginStyles.content}>
+          <View style={loginStyles.logoContainer}>
+            <Text style={loginStyles.welcomeText}>
+              {AUTH_MESSAGES.WELCOME_TITLE}
+            </Text>
+            <Text style={loginStyles.subtitle}>
+              {AUTH_MESSAGES.WELCOME_SUBTITLE}
+            </Text>
           </View>
 
-          <ScrollView
-            style={loginStyles.content}
-            contentContainerStyle={{
-              flexGrow: 1,
-              justifyContent: "center",
-              alignItems: "center",
-            }}
+          <LoginForm
+            form={form}
+            loading={loading}
+            isBiometricEnabled={biometric.isBiometricEnabled}
+            onLogin={handleLogin}
+            onBiometricAuth={biometric.handleBiometricAuth}
+          />
+
+          <TouchableOpacity
+            style={loginStyles.registerLink}
+            onPress={() => router.push("/(auth)/register")}
           >
-            <View style={loginStyles.logoContainer}>
-              <Text style={loginStyles.welcomeText}>
-                {t("auth.welcome_title") || AUTH_MESSAGES.WELCOME_TITLE}
+            <Text style={loginStyles.registerLinkText}>
+              {AUTH_MESSAGES.NEW_USER}
+              <Text style={loginStyles.registerLinkBold}>
+                {AUTH_MESSAGES.SIGN_UP}
               </Text>
-              <Text style={loginStyles.subtitle}>
-                {t("auth.welcome_subtitle") || AUTH_MESSAGES.WELCOME_SUBTITLE}
-              </Text>
-            </View>
-
-            <LoginForm
-              form={form}
-              loading={loading}
-              isBiometricEnabled={biometric.isBiometricEnabled}
-              onLogin={handleLogin}
-              onBiometricAuth={biometric.handleBiometricAuth}
-              isRTL={isRTL}
-              t={t}
-            />
-
-            <TouchableOpacity
-              style={loginStyles.registerLink}
-              onPress={() => router.push("/(auth)/register")}
-            >
-              <Text style={loginStyles.registerLinkText}>
-                {t("auth.new_user") || AUTH_MESSAGES.NEW_USER}
-                <Text style={loginStyles.registerLinkBold}>
-                  {t("auth.sign_up") || AUTH_MESSAGES.SIGN_UP}
-                </Text>
-              </Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </TouchableWithoutFeedback>
-    </ScrollView>
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   );
 }

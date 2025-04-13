@@ -1,6 +1,6 @@
 import React, {
-  useEffect,
   useState,
+  useEffect,
   useRef,
   useCallback,
   useMemo,
@@ -9,38 +9,29 @@ import React, {
 import {
   View,
   Text,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  StatusBar,
   Animated,
   Platform,
   KeyboardAvoidingView,
+  StatusBar,
   Alert,
+  StyleSheet,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import {
-  Ionicons,
-  MaterialCommunityIcons,
-  FontAwesome5,
-} from "@expo/vector-icons";
 import { authService } from "../../services/auth.service";
-import { searchService } from "../../services/searchService";
-import createHomeStyles from "../../styles/SearchScreen";
 import { COLORS } from "../../constants/colors";
 import withProfileCompletion from "../../components/profile/withProfileCompletion";
-import SectionTile from "../../components/partner/SectionTile";
-import BasicInfoSection from "../../components/partner/BasicInfoSection";
-import EducationSection from "../../components/partner/EducationSection";
-import PersonalSection from "../../components/partner/PersonalSection";
-import LifestyleSection from "../../components/partner/LifestyleSection";
-import SearchHeader from "../../components/partner/SearchHeader";
-import SearchButtons from "../../components/partner/SearchButtons";
 import LoadingScreen from "../../components/partner/LoadingScreen";
 import ErrorView from "../../components/partner/ErrorView";
-import Tip from "../../components/partner/Tip";
+
+import SearchHeader from "../../components/partner/SearchHeader";
+import FilterProgressTracker from "../../components/search/FilterProgressTracker";
+import BasicInfoFilterSection from "../../components/search/BasicInfoFilterSection";
+import EducationFilterSection from "../../components/search/EducationFilterSection";
+import PersonalFilterSection from "../../components/search/PersonalFilterSection";
+import LifestyleFilterSection from "../../components/search/LifestyleFilterSection";
+import SearchActionButtons from "../../components/search/SearchActionButtons";
+import SavedPreferencesMessage from "../../components/search/SavedPreferencesMessage";
 
 import {
   getSavedPreferences,
@@ -51,7 +42,6 @@ import {
   clearError,
   manuallySetLoading,
   selectIsBasicSectionComplete,
-  DEFAULT_AGE_RANGE,
 } from "../../store/slices/searchSlice";
 import {
   fetchAllProfileData,
@@ -60,68 +50,214 @@ import {
   selectProfessionalEducational,
   selectLifestyleInterests,
   fetchCitiesByCountry,
+  selectCities,
+  selectDirectMarriageBudget,
+  selectDirectReligiosityLevels,
 } from "../../store/slices/profileAttributesSlice";
 import { LanguageContext } from "../../contexts/LanguageContext";
 
-const SearchScreen = () => {
+import createUnifiedSearchStyles from "../../styles/SearchScreen";
+
+const STICKY_HEADER_HEIGHT = 50;
+const FILTER_TRACKER_HEIGHT = 180; // Approximate height of the FilterProgressTracker
+
+// Section definitions for sticky headers
+const SECTIONS = [
+  {
+    id: "basic",
+    title: "Basic Information",
+    titleKey: "search.sections.basic.title",
+  },
+  {
+    id: "education",
+    title: "Education & Career",
+    titleKey: "search.sections.education.title",
+  },
+  {
+    id: "personal",
+    title: "Personal Attributes",
+    titleKey: "search.sections.personal.title",
+  },
+  {
+    id: "lifestyle",
+    title: "Lifestyle & Interests",
+    titleKey: "search.sections.lifestyle.title",
+  },
+];
+
+const UnifiedSearchScreen = () => {
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const getPresetLabel = useCallback(
+    (min, max) => {
+      if (min === 18 && max === 25)
+        return t ? t("age_presets.young_adult") : "Young Adult (18-25)";
+      if (min === 26 && max === 35)
+        return t ? t("age_presets.early_career") : "Early Career (26-35)";
+      if (min === 36 && max === 45)
+        return t ? t("age_presets.established") : "Established (36-45)";
+      if (min === 46 && max === 70)
+        return t ? t("age_presets.mature") : "Mature (46-70)";
+      return t ? t("age_presets.all_ages") : "All Ages (18-70)";
+    },
+    [t]
+  );
+  const handleAgeRangePreset = useCallback(
+    (min, max) => {
+      const isAgeFilterAlreadySet =
+        preferences.preferred_age_min !== 18 ||
+        preferences.preferred_age_max !== 70;
+      const wouldBeNewFilter =
+        !isAgeFilterAlreadySet && (min !== 18 || max !== 70);
+
+      if (isMaxFiltersSelected && wouldBeNewFilter) {
+        Alert.alert(
+          t ? t("search.max_filters.title") : "Maximum Filters Reached",
+          t
+            ? t("search.max_filters.message")
+            : "You've selected the maximum of 10 filters for the perfect match. To add this filter, please remove another one first.",
+          [{ text: t ? t("common.ok") : "OK" }]
+        );
+        return;
+      }
+
+      handlePreferenceChange("preferred_age_min", min);
+      handlePreferenceChange("preferred_age_max", max);
+    },
+    [handlePreferenceChange, preferences, isMaxFiltersSelected, t]
+  );
   const { t, isRTL } = useContext(LanguageContext);
-  const styles = createHomeStyles(isRTL);
+  const styles = createUnifiedSearchStyles(isRTL);
   const [preferencesUserId, setPreferencesUserId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showResults, setShowResults] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
-  const [activeSection, setActiveSection] = useState(null);
   const [isMounted, setIsMounted] = useState(true);
   const [retryCount, setRetryCount] = useState(0);
+  const [selectedFiltersCount, setSelectedFiltersCount] = useState(0);
+  const [validationErrors, setValidationErrors] = useState({});
 
-  const [sectionStatus, setSectionStatus] = useState({
-    basic: false,
-    education: false,
-    personal: false,
-    lifestyle: false,
+  // State for sticky headers
+  const [sectionOffsets, setSectionOffsets] = useState({});
+  const [currentStickySection, setCurrentStickySection] = useState(null);
+
+  // Create refs for each section
+  const sectionRefs = useRef({
+    basic: React.createRef(),
+    education: React.createRef(),
+    personal: React.createRef(),
+    lifestyle: React.createRef(),
   });
 
-  const scrollViewRef = useRef(null);
+  const MAX_FILTERS = 10;
+
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const cardOffset = useRef(new Animated.Value(50)).current;
+  const scrollViewRef = useRef(null);
 
   const dispatch = useDispatch();
   const router = useRouter();
 
   const {
     preferences,
-    searchResults,
     loading,
     error: reduxError,
-    success,
     initialLoadComplete,
   } = useSelector((state) => state.search);
 
-  const isBasicComplete = useSelector(selectIsBasicSectionComplete);
   const geographic = useSelector(selectGeographic);
   const personalAttributes = useSelector(selectPersonalAttributes);
   const professionalEducational = useSelector(selectProfessionalEducational);
   const lifestyleInterests = useSelector(selectLifestyleInterests);
+  const cities = useSelector(selectCities);
+  const marriageBudget = useSelector(selectDirectMarriageBudget);
+  const religiosityLevels = useSelector(selectDirectReligiosityLevels);
   const authState = useSelector((state) => state.auth);
 
   const selectedCountryId = preferences.preferred_country_id;
+
+  // Calculate match percentage based on selected filters
+  const matchPercentage = useMemo(() => {
+    return Math.min(
+      Math.round((selectedFiltersCount / MAX_FILTERS) * 100),
+      100
+    );
+  }, [selectedFiltersCount]);
+
+  const isMaxFiltersSelected = useMemo(() => {
+    return selectedFiltersCount >= MAX_FILTERS;
+  }, [selectedFiltersCount]);
+
+  const hasSmokingError = useMemo(() => {
+    return (
+      preferences.preferred_smoking_status === true &&
+      (!preferences.preferred_smoking_tools ||
+        preferences.preferred_smoking_tools.length === 0)
+    );
+  }, [
+    preferences.preferred_smoking_status,
+    preferences.preferred_smoking_tools,
+  ]);
+
+  // Handle scroll events to update sticky headers
+  useEffect(() => {
+    if (!scrollY || Object.keys(sectionOffsets).length === 0) return;
+
+    const scrollListener = scrollY.addListener(({ value }) => {
+      // Account for the FilterProgressTracker height when determining which section is sticky
+      const adjustedScrollY = value + FILTER_TRACKER_HEIGHT;
+
+      // Determine which section should be sticky based on scroll position
+      let currentSection = null;
+      const sections = Object.entries(sectionOffsets);
+
+      // Sort sections by their offset (in ascending order)
+      sections.sort((a, b) => a[1] - b[1]);
+
+      for (let i = sections.length - 1; i >= 0; i--) {
+        const [section, offset] = sections[i];
+        if (adjustedScrollY >= offset) {
+          currentSection = section;
+          break;
+        }
+      }
+
+      // Check if we need to update the current sticky section
+      if (currentSection !== currentStickySection) {
+        setCurrentStickySection(currentSection);
+      }
+    });
+
+    return () => {
+      scrollY.removeListener(scrollListener);
+    };
+  }, [scrollY, sectionOffsets, currentStickySection]);
+
+  // Measure section positions after layout
+  const measureSectionOffsets = useCallback(() => {
+    Object.entries(sectionRefs.current).forEach(([key, ref]) => {
+      if (ref.current) {
+        ref.current.measureInWindow((x, y, width, height) => {
+          setSectionOffsets((prev) => ({
+            ...prev,
+            [key]: y,
+          }));
+        });
+      }
+    });
+  }, []);
+
+  // Get current section title
+  const getCurrentSectionTitle = useCallback(() => {
+    if (!currentStickySection) return "";
+
+    const section = SECTIONS.find((s) => s.id === currentStickySection);
+    return t ? t(section.titleKey) : section.title;
+  }, [currentStickySection, t]);
 
   useEffect(() => {
     if (selectedCountryId) {
       dispatch(fetchCitiesByCountry(selectedCountryId));
     }
   }, [selectedCountryId, dispatch]);
-
-  const isAnyFilterApplied = useMemo(
-    () => Object.values(sectionStatus).some((status) => status),
-    [sectionStatus]
-  );
-
-  const completedSectionsCount = useMemo(
-    () => Object.values(sectionStatus).filter((status) => status).length,
-    [sectionStatus]
-  );
 
   useEffect(() => {
     if (isLoading) {
@@ -146,6 +282,18 @@ const SearchScreen = () => {
     };
   }, []);
 
+  // Measure section offsets when layout is ready
+  useEffect(() => {
+    if (!isLoading && initialLoadComplete) {
+      // Use a timeout to ensure the layout is completed
+      const timer = setTimeout(() => {
+        measureSectionOffsets();
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, initialLoadComplete, measureSectionOffsets]);
+
   useEffect(() => {
     if (!isMounted || isLoading) return;
 
@@ -169,7 +317,7 @@ const SearchScreen = () => {
           if (!preferencesExist) {
             initializeScreen();
           } else {
-            updateSectionStatus();
+            countSelectedFilters();
           }
         }
       } catch (error) {
@@ -182,7 +330,7 @@ const SearchScreen = () => {
 
   useEffect(() => {
     if (!isLoading && isMounted) {
-      updateSectionStatus();
+      countSelectedFilters();
     }
   }, [preferences, isLoading]);
 
@@ -193,9 +341,7 @@ const SearchScreen = () => {
   }, [isLoading]);
 
   const initializeScreen = async () => {
-    if (!isMounted) {
-      return;
-    }
+    if (!isMounted) return;
 
     setIsLoading(true);
     setError(null);
@@ -209,7 +355,6 @@ const SearchScreen = () => {
 
       try {
         await dispatch(getSavedPreferences()).unwrap();
-
         dispatch(setInitialLoadComplete(true));
 
         if (preferences.preferred_country_id) {
@@ -218,16 +363,22 @@ const SearchScreen = () => {
 
         setTimeout(() => {
           if (isMounted) {
-            updateSectionStatus();
+            countSelectedFilters();
           }
         }, 300);
       } catch (prefsError) {
-        console.error("[SearchScreen] Error loading preferences:", prefsError);
+        console.error(
+          "[UnifiedSearchScreen] Error loading preferences:",
+          prefsError
+        );
         dispatch(setInitialLoadComplete(true));
         setError(t("search.errors.preferences_load"));
       }
     } catch (error) {
-      console.error("[SearchScreen] Error initializing search screen:", error);
+      console.error(
+        "[UnifiedSearchScreen] Error initializing search screen:",
+        error
+      );
       if (isMounted) {
         setError(t("search.errors.data_load"));
         dispatch(setInitialLoadComplete(true));
@@ -242,103 +393,83 @@ const SearchScreen = () => {
   };
 
   const startEntryAnimation = () => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.timing(cardOffset, {
-        toValue: 0,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 600,
+      useNativeDriver: true,
+    }).start();
   };
 
-  const updateSectionStatus = useCallback(() => {
+  const countSelectedFilters = useCallback(() => {
     if (!isMounted) return;
 
     try {
-      const newStatus = {
-        basic: isBasicComplete,
-        education: isEducationSectionComplete(),
-        personal: isPersonalSectionComplete(),
-        lifestyle: isLifestyleSectionComplete(),
-      };
+      let count = 0;
 
-      setSectionStatus((prevStatus) => {
-        if (JSON.stringify(prevStatus) !== JSON.stringify(newStatus)) {
-          return newStatus;
-        }
-        return prevStatus;
-      });
+      if (preferences.preferred_nationality_id) count++;
+      if (preferences.preferred_origin_id) count++;
+      if (preferences.preferred_country_id) count++;
+      if (preferences.preferred_city_id) count++;
+      if (
+        preferences.preferred_age_min !== 18 ||
+        preferences.preferred_age_max !== 70
+      )
+        count++;
+
+      if (preferences.preferred_educational_level_id) count++;
+      if (preferences.preferred_specialization_id) count++;
+      if (preferences.preferred_employment_status !== null) count++;
+      if (preferences.preferred_job_title_id) count++;
+      if (preferences.preferred_financial_status_id) count++;
+      if (preferences.preferred_marriage_budget_id) count++;
+
+      if (preferences.preferred_height_id) count++;
+      if (preferences.preferred_weight_id) count++;
+      if (preferences.preferred_marital_status_id) count++;
+      if (preferences.preferred_social_media_presence_id) count++;
+
+      if (preferences.preferred_smoking_status !== null) count++;
+      if (preferences.preferred_drinking_status_id) count++;
+      if (preferences.preferred_sports_activity_id) count++;
+      if (preferences.preferred_sleep_habit_id) count++;
+      if (
+        preferences.preferred_pets_id &&
+        preferences.preferred_pets_id.length > 0
+      )
+        count++;
+      if (preferences.preferred_religiosity_level_id) count++;
+
+      setSelectedFiltersCount(count);
     } catch (error) {
-      console.error("Error updating section status:", error);
+      console.error("Error counting selected filters:", error);
     }
-  }, [isBasicComplete, preferences, isMounted]);
-
-  const isEducationSectionComplete = useCallback(() => {
-    return !!(
-      preferences.preferred_educational_level_id ||
-      preferences.preferred_specialization_id ||
-      preferences.preferred_employment_status !== null ||
-      preferences.preferred_job_title_id ||
-      preferences.preferred_financial_status_id ||
-      preferences.preferred_marriage_budget_id
-    );
-  }, [preferences]);
-
-  const isPersonalSectionComplete = useCallback(() => {
-    return !!(
-      preferences.preferred_height_id ||
-      preferences.preferred_weight_id ||
-      preferences.preferred_marital_status_id ||
-      preferences.preferred_social_media_presence_id
-    );
-  }, [preferences]);
-
-  const isLifestyleSectionComplete = useCallback(() => {
-    return !!(
-      preferences.preferred_smoking_status !== null ||
-      preferences.preferred_drinking_status_id ||
-      preferences.preferred_sports_activity_id ||
-      preferences.preferred_sleep_habit_id ||
-      (preferences.preferred_pets_id &&
-        preferences.preferred_pets_id.length > 0) ||
-      preferences.preferred_religiosity_level_id
-    );
-  }, [preferences]);
+  }, [preferences, isMounted]);
 
   const handlePreferenceChange = useCallback(
     (field, value) => {
+      const isAdding = value !== null && preferences[field] === null;
+
+      if (isMaxFiltersSelected && isAdding) {
+        Alert.alert(
+          t ? t("search.max_filters.title") : "Maximum Filters Reached",
+          t
+            ? t("search.max_filters.message")
+            : "You've selected the maximum of 10 filters for the perfect match. To add this filter, please remove another one first.",
+          [{ text: t ? t("common.ok") : "OK" }]
+        );
+        return;
+      }
+
       dispatch(updatePreference({ field, value }));
 
       if (field === "preferred_country_id") {
         dispatch(updatePreference({ field: "preferred_city_id", value: null }));
       }
 
-      setTimeout(() => updateSectionStatus(), 100);
+      setTimeout(() => countSelectedFilters(), 100);
     },
-    [dispatch, updateSectionStatus]
+    [dispatch, countSelectedFilters, preferences, isMaxFiltersSelected, t]
   );
-
-  const handleNavigateToSection = useCallback((section) => {
-    setActiveSection(section);
-
-    if (scrollViewRef.current) {
-      scrollViewRef.current.scrollTo({ y: 0, animated: true });
-    }
-  }, []);
-
-  const handleReturnToTiles = useCallback(() => {
-    setActiveSection(null);
-  }, []);
-
-  const handleCompleteSection = useCallback(() => {
-    updateSectionStatus();
-    setActiveSection(null);
-  }, [updateSectionStatus]);
 
   const handleSearch = useCallback(async () => {
     setIsLoading(true);
@@ -346,8 +477,6 @@ const SearchScreen = () => {
     try {
       await dispatch(submitSearchPreferences(preferences)).unwrap();
       setHasSearched(true);
-      setShowResults(true);
-
       router.push("/(tabs)/matches");
     } catch (error) {
       console.error("Error submitting search preferences:", error);
@@ -365,18 +494,25 @@ const SearchScreen = () => {
         style: "destructive",
         onPress: () => {
           dispatch(resetPreferences());
-          updateSectionStatus();
+          countSelectedFilters();
           Alert.alert(t("common.success"), t("search.reset_success"));
         },
       },
     ]);
-  }, [dispatch, updateSectionStatus, t]);
+  }, [dispatch, countSelectedFilters, t]);
 
   const handleRetry = useCallback(() => {
     setRetryCount((prev) => prev + 1);
     setError(null);
     initializeScreen();
   }, []);
+
+  const isFilterDisabled = useCallback(
+    (field) => {
+      return isMaxFiltersSelected && preferences[field] === null;
+    },
+    [isMaxFiltersSelected, preferences]
+  );
 
   if (isLoading && !initialLoadComplete) {
     return (
@@ -398,160 +534,162 @@ const SearchScreen = () => {
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-    >
-      <StatusBar barStyle="light-content" backgroundColor={COLORS.primary} />
+    <>
+      <SearchHeader t={t} />
+      <View style={styles.FilterProgressTracker}>
+        <FilterProgressTracker
+          t={t}
+          selectedFiltersCount={selectedFiltersCount}
+          maxFilters={MAX_FILTERS}
+          matchPercentage={matchPercentage}
+          isMaxFiltersSelected={isMaxFiltersSelected}
+          scrollY={scrollY}
+          styles={styles}
+          isRTL={isRTL}
+        />
+      </View>
 
-      <SearchHeader
-        activeSection={activeSection}
-        onReturn={handleReturnToTiles}
-        onComplete={handleCompleteSection}
-      />
+      {/* Sticky section header */}
+      {currentStickySection && (
+        <Animated.View
+          style={[
+            stickyStyles.stickyHeader,
+            {
+              top: FILTER_TRACKER_HEIGHT, // Position below the FilterProgressTracker
+              flexDirection: isRTL ? "row-reverse" : "row",
+            },
+          ]}
+        >
+          <Text style={stickyStyles.stickyHeaderText}>
+            {getCurrentSectionTitle()}
+          </Text>
+        </Animated.View>
+      )}
 
-      <Animated.ScrollView
-        ref={scrollViewRef}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-        style={{ opacity: fadeAnim }}
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        {reduxError && (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{reduxError}</Text>
-          </View>
-        )}
+        <Animated.ScrollView
+          ref={scrollViewRef}
+          contentContainerStyle={styles.scrollContent}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: true }
+          )}
+          scrollEventThrottle={8}
+          onLayout={measureSectionOffsets}
+        >
+          <StatusBar
+            barStyle="light-content"
+            backgroundColor={COLORS.primary}
+          />
 
-        {!activeSection && (
-          <View style={styles.tilesContainer}>
-            <SectionTile
-              title={t("search.sections.basic.title")}
-              subtitle={t("search.sections.basic.subtitle")}
-              icon="person"
-              IconComponent={Ionicons}
-              isComplete={sectionStatus.basic}
-              onPress={() => handleNavigateToSection("basic")}
+          {/* Basic Info Section with ref for sticky header */}
+          <View ref={sectionRefs.current.basic}>
+            <BasicInfoFilterSection
+              t={t}
+              isRTL={isRTL}
+              preferences={preferences}
+              geographic={geographic}
+              personalAttributes={personalAttributes}
+              cities={cities}
+              handlePreferenceChange={handlePreferenceChange}
+              handleAgeRangePreset={handleAgeRangePreset}
+              getPresetLabel={getPresetLabel}
+              isFilterDisabled={isFilterDisabled}
+              isMaxFiltersSelected={isMaxFiltersSelected}
               styles={styles}
             />
+          </View>
 
-            <SectionTile
-              title={t("search.sections.education.title")}
-              subtitle={t("search.sections.education.subtitle")}
-              icon="school"
-              IconComponent={Ionicons}
-              isComplete={sectionStatus.education}
-              onPress={() => handleNavigateToSection("education")}
-            />
-
-            <SectionTile
-              title={t("search.sections.personal.title")}
-              subtitle={t("search.sections.personal.subtitle")}
-              icon="human-male-height"
-              IconComponent={MaterialCommunityIcons}
-              isComplete={sectionStatus.personal}
-              onPress={() => handleNavigateToSection("personal")}
-            />
-
-            <SectionTile
-              title={t("search.sections.lifestyle.title")}
-              subtitle={t("search.sections.lifestyle.subtitle")}
-              icon="coffee"
-              IconComponent={FontAwesome5}
-              isComplete={sectionStatus.lifestyle}
-              onPress={() => handleNavigateToSection("lifestyle")}
+          {/* Education Section with ref for sticky header */}
+          <View ref={sectionRefs.current.education}>
+            <EducationFilterSection
+              t={t}
+              isRTL={isRTL}
+              preferences={preferences}
+              professionalEducational={professionalEducational}
+              geographic={geographic}
+              marriageBudget={marriageBudget}
+              handlePreferenceChange={handlePreferenceChange}
+              isFilterDisabled={isFilterDisabled}
+              styles={styles}
             />
           </View>
-        )}
 
-        {activeSection && (
-          <Animated.View
-            style={[
-              styles.formContainer,
-              { transform: [{ translateY: cardOffset }] },
-            ]}
-          >
-            {activeSection === "basic" && (
-              <BasicInfoSection
-                preferences={preferences}
-                onChange={handlePreferenceChange}
-                geographic={geographic}
-                personalAttributes={personalAttributes}
-                onComplete={handleCompleteSection}
-                styles={styles}
-                isRTL={isRTL}
-                t={t}
-              />
-            )}
-            {activeSection === "education" && (
-              <EducationSection
-                preferences={preferences}
-                onChange={handlePreferenceChange}
-                professionalEducational={professionalEducational}
-                geographic={geographic}
-                onComplete={handleCompleteSection}
-                styles={styles}
-                isRTL={isRTL}
-                t={t}
-              />
-            )}
+          {/* Personal Section with ref for sticky header */}
+          <View ref={sectionRefs.current.personal}>
+            <PersonalFilterSection
+              t={t}
+              isRTL={isRTL}
+              preferences={preferences}
+              personalAttributes={personalAttributes}
+              handlePreferenceChange={handlePreferenceChange}
+              isFilterDisabled={isFilterDisabled}
+              styles={styles}
+            />
+          </View>
 
-            {activeSection === "personal" && (
-              <PersonalSection
-                preferences={preferences}
-                onChange={handlePreferenceChange}
-                personalAttributes={personalAttributes}
-                onComplete={handleCompleteSection}
-                styles={styles}
-                isRTL={isRTL}
-                t={t}
-              />
-            )}
+          {/* Lifestyle Section with ref for sticky header */}
+          <View ref={sectionRefs.current.lifestyle}>
+            <LifestyleFilterSection
+              t={t}
+              isRTL={isRTL}
+              preferences={preferences}
+              lifestyleInterests={lifestyleInterests}
+              personalAttributes={personalAttributes}
+              religiosityLevels={religiosityLevels}
+              handlePreferenceChange={handlePreferenceChange}
+              isFilterDisabled={isFilterDisabled}
+              isMaxFiltersSelected={isMaxFiltersSelected}
+              validationErrors={validationErrors}
+              setValidationErrors={setValidationErrors}
+              styles={styles}
+            />
+          </View>
 
-            {activeSection === "lifestyle" && (
-              <LifestyleSection
-                preferences={preferences}
-                onChange={handlePreferenceChange}
-                lifestyleInterests={lifestyleInterests}
-                personalAttributes={personalAttributes}
-                onComplete={handleCompleteSection}
-                styles={styles}
-                isRTL={isRTL}
-                t={t}
-              />
-            )}
-          </Animated.View>
-        )}
-
-        {!activeSection && (
-          <SearchButtons
-            isLoading={loading}
-            isDisabled={!isAnyFilterApplied}
-            completedSections={completedSectionsCount}
-            hasSearched={hasSearched}
-            onSearch={handleSearch}
-            onReset={handleReset}
-            onViewResults={() => setShowResults(true)}
+          <SearchActionButtons
+            t={t}
+            loading={loading}
+            hasSmokingError={hasSmokingError}
+            selectedFiltersCount={selectedFiltersCount}
+            handleSearch={handleSearch}
+            handleReset={handleReset}
           />
-        )}
 
-        {!activeSection &&
-          !Object.values(sectionStatus).every((value) => value) && (
-            <Tip isAnyFilterApplied={isAnyFilterApplied} />
-          )}
-
-        {hasSearched && !activeSection && (
-          <View style={styles.savedPreferencesCard}>
-            <Text style={styles.savedPreferencesTitle}>
-              {t("search.preferences_saved.title")}
-            </Text>
-            <Text style={styles.savedPreferencesText}>
-              {t("search.preferences_saved.message")}
-            </Text>
-          </View>
-        )}
-      </Animated.ScrollView>
-    </KeyboardAvoidingView>
+          {hasSearched && <SavedPreferencesMessage t={t} />}
+        </Animated.ScrollView>
+      </KeyboardAvoidingView>
+    </>
   );
 };
 
-export default withProfileCompletion(SearchScreen);
+// Styles for sticky header
+const stickyStyles = StyleSheet.create({
+  stickyHeader: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: STICKY_HEADER_HEIGHT,
+    backgroundColor: COLORS.background,
+    zIndex: 999,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eaeaea",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+  },
+  stickyHeaderText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.primary,
+  },
+});
+
+export default withProfileCompletion(UnifiedSearchScreen);

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -19,10 +19,13 @@ const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 const ModernDropdown = ({
   label,
   value,
-  items,
+  items = [],
   onValueChange,
   required = false,
   placeholder = "Select an option",
+  disabled = false,
+  containerStyle,
+  isRTL = false,
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -32,6 +35,11 @@ const ModernDropdown = ({
   // Find the selected item label
   const selectedItem = items.find((item) => item.value === value);
   const displayText = selectedItem ? selectedItem.label : placeholder;
+
+  // Reset filtered items when source items change
+  useEffect(() => {
+    setFilteredItems(items);
+  }, [items]);
 
   const handleSelect = (item) => {
     onValueChange(item.value);
@@ -44,6 +52,10 @@ const ModernDropdown = ({
   };
 
   const animateModalIn = () => {
+    // Reset search state when opening modal
+    setSearchText("");
+    setFilteredItems(items);
+
     setModalVisible(true);
     Animated.timing(modalAnimation, {
       toValue: 1,
@@ -76,6 +88,12 @@ const ModernDropdown = ({
     }
   };
 
+  // Function to reset search and show all items
+  const resetSearch = () => {
+    setSearchText("");
+    setFilteredItems(items);
+  };
+
   // Animations for modal
   const slideTranslation = modalAnimation.interpolate({
     inputRange: [0, 1],
@@ -88,15 +106,17 @@ const ModernDropdown = ({
   });
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, containerStyle]}>
       <View style={styles.labelContainer}>
         <Text style={styles.label}>
           {label} {required && <Text style={styles.requiredMarker}>*</Text>}
         </Text>
 
-        {value !== null && !required && (
+        {value !== null && !required && !disabled && (
           <TouchableOpacity onPress={handleClear} style={styles.clearButton}>
-            <Text style={styles.clearButtonText}>Clear</Text>
+            <Text style={styles.clearButtonText}>
+              {isRTL ? "مسح" : "Clear"}
+            </Text>
           </TouchableOpacity>
         )}
       </View>
@@ -106,18 +126,23 @@ const ModernDropdown = ({
           styles.dropdown,
           !selectedItem && styles.dropdownEmpty,
           value === null && required && styles.dropdownError,
+          disabled && styles.dropdownDisabled,
         ]}
-        onPress={animateModalIn}
-        activeOpacity={0.7}
+        onPress={disabled ? null : animateModalIn}
+        activeOpacity={disabled ? 1 : 0.7}
       >
         <Text
-          style={[styles.dropdownText, !selectedItem && styles.placeholder]}
+          style={[
+            styles.dropdownText,
+            !selectedItem && styles.placeholder,
+            disabled && styles.disabledText,
+          ]}
           numberOfLines={1}
         >
           {displayText}
         </Text>
-        <View style={styles.iconContainer}>
-          <View style={styles.downArrow} />
+        <View style={[styles.iconContainer, disabled && styles.disabledIcon]}>
+          <View style={[styles.downArrow, disabled && styles.disabledArrow]} />
         </View>
       </TouchableOpacity>
 
@@ -196,7 +221,15 @@ const ModernDropdown = ({
               )}
               ListEmptyComponent={
                 <View style={styles.emptyList}>
-                  <Text style={styles.emptyListText}>No results found</Text>
+                  <Text style={styles.emptyListText}>
+                    No results found for "{searchText}"
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.resetButton}
+                    onPress={resetSearch}
+                  >
+                    <Text style={styles.resetButtonText}>Show all options</Text>
+                  </TouchableOpacity>
                 </View>
               }
               showsVerticalScrollIndicator={false}
@@ -257,6 +290,11 @@ const styles = StyleSheet.create({
     borderColor: COLORS.error,
     borderWidth: 1.5,
   },
+  dropdownDisabled: {
+    backgroundColor: "#F5F5F7",
+    borderColor: "#E0E0E5",
+    opacity: 0.7,
+  },
   dropdownText: {
     fontSize: 16,
     color: COLORS.text,
@@ -265,11 +303,17 @@ const styles = StyleSheet.create({
   placeholder: {
     color: COLORS.lightText,
   },
+  disabledText: {
+    color: "#BBBBBB",
+  },
   iconContainer: {
     width: 24,
     height: 24,
     justifyContent: "center",
     alignItems: "center",
+  },
+  disabledIcon: {
+    opacity: 0.5,
   },
   downArrow: {
     width: 0,
@@ -280,6 +324,9 @@ const styles = StyleSheet.create({
     borderLeftColor: "transparent",
     borderRightColor: "transparent",
     borderTopColor: COLORS.lightText,
+  },
+  disabledArrow: {
+    borderTopColor: "#BBBBBB",
   },
   errorText: {
     color: COLORS.error,
@@ -317,7 +364,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: COLORS.darkText,
+    color: COLORS.darkText || COLORS.text,
   },
   closeButton: {
     position: "absolute",
@@ -347,6 +394,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 20,
+    flexGrow: 1,
   },
   optionItem: {
     flexDirection: "row",
@@ -388,6 +436,19 @@ const styles = StyleSheet.create({
   emptyListText: {
     fontSize: 16,
     color: COLORS.lightText,
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  resetButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: COLORS.lightPrimary || "rgba(65, 105, 225, 0.1)",
+    borderRadius: 8,
+  },
+  resetButtonText: {
+    color: COLORS.primary,
+    fontWeight: "500",
+    fontSize: 14,
   },
 });
 

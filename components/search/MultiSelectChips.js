@@ -13,17 +13,39 @@ class MultiSelectChips extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      animatedValues: props.items.map(() => new Animated.Value(0)),
+      animatedValues: {},
     };
   }
 
   componentDidMount() {
-    // Animate chips in when component mounts
-    this.animateChipsIn();
+    this.initializeAnimatedValues();
   }
 
+  componentDidUpdate(prevProps) {
+    // Check if items array has changed
+    if (prevProps.items !== this.props.items) {
+      this.initializeAnimatedValues();
+    }
+  }
+
+  initializeAnimatedValues = () => {
+    const { items } = this.props;
+    const animatedValues = { ...this.state.animatedValues };
+
+    // Create animated values for new items
+    items.forEach((item) => {
+      if (!animatedValues[item.id]) {
+        animatedValues[item.id] = new Animated.Value(0);
+      }
+    });
+
+    this.setState({ animatedValues }, this.animateChipsIn);
+  };
+
   animateChipsIn = () => {
-    const animations = this.state.animatedValues.map((anim, index) => {
+    const { items } = this.props;
+    const animations = items.map((item, index) => {
+      const anim = this.state.animatedValues[item.id];
       return Animated.timing(anim, {
         toValue: 1,
         duration: 300,
@@ -36,23 +58,32 @@ class MultiSelectChips extends React.Component {
   };
 
   // Animate a single chip when selected/deselected
-  animateChipSelect = (index) => {
-    Animated.sequence([
-      Animated.timing(this.state.animatedValues[index], {
-        toValue: 1.1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(this.state.animatedValues[index], {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
+  animateChipSelect = (id) => {
+    const anim = this.state.animatedValues[id];
+
+    if (anim) {
+      Animated.sequence([
+        Animated.timing(anim, {
+          toValue: 1.1,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+        Animated.timing(anim, {
+          toValue: 1,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
   };
 
-  handleToggleItem = (id, index) => {
-    const { selectedItems, onSelectItem } = this.props;
+  handleToggleItem = (id) => {
+    const { selectedItems, onSelectItem, disabled } = this.props;
+
+    if (disabled) {
+      return;
+    }
+
     let newSelectedItems;
 
     // Convert to Set for easier operations if array
@@ -67,12 +98,13 @@ class MultiSelectChips extends React.Component {
       newSelectedItems = [...(selectedItems || []), id];
     }
 
-    this.animateChipSelect(index);
+    this.animateChipSelect(id);
     onSelectItem(newSelectedItems);
   };
 
   render() {
-    const { items, selectedItems } = this.props;
+    const { items, selectedItems, isRTL, disabled } = this.props;
+    const { animatedValues } = this.state;
 
     // Convert selectedItems to a Set for easier checking
     const selectedSet = new Set(selectedItems || []);
@@ -81,19 +113,24 @@ class MultiSelectChips extends React.Component {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.container}
+        contentContainerStyle={[
+          styles.container,
+          isRTL && styles.containerRTL,
+          disabled && styles.disabledContainer,
+        ]}
       >
-        {items.map((item, index) => {
+        {items.map((item) => {
           const isSelected = selectedSet.has(item.id);
+          const animValue = animatedValues[item.id] || new Animated.Value(1);
 
           // Scale animation for each chip
-          const scale = this.state.animatedValues[index].interpolate({
-            inputRange: [0, 1],
-            outputRange: [0.8, 1],
+          const scale = animValue.interpolate({
+            inputRange: [0, 1, 1.1],
+            outputRange: [0.8, 1, 1.1],
           });
 
           // Opacity animation for each chip
-          const opacity = this.state.animatedValues[index].interpolate({
+          const opacity = animValue.interpolate({
             inputRange: [0, 1],
             outputRange: [0, 1],
           });
@@ -103,13 +140,14 @@ class MultiSelectChips extends React.Component {
               key={item.id}
               style={{
                 transform: [{ scale }],
-                opacity,
+                opacity: disabled ? 0.5 : opacity,
               }}
             >
               <TouchableOpacity
                 style={[styles.chip, isSelected && styles.selectedChip]}
-                onPress={() => this.handleToggleItem(item.id, index)}
+                onPress={() => this.handleToggleItem(item.id)}
                 activeOpacity={0.7}
+                disabled={disabled}
               >
                 {isSelected && (
                   <View style={styles.checkIcon}>
@@ -120,6 +158,7 @@ class MultiSelectChips extends React.Component {
                   style={[
                     styles.chipText,
                     isSelected && styles.selectedChipText,
+                    isRTL && styles.textRTL,
                   ]}
                 >
                   {item.name}
@@ -138,6 +177,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "nowrap",
     paddingVertical: 8,
+  },
+  containerRTL: {
+    flexDirection: "row-reverse",
+  },
+  disabledContainer: {
+    opacity: 0.6,
   },
   chip: {
     paddingHorizontal: 16,
@@ -167,6 +212,9 @@ const styles = StyleSheet.create({
   selectedChipText: {
     fontWeight: "600",
     color: COLORS.primary,
+  },
+  textRTL: {
+    textAlign: "right",
   },
   checkIcon: {
     width: 16,
