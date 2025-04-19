@@ -1,5 +1,4 @@
 export const processProfileData = (userProfile, profile) => {
-  // Extract basic user information
   const fullName = `${userProfile.first_name || ""} ${
     userProfile.last_name || ""
   }`.trim();
@@ -9,10 +8,8 @@ export const processProfileData = (userProfile, profile) => {
     profile.city || userProfile.city_location || "Location not provided";
   const bio = profile.bio || "No bio provided";
 
-  // Extract hobbies/interests
   const interests = profile.hobbies || [];
 
-  // Construct stats object
   const stats = {
     height: profile.height,
     weight: profile.weight,

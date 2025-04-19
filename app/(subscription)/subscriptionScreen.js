@@ -339,7 +339,6 @@ export default function SubscriptionScreen() {
           style={styles.subscribeButton}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            // Handle subscription
           }}
         >
           <LinearGradient

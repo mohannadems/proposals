@@ -1,4 +1,3 @@
-// TermsModal.js
 import React, { useState } from "react";
 import {
   Modal,
@@ -21,26 +20,19 @@ export const TermsModal = ({ visible, onAccept, onDecline }) => {
     try {
       setIsLoading(true);
 
-      // Animate loading overlay
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 300,
         useNativeDriver: true,
       }).start();
 
-      // Perform your actual async operation here
       await onAccept();
 
-      // IMPORTANT FIX: Reset loading state after successful completion
       setIsLoading(false);
       fadeAnim.setValue(0);
-
-      // The parent component might handle navigation or other post-acceptance logic
     } catch (error) {
-      // Handle any errors
       console.error("Error accepting terms:", error);
 
-      // Reset loading state
       setIsLoading(false);
       fadeAnim.setValue(0);
     }

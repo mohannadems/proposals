@@ -1,4 +1,3 @@
-// app/components/common/GenderSelector.js
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Controller } from "react-hook-form";
@@ -13,7 +12,6 @@ const GenderSelector = ({
   t,
   required = false,
 }) => {
-  // Define gender options with translation support
   const genderOptions = [
     {
       value: "male",
@@ -27,7 +25,6 @@ const GenderSelector = ({
     },
   ];
 
-  // Create dynamic styles based on RTL
   const dynamicStyles = {
     container: {
       marginBottom: 16,

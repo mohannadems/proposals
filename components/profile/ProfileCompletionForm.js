@@ -1,4 +1,3 @@
-// components/profile/ProfileCompletionForm.js
 import React, { useState } from "react";
 import {
   View,

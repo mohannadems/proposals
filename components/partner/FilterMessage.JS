@@ -11,24 +11,19 @@ const FilterMessage = ({
   styles,
   isRTL,
 }) => {
-  // Create animation value for fade-in effect
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // Determine if we should show the message
   const shouldShowMessage =
     selectedFiltersCount > 0 && selectedFiltersCount < maxFilters;
 
-  // Animation effect when the component mounts or when count changes
   useEffect(() => {
     if (shouldShowMessage) {
-      // Fade in the message
       Animated.timing(fadeAnim, {
         toValue: 1,
         duration: 500,
         useNativeDriver: true,
       }).start();
     } else {
-      // Fade out if not showing
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 300,

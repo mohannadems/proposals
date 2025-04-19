@@ -173,12 +173,10 @@ const getProfileImage = (profile, isMatchProfile = false) => {
   try {
     if (isMatchProfile && profile?.matched_user_photo) {
       const photoUrl = profile.matched_user_photo;
-      // If the URL already includes http/https, use it directly
       if (photoUrl.startsWith("http")) {
         return photoUrl;
       } else {
-        // Otherwise, prepend your server domain
-        return `https://proposals.world${photoUrl}`; // FIXED: Removed extra quote
+        return `https://proposals.world${photoUrl}`;
       }
     }
 
@@ -191,11 +189,10 @@ const getProfileImage = (profile, isMatchProfile = false) => {
       if (photoUrl.startsWith("http")) {
         return photoUrl;
       } else {
-        return `https://proposals.world${photoUrl}`; // Also ensure consistency here
+        return `https://proposals.world${photoUrl}`;
       }
     }
 
-    // If no valid profile photo is found, use fallback
     return (
       profile?.profile?.avatar_url ||
       (isMatchProfile

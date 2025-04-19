@@ -1,4 +1,3 @@
-// StatItem.js
 import React, { useContext } from "react";
 import { View, Text } from "react-native";
 import { Feather } from "@expo/vector-icons";

@@ -59,9 +59,8 @@ import { LanguageContext } from "../../contexts/LanguageContext";
 import createUnifiedSearchStyles from "../../styles/SearchScreen";
 
 const STICKY_HEADER_HEIGHT = 50;
-const FILTER_TRACKER_HEIGHT = 180; // Approximate height of the FilterProgressTracker
+const FILTER_TRACKER_HEIGHT = 180;
 
-// Section definitions for sticky headers
 const SECTIONS = [
   {
     id: "basic",
@@ -136,11 +135,9 @@ const UnifiedSearchScreen = () => {
   const [selectedFiltersCount, setSelectedFiltersCount] = useState(0);
   const [validationErrors, setValidationErrors] = useState({});
 
-  // State for sticky headers
   const [sectionOffsets, setSectionOffsets] = useState({});
   const [currentStickySection, setCurrentStickySection] = useState(null);
 
-  // Create refs for each section
   const sectionRefs = useRef({
     basic: React.createRef(),
     education: React.createRef(),
@@ -174,7 +171,6 @@ const UnifiedSearchScreen = () => {
 
   const selectedCountryId = preferences.preferred_country_id;
 
-  // Calculate match percentage based on selected filters
   const matchPercentage = useMemo(() => {
     return Math.min(
       Math.round((selectedFiltersCount / MAX_FILTERS) * 100),
@@ -197,19 +193,15 @@ const UnifiedSearchScreen = () => {
     preferences.preferred_smoking_tools,
   ]);
 
-  // Handle scroll events to update sticky headers
   useEffect(() => {
     if (!scrollY || Object.keys(sectionOffsets).length === 0) return;
 
     const scrollListener = scrollY.addListener(({ value }) => {
-      // Account for the FilterProgressTracker height when determining which section is sticky
       const adjustedScrollY = value + FILTER_TRACKER_HEIGHT;
 
-      // Determine which section should be sticky based on scroll position
       let currentSection = null;
       const sections = Object.entries(sectionOffsets);
 
-      // Sort sections by their offset (in ascending order)
       sections.sort((a, b) => a[1] - b[1]);
 
       for (let i = sections.length - 1; i >= 0; i--) {
@@ -220,7 +212,6 @@ const UnifiedSearchScreen = () => {
         }
       }
 
-      // Check if we need to update the current sticky section
       if (currentSection !== currentStickySection) {
         setCurrentStickySection(currentSection);
       }
@@ -231,7 +222,6 @@ const UnifiedSearchScreen = () => {
     };
   }, [scrollY, sectionOffsets, currentStickySection]);
 
-  // Measure section positions after layout
   const measureSectionOffsets = useCallback(() => {
     Object.entries(sectionRefs.current).forEach(([key, ref]) => {
       if (ref.current) {
@@ -245,7 +235,6 @@ const UnifiedSearchScreen = () => {
     });
   }, []);
 
-  // Get current section title
   const getCurrentSectionTitle = useCallback(() => {
     if (!currentStickySection) return "";
 
@@ -282,10 +271,8 @@ const UnifiedSearchScreen = () => {
     };
   }, []);
 
-  // Measure section offsets when layout is ready
   useEffect(() => {
     if (!isLoading && initialLoadComplete) {
-      // Use a timeout to ensure the layout is completed
       const timer = setTimeout(() => {
         measureSectionOffsets();
       }, 500);
@@ -665,7 +652,6 @@ const UnifiedSearchScreen = () => {
   );
 };
 
-// Styles for sticky header
 const stickyStyles = StyleSheet.create({
   stickyHeader: {
     position: "absolute",

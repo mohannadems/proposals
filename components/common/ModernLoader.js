@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useEffect, useRef } from "react";
 import {
   View,
@@ -27,7 +25,6 @@ const COLORS = {
 };
 
 const ModernLoadingScreen = () => {
-  // Animation values
   const pulseAnim = useRef(new Animated.Value(0)).current;
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
@@ -35,7 +32,6 @@ const ModernLoadingScreen = () => {
   const scaleAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Pulse animation
     Animated.loop(
       Animated.sequence([
         Animated.timing(pulseAnim, {
@@ -53,7 +49,6 @@ const ModernLoadingScreen = () => {
       ])
     ).start();
 
-    // Rotation animation
     Animated.loop(
       Animated.timing(rotateAnim, {
         toValue: 1,
@@ -63,7 +58,6 @@ const ModernLoadingScreen = () => {
       })
     ).start();
 
-    // Progress animation
     Animated.loop(
       Animated.sequence([
         Animated.timing(progressAnim, {
@@ -81,7 +75,6 @@ const ModernLoadingScreen = () => {
       ])
     ).start();
 
-    // Initial fade in
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 800,
@@ -89,7 +82,6 @@ const ModernLoadingScreen = () => {
       easing: Easing.out(Easing.ease),
     }).start();
 
-    // Scale animation
     Animated.spring(scaleAnim, {
       toValue: 1,
       tension: 20,
@@ -108,7 +100,6 @@ const ModernLoadingScreen = () => {
     outputRange: ["0%", "100%"],
   });
 
-  // Generate multiple circles for the background
   const renderBackgroundCircles = () => {
     return Array(6)
       .fill(0)
@@ -151,10 +142,8 @@ const ModernLoadingScreen = () => {
             },
           ]}
         >
-          {/* Background animated circles */}
           {renderBackgroundCircles()}
 
-          {/* Central loading element */}
           <Animated.View
             style={[
               styles.centralCircle,
@@ -176,10 +165,8 @@ const ModernLoadingScreen = () => {
             </View>
           </Animated.View>
 
-          {/* Loading text */}
           <Text style={styles.loadingText}>Loading</Text>
 
-          {/* Animated dots */}
           <View style={styles.dotsContainer}>
             {[0, 1, 2].map((i) => (
               <Animated.View
@@ -207,7 +194,6 @@ const ModernLoadingScreen = () => {
             ))}
           </View>
 
-          {/* Progress bar */}
           <View style={styles.progressContainer}>
             <Animated.View
               style={[

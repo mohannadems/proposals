@@ -1,4 +1,3 @@
-// app/components/common/EmploymentCard.js
 import React from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
 import { COLORS } from "../../constants/colors";

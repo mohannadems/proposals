@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   itemList: {
-    maxHeight: 250, // Ensure enough space for multiple items
+    maxHeight: 250,
   },
   dropdownItem: {
     flexDirection: "row",

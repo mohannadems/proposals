@@ -2,7 +2,6 @@ import React, { useRef } from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
 import { COLORS } from "../../constants/colors";
 
-// This is a reusable component for section headers that can be used in all filter sections
 const SectionHeader = ({ title, forwardRef, isRTL, style, textStyle }) => {
   return (
     <View ref={forwardRef} style={[styles.sectionHeader, style]}>
@@ -19,7 +18,6 @@ const SectionHeader = ({ title, forwardRef, isRTL, style, textStyle }) => {
   );
 };
 
-// Styles
 const styles = StyleSheet.create({
   sectionHeader: {
     paddingVertical: 12,

@@ -9,7 +9,6 @@ import { loginStyles } from "../../styles/auth.styles";
 import { AUTH_MESSAGES } from "../../constants/auth";
 import { LanguageContext } from "../../contexts/LanguageContext";
 
-// Enhanced TouchableOpacity with haptic feedback
 const HapticTouchable = ({ onPress, feedback = "light", children, style }) => {
   const handlePress = async () => {
     switch (feedback) {
@@ -38,7 +37,6 @@ const HapticTouchable = ({ onPress, feedback = "light", children, style }) => {
   );
 };
 
-// Enhanced Login Button with haptic feedback
 const EnhancedLoginButton = ({ onPress, loading, buttonText }) => {
   const handleLogin = async () => {
     if (!loading) {

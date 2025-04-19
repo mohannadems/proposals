@@ -1,4 +1,3 @@
-// Create a function to get translated card configs based on language
 export const getTranslatedCardConfigs = (t) => {
   if (!t) return cardConfigs;
 

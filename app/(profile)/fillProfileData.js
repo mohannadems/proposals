@@ -55,7 +55,6 @@ const ProfileFormScreen = () => {
     setErrorModalVisible
   );
 
-  // Translate FORM_STEPS titles and descriptions
   const getTranslatedStep = (step) => {
     if (!t) return step;
 

@@ -522,7 +522,6 @@ const LifestyleSection = ({ isRTL = false, t }) => {
                 isRTL={_isRTL}
                 rules={{
                   validate: (value) => {
-                    // Check if smoking status requires tools but none are selected
                     if (
                       (smoking_status === 2 || smoking_status === 3) &&
                       (!value || value.length === 0)

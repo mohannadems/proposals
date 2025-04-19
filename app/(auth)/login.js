@@ -35,12 +35,11 @@ export default function LoginScreen() {
       }
       return result;
     } catch (error) {
-      // Set the error message in the form
       form.setValidationErrors((prev) => ({
         ...prev,
         general: error.message || AUTH_MESSAGES.INVALID_CREDENTIALS,
       }));
-      throw error; // Re-throw to be handled by handleLogin
+      throw error;
     }
   };
 

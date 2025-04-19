@@ -34,16 +34,13 @@ const { width } = Dimensions.get("window");
 const scale = width / 375;
 const moderateScale = (size) => size + (scale - 1) * 0.5;
 
-// Check if profile is complete directly from API data
 const isApiProfileComplete = (userData) => {
-  // Early check if userData or profile is undefined
   if (!userData || !userData.data || !userData.data.profile) {
     return false;
   }
 
   const { profile } = userData.data;
 
-  // Check if all critical fields are filled (API format)
   const criticalFields = [
     "nationality",
     "language",
@@ -58,7 +55,6 @@ const isApiProfileComplete = (userData) => {
     "financial_status",
   ];
 
-  // Count filled critical fields
   const filledCount = criticalFields.filter(
     (field) =>
       profile[field] !== null &&
@@ -66,27 +62,21 @@ const isApiProfileComplete = (userData) => {
       profile[field] !== ""
   ).length;
 
-  // Check if profile has photos
   const hasPhotos =
     profile.photos &&
     Array.isArray(profile.photos) &&
     profile.photos.length > 0;
 
-  // If most critical fields are filled and there's a photo, consider it complete
   const isComplete = filledCount >= criticalFields.length * 0.8 && hasPhotos;
 
   return isComplete;
 };
 
-// Helper function to check if profile from API is mostly empty
 const isProfileEmpty = (userData) => {
-  // Guard against undefined userData
   if (!userData) return true;
 
-  // Handle different data structures
   const profile = userData.profile || (userData.data && userData.data.profile);
 
-  // If profile doesn't exist, consider it empty
   if (!profile) return true;
 
   const requiredFields = [
@@ -102,7 +92,6 @@ const isProfileEmpty = (userData) => {
     "weight",
   ];
 
-  // Check if most fields are null/empty
   const emptyCount = requiredFields.filter(
     (field) =>
       profile[field] === null ||
@@ -110,13 +99,10 @@ const isProfileEmpty = (userData) => {
       profile[field] === ""
   ).length;
 
-  // If most fields are empty, consider the profile empty
   return emptyCount > requiredFields.length * 0.7;
 };
 
-// Utility function to check if profile is complete
 const checkProfileCompletion = (userData) => {
-  // Early check if userData or profile is undefined
   if (!userData || !userData.data || !userData.data.profile) {
     return {
       isProfileComplete: false,
@@ -126,7 +112,6 @@ const checkProfileCompletion = (userData) => {
 
   const { profile } = userData.data;
 
-  // Define required fields
   const requiredFields = [
     "nationality",
     "language",
@@ -142,13 +127,10 @@ const checkProfileCompletion = (userData) => {
     "weight",
   ];
 
-  // Array fields that must have at least one item
   const requiredArrayFields = ["photos"];
 
-  // Track missing fields
   const missingFields = [];
 
-  // Check each required field
   requiredFields.forEach((field) => {
     if (
       profile[field] === null ||
@@ -157,12 +139,10 @@ const checkProfileCompletion = (userData) => {
     ) {
       missingFields.push(field);
     } else if (field === "employment_status" && profile[field] === 0) {
-      // Special case for employment_status which should not be 0
       missingFields.push(field);
     }
   });
 
-  // Check each required array field
   requiredArrayFields.forEach((field) => {
     if (
       !profile[field] ||
@@ -179,38 +159,28 @@ const checkProfileCompletion = (userData) => {
   };
 };
 
-// Helper function to create a merged profile using local form data
 const createMergedProfileData = (userData, formData) => {
   try {
-    // Create a safe base object
     let mergedData = {
       data: {
         profile: {},
       },
     };
 
-    // Handle different possible input structures
     if (userData) {
-      // If userData has a data property
       if (userData.data) {
         mergedData = JSON.parse(JSON.stringify(userData));
-      }
-      // If userData is a profile directly
-      else if (userData.profile) {
+      } else if (userData.profile) {
         mergedData.data.profile = JSON.parse(JSON.stringify(userData.profile));
-      }
-      // If userData is just a plain object with profile fields
-      else {
+      } else {
         mergedData.data.profile = JSON.parse(JSON.stringify(userData));
       }
     }
 
-    // Ensure profile exists
     if (!mergedData.data.profile) {
       mergedData.data.profile = {};
     }
 
-    // Safely merge form data
     if (formData) {
       const fieldMapping = {
         nationality_id: "nationality",
@@ -223,14 +193,12 @@ const createMergedProfileData = (userData, formData) => {
         employment_status: "employment_status",
       };
 
-      // Populate profile fields from form data
       Object.entries(fieldMapping).forEach(([formField, profileField]) => {
         if (formData[formField] !== undefined) {
           mergedData.data.profile[profileField] = formData[formField];
         }
       });
 
-      // Special handling for specific fields
       if (formData.height) mergedData.data.profile.height = formData.height;
       if (formData.weight) mergedData.data.profile.weight = formData.weight;
       if (formData.profile_image) {
@@ -246,7 +214,6 @@ const createMergedProfileData = (userData, formData) => {
       formData: formData ? Object.keys(formData) : "undefined",
     });
 
-    // Return a safe, empty structure if anything goes wrong
     return {
       data: {
         profile: {},
@@ -389,7 +356,6 @@ const withProfileCompletion = (WrappedComponent) => {
 
     const fadeAnim = useSharedValue(0);
 
-    // Fetch profile data on component mount
     useEffect(() => {
       dispatch(fetchProfileCompletionData());
     }, [dispatch]);
@@ -406,12 +372,10 @@ const withProfileCompletion = (WrappedComponent) => {
           return;
         }
 
-        // Ensure we have a valid userId
         const storageKey = userId
           ? `profile_form_data_${userId}`
           : "profile_form_data_default";
 
-        // Clear saved progress if the current user doesn't match the saved user
         const savedUserKey = await AsyncStorage.getItem(
           "last_logged_in_user_id"
         );
@@ -420,7 +384,6 @@ const withProfileCompletion = (WrappedComponent) => {
           await AsyncStorage.removeItem("last_logged_in_user_id");
         }
 
-        // Update last logged-in user ID
         if (userId) {
           await AsyncStorage.setItem("last_logged_in_user_id", userId);
         }
@@ -431,7 +394,6 @@ const withProfileCompletion = (WrappedComponent) => {
           try {
             const parsed = JSON.parse(savedData);
 
-            // Additional check: verify saved data is for the current user
             if (parsed.userId && parsed.userId !== userId) {
               await AsyncStorage.removeItem(storageKey);
               const defaultProgressData = calculateProfileProgress(data);
@@ -441,19 +403,15 @@ const withProfileCompletion = (WrappedComponent) => {
 
             setSavedProgress(parsed);
 
-            // Calculate progress with enhanced error handling
             let progressData;
             try {
-              // Attempt to create a merged profile or use existing data
               const mergedData = createMergedProfileData(data, parsed.formData);
               progressData = calculateProfileProgress(mergedData, parsed);
             } catch (progressCalcError) {
               console.error("Error calculating progress:", progressCalcError);
-              // Fallback to default progress calculation
               progressData = calculateProfileProgress(data);
             }
 
-            // Strict checks for progress
             const apiComplete = isApiProfileComplete(data);
             const serverProfileIsEmpty = isProfileEmpty(data);
 
@@ -471,7 +429,6 @@ const withProfileCompletion = (WrappedComponent) => {
             setProgressInfo(progressData);
           } catch (parseError) {
             console.error("Error parsing saved progress:", parseError);
-            // If parsing fails, reset saved progress and calculate from scratch
             await AsyncStorage.removeItem(storageKey);
             const defaultProgressData = calculateProfileProgress(data);
             setProgressInfo(defaultProgressData);
@@ -483,7 +440,6 @@ const withProfileCompletion = (WrappedComponent) => {
       } catch (error) {
         console.error("Comprehensive error in loadProfileData:", error);
 
-        // Provide a safe fallback
         setProgressInfo({
           progress: 0,
           missingFields: [],
@@ -494,7 +450,6 @@ const withProfileCompletion = (WrappedComponent) => {
       }
     }, [userId, data]);
 
-    // Load saved progress
     useEffect(() => {
       const initializeData = async () => {
         setIsLoading(true);
@@ -505,12 +460,10 @@ const withProfileCompletion = (WrappedComponent) => {
       initializeData();
     }, [userId, data, loadProfileData]);
 
-    // Fade in animation
     useEffect(() => {
       fadeAnim.value = withTiming(1, { duration: 800 });
     }, []);
 
-    // Refresh handler
     const onRefresh = useCallback(async () => {
       setRefreshing(true);
       await dispatch(fetchProfileCompletionData());
@@ -518,7 +471,6 @@ const withProfileCompletion = (WrappedComponent) => {
       setRefreshing(false);
     }, [dispatch, loadProfileData]);
 
-    // Error boundary for rendering
     if (isLoading) {
       return (
         <View style={styles.loadingContainer}>
@@ -528,10 +480,8 @@ const withProfileCompletion = (WrappedComponent) => {
       );
     }
 
-    // Get the fresh calculation
     let { progress, stepProgress } = progressInfo;
 
-    // Check if API profile is complete - do additional check here
     const apiComplete = isApiProfileComplete(data);
     if (apiComplete && progress < 90) {
       progress = 100;
@@ -543,7 +493,6 @@ const withProfileCompletion = (WrappedComponent) => {
       ? checkProfileCompletion(data).isProfileComplete
       : false;
 
-    // If the server data is complete OR we have high calculated progress, show wrapped component
     if (
       apiComplete ||
       progress >= 100 ||

@@ -1,4 +1,3 @@
-// components/common/RTLWrapper.js
 import React, { useContext } from "react";
 import { View, StyleSheet } from "react-native";
 import { LanguageContext } from "../../contexts/LanguageContext";

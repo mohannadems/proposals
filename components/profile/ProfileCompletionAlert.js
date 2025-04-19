@@ -32,11 +32,9 @@ const ProfileCompletionAlert = () => {
   const [savedProgress, setSavedProgress] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Animated values
   const scaleAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // Animation setup
   useEffect(() => {
     if (showProfileAlert) {
       Animated.parallel([
@@ -56,7 +54,6 @@ const ProfileCompletionAlert = () => {
     }
   }, [showProfileAlert]);
 
-  // Load saved progress from AsyncStorage
   useEffect(() => {
     const loadSavedProgress = async () => {
       try {
@@ -80,7 +77,6 @@ const ProfileCompletionAlert = () => {
     loadSavedProgress();
   }, [userId]);
 
-  // Calculate progress including saved data
   const { progress, stepProgress, missingFields } = calculateProfileProgress(
     data,
     savedProgress

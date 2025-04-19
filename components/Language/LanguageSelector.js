@@ -1,4 +1,3 @@
-// components/Language/LanguageSelector.js
 import React, { useContext } from "react";
 import { TouchableOpacity, Text, StyleSheet } from "react-native";
 import { LanguageContext } from "../../contexts/LanguageContext";

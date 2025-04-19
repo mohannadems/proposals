@@ -7,5 +7,4 @@ export default {
     welcome: "مرحبا",
     hello: "اهلا",
   },
-  // Add more languages as needed
 };

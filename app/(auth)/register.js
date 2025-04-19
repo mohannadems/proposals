@@ -52,7 +52,6 @@ export default function RegisterScreen() {
       form.setValidationErrorsWithAPI(validationErrors);
 
       if (error.errors.email || error.errors.phone_number) {
-        // Show alert first and navigate after user acknowledges
         Alert.alert(
           "Registration Error",
           error.errors.email || error.errors.phone_number,
@@ -109,10 +108,8 @@ export default function RegisterScreen() {
     }
   };
 
-  // Also update the component's cleanup
   useEffect(() => {
     return () => {
-      // Cleanup when component unmounts
       setTermsVisible(false);
       setRegistrationData(null);
     };

@@ -31,7 +31,6 @@ const FormDatePicker = ({
   const [tempDate, setTempDate] = useState(null);
   const selectedDate = watch(name);
 
-  // Create dynamic styles based on RTL
   const dynamicStyles = {
     container: {
       marginBottom: 16,
@@ -144,7 +143,6 @@ const FormDatePicker = ({
       day: "numeric",
     };
 
-    // Use the correct locale based on current language
     const locale = isRTL ? "ar-SA" : "en-US";
 
     return Platform.OS === "android"

@@ -26,12 +26,11 @@ const BasicInfoFilterSection = ({
   isMaxFiltersSelected,
   getPresetLabel,
   styles: propStyles,
-  sectionRef, // Pass the ref from the parent component
+  sectionRef,
 }) => {
   const styles = propStyles || createSearchStyles(isRTL);
   return (
     <View style={styles.sectionCard}>
-      {/* Use the SectionHeader component with the forwarded ref */}
       <SectionHeader
         title={t ? t("search.sections.basic.title") : "Basic Information"}
         forwardRef={sectionRef}

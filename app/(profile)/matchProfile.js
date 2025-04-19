@@ -241,7 +241,6 @@ const MatchProfileScreen = () => {
 
   const { firstName, fullName, age, city, bio, interests, stats } = profileData;
 
-  // Map stat labels to translated versions
   const getStatLabel = (key) => {
     return t(`match_profile.stats.${key}`);
   };

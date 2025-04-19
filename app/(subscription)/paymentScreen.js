@@ -102,7 +102,6 @@ const CreditCard = ({ cardDetails, isFlipped, rotateY }) => {
         </View>
 
         {!isFlipped ? (
-          // Front of card
           <View style={styles.cardContent}>
             <View style={styles.cardHeader}>
               <View style={styles.chip} />
@@ -134,7 +133,6 @@ const CreditCard = ({ cardDetails, isFlipped, rotateY }) => {
             </View>
           </View>
         ) : (
-          // Back of card
           <View style={styles.cardBack}>
             <View style={styles.magneticStrip} />
             <View style={styles.cvvContainer}>
@@ -270,10 +268,8 @@ export default function PremiumPaymentScreen() {
     setLoading(true);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-    // Simulate payment processing
     setTimeout(() => {
       setLoading(false);
-      // Navigate to success screen
     }, 2000);
   };
 

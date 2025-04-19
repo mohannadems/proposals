@@ -604,7 +604,6 @@ const MatchesScreen = () => {
     [router, activeFilter]
   );
 
-  // Handle applying filters
   const handleApplyFilters = useCallback(() => {
     const filters = {
       ...activeFilters,

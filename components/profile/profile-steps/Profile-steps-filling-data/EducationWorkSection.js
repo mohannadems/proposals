@@ -27,7 +27,6 @@ import { AnimatedCard, SectionHeader, ToggleButton } from "./AnimatedBase";
 import { CardHeader } from "./CardHeader";
 import { AnimatedFormContainer } from "./FormComponents";
 
-// Original card configs for reference
 const cardConfigs = {
   education: {
     title: "Educational Background",
@@ -63,7 +62,6 @@ const cardConfigs = {
 
 const EducationWorkSection = ({ isRTL = false, t }) => {
   const { isRTL: contextRTL, t: contextT } = useContext(LanguageContext) || {};
-  // Use props if provided, otherwise use context
   const _isRTL = isRTL !== undefined ? isRTL : contextRTL;
   const _t = t || contextT;
 
@@ -90,7 +88,6 @@ const EducationWorkSection = ({ isRTL = false, t }) => {
   const { jobTitles = [] } = useSelector(selectProfessionalEducational);
   const { housingStatuses = [], financialStatuses = [] } = geographic;
 
-  // Create dynamic styles based on RTL
   const dynamicStyles = {
     container: {
       flex: 1,
@@ -134,7 +131,6 @@ const EducationWorkSection = ({ isRTL = false, t }) => {
     );
   }
 
-  // Helper function to get translated card configs
   const getTranslatedCardConfig = (config) => {
     if (!_t) return config;
 

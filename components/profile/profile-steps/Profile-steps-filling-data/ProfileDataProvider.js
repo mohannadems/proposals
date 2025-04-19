@@ -1,4 +1,3 @@
-// components/ProfileDataProvider.js
 import React, { createContext, useContext } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useDynamicProfileData } from "../../../../services/dynamicProfileData";
@@ -6,10 +5,8 @@ import { fetchCitiesByCountry } from "../../../../store/slices/profileAttributes
 import { View, ActivityIndicator, Text } from "react-native";
 import { COLORS } from "../../../../constants/colors";
 
-// Create a context for profile data
 const ProfileDataContext = createContext();
 
-// Custom hook to use the profile data context
 export const useProfileData = () => {
   const context = useContext(ProfileDataContext);
   if (!context) {
@@ -18,20 +15,17 @@ export const useProfileData = () => {
   return context;
 };
 
-// Provider component
 export const ProfileDataProvider = ({ children, loadingFallback = true }) => {
   const dispatch = useDispatch();
   const { profileData, getCitiesByCountry, isLoading, hasErrors } =
     useDynamicProfileData();
 
-  // Function to fetch cities for a specific country
   const fetchCities = (countryId) => {
     if (countryId) {
       dispatch(fetchCitiesByCountry(countryId));
     }
   };
 
-  // Return a loading indicator if data is still being fetched and loadingFallback is true
   if (isLoading && loadingFallback) {
     return (
       <View style={styles.loadingContainer}>
@@ -41,7 +35,6 @@ export const ProfileDataProvider = ({ children, loadingFallback = true }) => {
     );
   }
 
-  // Provide the profile data and utilities through context
   return (
     <ProfileDataContext.Provider
       value={{
@@ -57,7 +50,6 @@ export const ProfileDataProvider = ({ children, loadingFallback = true }) => {
   );
 };
 
-// Styles for loading state
 const styles = {
   loadingContainer: {
     flex: 1,

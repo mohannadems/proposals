@@ -51,7 +51,6 @@ const PhotoUploader = ({ currentPhotoUrl, onPhotoUpdate, onError }) => {
   const handleUpload = async (uri) => {
     setUploading(true);
     setUploadProgress(0);
-    // Set the local image immediately to show the selected image
     setLocalImageUri(uri);
 
     try {
@@ -78,11 +77,11 @@ const PhotoUploader = ({ currentPhotoUrl, onPhotoUpdate, onError }) => {
           "Your profile photo has been successfully updated."
         );
       } else {
-        setLocalImageUri(null); // Reset local image if upload fails
+        setLocalImageUri(null);
         throw new Error(response.message || "Failed to update profile photo");
       }
     } catch (error) {
-      setLocalImageUri(null); // Reset local image if upload fails
+      setLocalImageUri(null);
       console.error("Upload error:", error);
       Alert.alert(
         "Update Failed",

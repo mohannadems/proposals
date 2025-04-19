@@ -20,17 +20,13 @@ export const CardHeader = ({
   t,
 }) => {
   const { isRTL: contextRTL, t: contextT } = useContext(LanguageContext) || {};
-  // Use props if provided, otherwise use context
   const _isRTL = isRTL !== undefined ? isRTL : contextRTL;
   const _t = t || contextT;
 
-  // Replace 'lifestyle' with 'style' icon if needed
   const safeIconName = iconName === "lifestyle" ? "style" : iconName;
 
-  // Get translations if available
   const translatedConfigs = _t ? getTranslatedCardConfigs(_t) : null;
 
-  // Find matching config based on title to get translations
   let translatedTitle = title;
   let translatedDescription = description;
 
@@ -47,7 +43,6 @@ export const CardHeader = ({
     }
   }
 
-  // Choose the correct animation based on RTL setting
   const TextAnimation = _isRTL ? FadeInLeft : FadeInRight;
 
   return (

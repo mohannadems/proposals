@@ -108,26 +108,22 @@ export const useProfileForm = (
       };
 
       const submissionData = {
-        // Personal Information
         bio_en: String(data.bio_en || ""),
         bio_ar: String(data.bio_ar || ""),
         date_of_birth: formatDate(data.date_of_birth),
         guardian_contact: String(data.guardian_contact || ""),
         gender: String(data.gender || ""),
 
-        // Location Information
         nationality_id: Number(data.nationality_id) || null,
         country_of_residence_id: Number(data.country_of_residence_id) || null,
         city_id: Number(data.city_id) || null,
         origin_id: Number(data.origin_id) || null,
 
-        // Physical Attributes
         height: Number(data.height) || null,
         weight: Number(data.weight) || null,
         hair_color_id: Number(data.hair_color_id) || null,
         skin_color_id: Number(data.skin_color_id) || null,
 
-        // Education and Work
         educational_level_id: Number(data.educational_level_id) || null,
         specialization_id: Number(data.specialization_id) || null,
         employment_status: data.employment_status === true,
@@ -140,27 +136,22 @@ export const useProfileForm = (
             ? Number(data.position_level_id) || null
             : null,
 
-        // Financial and Housing
         financial_status_id: Number(data.financial_status_id) || null,
         housing_status_id: Number(data.housing_status_id) || null,
         car_ownership: Boolean(data.car_ownership) === true,
         marriage_budget_id: Number(data.marriage_budget_id) || null,
 
-        // Marital and Family
         marital_status_id: Number(data.marital_status_id) || null,
         number_of_children: Number(data.number_of_children) || 0,
 
-        // Religious and Cultural
         religion_id: Number(data.religion_id) || null,
         religiosity_level_id: Number(data.religiosity_level_id) || null,
 
-        // Lifestyle
         sleep_habit_id: Number(data.sleep_habit_id) || null,
         sports_activity_id: Number(data.sports_activity_id) || null,
         social_media_presence_id: Number(data.social_media_presence_id) || null,
         drinking_status_id: Number(data.drinking_status_id) || null,
 
-        // Arrays
         hobbies:
           Array.isArray(data.hobbies) && data.hobbies.length > 0
             ? data.hobbies.map((id) => parseInt(id, 10))
@@ -170,40 +161,32 @@ export const useProfileForm = (
             ? data.pets.map((id) => parseInt(id, 10))
             : [],
 
-        // Additional Information
         health_issues_en: String(data.health_issues_en || ""),
         health_issues_ar: String(data.health_issues_ar || ""),
         zodiac_sign_id: Number(data.zodiac_sign_id) || null,
 
-        // Smoking status
         smoking_status: Number(data.smoking_status) === 1 ? 0 : 1,
       };
 
-      // Handle smoking tools
       if (Number(data.smoking_status) > 1) {
         submissionData.smoking_tools = Array.isArray(data.smoking_tools)
           ? data.smoking_tools.map(Number)
           : [];
       }
 
-      // Handle female-specific fields
       if (data.gender === "female") {
         submissionData.hijab_status = Number(data.hijab_status) || 0;
       }
 
-      // Keep null values in the submission
-      // Only remove undefined values
       Object.keys(submissionData).forEach((key) => {
         if (submissionData[key] === undefined) {
           delete submissionData[key];
         }
       });
 
-      // First update profile
       const resultAction = await dispatch(updateProfile(submissionData));
 
       if (updateProfile.fulfilled.match(resultAction)) {
-        // Handle profile image if exists
         if (data.profile_image && data.profile_image.base64) {
           const imageData = {
             base64: data.profile_image.base64,
@@ -212,7 +195,6 @@ export const useProfileForm = (
           await dispatch(updateProfilePhoto(imageData));
         }
         await clearFormProgress(userId);
-        // Fetch fresh profile data
         await dispatch(fetchProfile());
 
         Alert.alert(
