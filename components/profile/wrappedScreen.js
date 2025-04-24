@@ -3,7 +3,13 @@ import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { COLORS } from "../../constants/colors";
-import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  ActivityIndicator,
+  StyleSheet,
+  Animated,
+} from "react-native";
 import { fetchProfileCompletionData } from "../../store/slices/profileCompletionSlice";
 import HomeScreen from "../../components/home/HomeScreen";
 import { LanguageContext } from "../../contexts/LanguageContext";

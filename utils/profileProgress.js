@@ -35,7 +35,6 @@ const STEP_FIELDS = {
   ],
 };
 
-// Map form field names to API field names
 const FIELD_MAPPING = {
   bio_en: "bio_en",
   date_of_birth: "date_of_birth",
@@ -45,6 +44,7 @@ const FIELD_MAPPING = {
   city_id: "city",
   origin_id: "origin",
   hair_color_id: "hair_color",
+  eye_colors_id: "eye colors",
   skin_color_id: "skin_color",
   marital_status_id: "marital_status",
   number_of_children: "children",

@@ -43,9 +43,46 @@ import {
   setLikedFilter,
   clearFilters,
   setActiveTab,
+  setHasSubmittedFilters,
+  selectHasSubmittedFilters,
 } from "../../store/slices/userMatchesSlice";
 import { LanguageContext } from "../../contexts/LanguageContext";
+const NoFiltersPlaceholder = memo(({ styles, onSearchPress }) => {
+  const { t } = useContext(LanguageContext);
 
+  return (
+    <View style={styles.noFiltersContainer}>
+      <View style={styles.noFiltersIconContainer}>
+        <Feather name="sliders" size={50} color={COLORS.primary} />
+      </View>
+      <Text style={styles.noFiltersTitle}>
+        {t ? t("matches.no_filters.title") : "Set Your Preferences"}
+      </Text>
+      <Text style={styles.noFiltersDescription}>
+        {t
+          ? t("matches.no_filters.description")
+          : "Select your preferences to see potential matches that meet your criteria."}
+      </Text>
+      <TouchableOpacity style={styles.noFiltersButton} onPress={onSearchPress}>
+        <LinearGradient
+          colors={COLORS.primaryGradient}
+          style={StyleSheet.absoluteFill}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        />
+        <Feather
+          name="search"
+          size={18}
+          color="#fff"
+          style={{ marginRight: 8 }}
+        />
+        <Text style={styles.noFiltersButtonText}>
+          {t ? t("matches.no_filters.button") : "Start Searching"}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  );
+});
 const EmptyStateCard = memo(({ type, styles }) => {
   const { t } = useContext(LanguageContext);
 
@@ -456,7 +493,7 @@ const MatchesScreen = () => {
     activeFilters,
     activeTab,
   } = useSelector((state) => state.userMatches);
-
+  const hasSubmittedFilters = useSelector(selectHasSubmittedFilters);
   useEffect(() => {
     let isMounted = true;
     let retryCount = 0;
@@ -478,10 +515,13 @@ const MatchesScreen = () => {
 
         if (!isMounted) return;
 
-        await dispatch(fetchUserMatches()).unwrap();
+        // Only fetch matches if filters have been previously submitted
+        if (hasSubmittedFilters) {
+          await dispatch(fetchUserMatches()).unwrap();
+        }
 
         setTimeout(async () => {
-          if (isMounted) {
+          if (isMounted && hasSubmittedFilters) {
             try {
               await dispatch(fetchUserLikes()).unwrap();
             } catch (error) {
@@ -508,7 +548,7 @@ const MatchesScreen = () => {
     return () => {
       isMounted = false;
     };
-  }, [dispatch, t]);
+  }, [dispatch, t, hasSubmittedFilters]);
 
   const isFirstMount = useRef(true);
   useEffect(() => {
@@ -616,6 +656,7 @@ const MatchesScreen = () => {
 
     dispatch(setActiveFilters(filters));
     dispatch(fetchFilteredMatches(filters));
+    dispatch(setHasSubmittedFilters(true));
     setShowFilters(false);
   }, [activeFilters, dispatch]);
 
@@ -655,7 +696,138 @@ const MatchesScreen = () => {
         ? t("matches.sections.more_profiles_liked")
         : t("matches.sections.suggested_matches"),
     [activeFilter, t]
-  );
+  ); // Add the renderContent function right before the return statement
+  const renderContent = () => {
+    if (!hasSubmittedFilters) {
+      return (
+        <NoFiltersPlaceholder
+          styles={styles}
+          onSearchPress={() => router.push("/Partner")}
+        />
+      );
+    }
+
+    return (
+      <>
+        <View style={styles.filterContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterScroll}
+          >
+            <FilterChip
+              label={t("matches.filters.all")}
+              icon="map-pin"
+              active={activeFilter === "All"}
+              onPress={() => handleFilterChange("All")}
+              styles={styles}
+            />
+            <FilterChip
+              label={t("matches.filters.liked")}
+              icon="heart"
+              active={activeFilter === "Liked"}
+              onPress={() => handleFilterChange("Liked")}
+              styles={styles}
+            />
+          </ScrollView>
+        </View>
+
+        <View style={styles.spotlightSection}>
+          <SectionHeader
+            title={preferenceSectionTitle}
+            onSeeAllPress={() => {}}
+            styles={styles}
+          />
+
+          {activeFilter === "Liked" ? (
+            loading.likes ? (
+              <LoadingIndicator styles={styles} />
+            ) : likedUsers.length === 0 ? (
+              <EmptyStateCard type="liked" styles={styles} />
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.spotlightScroll}
+              >
+                {likedUsers.map((user, index) => (
+                  <MatchCard
+                    key={user.id ? `user-${user.id}` : `liked-${index}`}
+                    user={user}
+                    onPress={handleMatchPress}
+                    styles={styles}
+                  />
+                ))}
+              </ScrollView>
+            )
+          ) : loading.preferences ? (
+            <LoadingIndicator styles={styles} />
+          ) : preferenceMatches.length === 0 ? (
+            <EmptyStateCard type="preferences" styles={styles} />
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.spotlightScroll}
+            >
+              {preferenceMatches.map((user) => (
+                <MatchCard
+                  key={user.id}
+                  user={user}
+                  onPress={handleMatchPress}
+                  styles={styles}
+                />
+              ))}
+            </ScrollView>
+          )}
+        </View>
+
+        <View style={styles.quickMatchSection}>
+          <SectionHeader
+            title={suggestedSectionTitle}
+            percentage={suggestionPercentage}
+            showPercentage={activeFilter !== "Liked"}
+            onSeeAllPress={() => {}}
+            styles={styles}
+          />
+
+          {activeFilter === "Liked" ? (
+            loading.likes ? (
+              <LoadingIndicator styles={styles} />
+            ) : likedUsers.length === 0 ? (
+              <EmptyStateCard type="liked" styles={styles} />
+            ) : (
+              <View style={styles.quickMatchGrid}>
+                {likedUsers.map((user) => (
+                  <QuickMatch
+                    key={user.id}
+                    user={user}
+                    onPress={handleMatchPress}
+                    styles={styles}
+                  />
+                ))}
+              </View>
+            )
+          ) : loading.suggested ? (
+            <LoadingIndicator styles={styles} />
+          ) : suggestedMatches.length === 0 ? (
+            <EmptyStateCard type="suggested" styles={styles} />
+          ) : (
+            <View style={styles.quickMatchGrid}>
+              {suggestedMatches.map((user) => (
+                <QuickMatch
+                  key={user.id}
+                  user={user}
+                  onPress={handleMatchPress}
+                  styles={styles}
+                />
+              ))}
+            </View>
+          )}
+        </View>
+      </>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -729,124 +901,7 @@ const MatchesScreen = () => {
           />
         }
       >
-        <View style={styles.content}>
-          <View style={styles.filterContainer}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterScroll}
-            >
-              <FilterChip
-                label={t("matches.filters.all")}
-                icon="map-pin"
-                active={activeFilter === "All"}
-                onPress={() => handleFilterChange("All")}
-                styles={styles}
-              />
-              <FilterChip
-                label={t("matches.filters.liked")}
-                icon="heart"
-                active={activeFilter === "Liked"}
-                onPress={() => handleFilterChange("Liked")}
-                styles={styles}
-              />
-            </ScrollView>
-          </View>
-
-          <View style={styles.spotlightSection}>
-            <SectionHeader
-              title={preferenceSectionTitle}
-              onSeeAllPress={() => {}}
-              styles={styles}
-            />
-
-            {activeFilter === "Liked" ? (
-              loading.likes ? (
-                <LoadingIndicator styles={styles} />
-              ) : likedUsers.length === 0 ? (
-                <EmptyStateCard type="liked" styles={styles} />
-              ) : (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.spotlightScroll}
-                >
-                  {likedUsers.map((user, index) => (
-                    <MatchCard
-                      key={user.id ? `user-${user.id}` : `liked-${index}`}
-                      user={user}
-                      onPress={handleMatchPress}
-                      styles={styles}
-                    />
-                  ))}
-                </ScrollView>
-              )
-            ) : loading.preferences ? (
-              <LoadingIndicator styles={styles} />
-            ) : preferenceMatches.length === 0 ? (
-              <EmptyStateCard type="preferences" styles={styles} />
-            ) : (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.spotlightScroll}
-              >
-                {preferenceMatches.map((user) => (
-                  <MatchCard
-                    key={user.id}
-                    user={user}
-                    onPress={handleMatchPress}
-                    styles={styles}
-                  />
-                ))}
-              </ScrollView>
-            )}
-          </View>
-
-          <View style={styles.quickMatchSection}>
-            <SectionHeader
-              title={suggestedSectionTitle}
-              percentage={suggestionPercentage}
-              showPercentage={activeFilter !== "Liked"}
-              onSeeAllPress={() => {}}
-              styles={styles}
-            />
-
-            {activeFilter === "Liked" ? (
-              loading.likes ? (
-                <LoadingIndicator styles={styles} />
-              ) : likedUsers.length === 0 ? (
-                <EmptyStateCard type="liked" styles={styles} />
-              ) : (
-                <View style={styles.quickMatchGrid}>
-                  {likedUsers.map((user) => (
-                    <QuickMatch
-                      key={user.id}
-                      user={user}
-                      onPress={handleMatchPress}
-                      styles={styles}
-                    />
-                  ))}
-                </View>
-              )
-            ) : loading.suggested ? (
-              <LoadingIndicator styles={styles} />
-            ) : suggestedMatches.length === 0 ? (
-              <EmptyStateCard type="suggested" styles={styles} />
-            ) : (
-              <View style={styles.quickMatchGrid}>
-                {suggestedMatches.map((user) => (
-                  <QuickMatch
-                    key={user.id}
-                    user={user}
-                    onPress={handleMatchPress}
-                    styles={styles}
-                  />
-                ))}
-              </View>
-            )}
-          </View>
-        </View>
+        <View style={styles.content}>{renderContent()}</View>
       </ScrollView>
     </View>
   );

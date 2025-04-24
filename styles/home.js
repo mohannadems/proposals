@@ -21,7 +21,7 @@ export default function createHomeStyles(isRTL) {
       padding: 20,
     },
     heroContent: {
-      marginTop: 60,
+      marginTop: 30,
       alignItems: isRTL ? "flex-end " : "flex-start ",
     },
     heroTitle: {
@@ -68,7 +68,7 @@ export default function createHomeStyles(isRTL) {
       color: COLORS.primary,
     },
     statsContainer: {
-      marginTop: -18,
+      marginTop: -15,
       marginHorizontal: 20,
       marginBottom: 20,
       zIndex: 100,

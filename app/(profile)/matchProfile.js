@@ -30,7 +30,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { matchesService } from "../../services/matchesService";
 import { setActiveTab } from "../../store/slices/userMatchesSlice";
 import { LanguageContext } from "../../contexts/LanguageContext";
-
+import ReportUserModal from "../../components/report/ReportUserModal";
 const HEADER_HEIGHT = Platform.OS === "ios" ? 520 : 280;
 
 const LoadingSpinner = ({ visible }) => {
@@ -74,6 +74,8 @@ const LoadingSpinner = ({ visible }) => {
 };
 
 const MatchProfileScreen = () => {
+  const [reportModalVisible, setReportModalVisible] = useState(false);
+
   const { t, isRTL } = useContext(LanguageContext);
   const styles = createMatchProfileStyles(isRTL);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -498,17 +500,27 @@ const MatchProfileScreen = () => {
 
             <View style={styles.reportContainer}>
               <TouchableOpacity
-                style={styles.reportButton}
+                style={[styles.reportButton, isRTL && styles.reportButtonRTL]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  setReportModalVisible(true);
                 }}
               >
                 <Feather name="flag" size={16} color={COLORS.text} />
-                <Text style={styles.reportText}>
-                  {t("match_profile.report")} {firstName}
+                <Text
+                  style={[styles.reportText, isRTL && styles.reportTextRTL]}
+                >
+                  {isRTL ? `إبلاغ عن ${firstName}` : `Report ${firstName}`}
                 </Text>
               </TouchableOpacity>
             </View>
+
+            <ReportUserModal
+              visible={reportModalVisible}
+              onClose={() => setReportModalVisible(false)}
+              userId={userId}
+              userName={firstName}
+            />
           </View>
         </View>
       </ScrollView>

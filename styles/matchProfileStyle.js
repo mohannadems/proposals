@@ -640,6 +640,30 @@ const createMatchProfileStyles = (isRTL = I18nManager.isRTL) =>
       bottom: 0,
       zIndex: 999,
     },
+    reportContainer: {
+      marginTop: 20,
+      alignItems: "center",
+    },
+    reportButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      borderRadius: 16,
+      backgroundColor: "rgba(0, 0, 0, 0.05)",
+    },
+    reportButtonRTL: {
+      flexDirection: "row-reverse",
+    },
+    reportText: {
+      marginLeft: 6,
+      fontSize: 14,
+      color: COLORS.text,
+    },
+    reportTextRTL: {
+      marginLeft: 0,
+      marginRight: 6,
+    },
   });
 
 export default createMatchProfileStyles;

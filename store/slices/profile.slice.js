@@ -74,6 +74,7 @@ const initialProfileData = {
   sports_activity_id: null,
   social_media_presence_id: null,
   religion_id: null,
+  eye_colors_id: null,
   hair_color_id: null,
   skin_color_id: null,
   marital_status_id: null,

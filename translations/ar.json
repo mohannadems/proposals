@@ -1,4 +1,25 @@
 {
+  "report": {
+    "title": "الإبلاغ عن {{name}}",
+    "select_reason": "يرجى اختيار سبب الإبلاغ:",
+    "specify_reason": "يرجى تحديد السبب:",
+    "submit": "إرسال البلاغ",
+    "success": "تم إرسال البلاغ بنجاح",
+    "review_message": "سيقوم فريقنا بمراجعة البلاغ قريبًا.",
+    "reasons": {
+      "harassment": "تحرش",
+      "fake_profile": "حساب مزيف",
+      "inappropriate_content": "محتوى غير لائق",
+      "spam": "محتوى مزعج",
+      "other": "أخرى"
+    },
+    "other_reason_placeholder": "اذكر السبب بالعربية",
+    "other_reason_placeholder_second": "أيضًا بالإنجليزية (اختياري):",
+    "error": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+  },
+  "match_profile": {
+    "report": "إبلاغ"
+  },
   "register": {
     "welcome_title": "انضم إلى مجتمعنا",
     "welcome_subtitle": "أنشئ حسابًا للبدء في العثور على شريك حياتك المثالي",
@@ -207,6 +228,7 @@
       }
     },
     "lifestyle": {
+      "eye_colors": "للون الاعين",
       "loading": "جاري تحميل بيانات الملف الشخصي...",
       "nationality": "الجنسية",
       "country": "بلد الإقامة",
@@ -575,6 +597,11 @@
     "match": "تطابق"
   },
   "matches": {
+    "no_filters": {
+      "title": "حدد تفضيلاتك",
+      "description": "اختر تفضيلاتك لرؤية الأشخاص المحتملين الذين يلبون معاييرك.",
+      "button": "ابدأ البحث"
+    },
     "header": {
       "discover": "استكشاف",
       "open_filters": "فتح الفلاتر",

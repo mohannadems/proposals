@@ -484,6 +484,50 @@ const createStyles = (isRTL = I18nManager.isRTL) =>
       backgroundColor: "rgba(0, 0, 0, 0.5)",
       alignItems: "center",
       justifyContent: "center",
+    }, // Add these to your createStyles function in styles/matches.js
+    noFiltersContainer: {
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 40,
+      paddingHorizontal: 24,
+    },
+    noFiltersIconContainer: {
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      backgroundColor: "rgba(74, 111, 161, 0.1)",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 24,
+    },
+    noFiltersTitle: {
+      fontSize: 22,
+      fontWeight: "700",
+      color: COLORS.text,
+      marginBottom: 12,
+      textAlign: "center",
+    },
+    noFiltersDescription: {
+      fontSize: 16,
+      color: "#666",
+      textAlign: "center",
+      marginBottom: 30,
+      lineHeight: 24,
+    },
+    noFiltersButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 14,
+      paddingHorizontal: 24,
+      borderRadius: 12,
+      width: "80%",
+      overflow: "hidden",
+    },
+    noFiltersButtonText: {
+      color: "#fff",
+      fontSize: 16,
+      fontWeight: "600",
     },
   });
 

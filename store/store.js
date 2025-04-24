@@ -18,7 +18,7 @@ import profileAttributesReducer from "./slices/profileAttributesSlice";
 import searchReducer from "./slices/searchSlice";
 import userMatchesReducer from "./slices/userMatchesSlice";
 import userProfileReducer from "./slices/userProfileSlice";
-
+import reportReducer from "./slices/reportSlice";
 const STORAGE_KEYS = {
   PROFILE: "profile",
   PROFILE_COMPLETION: "profileCompletion",
@@ -68,6 +68,7 @@ const appReducer = combineReducers({
   search: persistedReducers.search,
   userMatches: persistedReducers.userMatches,
   userProfile: persistedReducers.userProfile,
+  report: reportReducer,
 });
 
 const rootReducer = (state, action) => {

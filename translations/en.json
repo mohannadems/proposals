@@ -1,4 +1,25 @@
 {
+  "report": {
+    "title": "Report {{name}}",
+    "select_reason": "Please select a reason for reporting:",
+    "specify_reason": "Please specify the reason:",
+    "submit": "Submit Report",
+    "success": "Report Submitted Successfully",
+    "review_message": "Our team will review the report shortly.",
+    "reasons": {
+      "harassment": "Harassment",
+      "fake_profile": "Fake Profile",
+      "inappropriate_content": "Inappropriate Content",
+      "spam": "Spam",
+      "other": "Other"
+    },
+    "other_reason_placeholder": "Describe the issue in English",
+    "other_reason_placeholder_second": "Also in Arabic (optional):",
+    "error": "Something went wrong. Please try again."
+  },
+  "match_profile": {
+    "report": "Report"
+  },
   "register": {
     "welcome_title": "Join our Community",
     "welcome_subtitle": "Create an account to start finding your perfect match",
@@ -201,6 +222,7 @@
     "social_media_presence": "Social Media",
     "hobbies": "Hobbies",
     "pets": "Pets",
+
     "guardian_contact": "Guardian Contact",
     "personal": {
       "title": "Tell us about yourself",
@@ -224,6 +246,7 @@
       "error": "Please select your gender"
     },
     "lifestyle": {
+      "eye_colors": "Eye Colors",
       "loading": "Loading profile attributes...",
       "nationality": "Nationality",
       "country": "Country of Residence",
@@ -619,6 +642,11 @@
     }
   },
   "matches": {
+    "no_filters": {
+      "title": "Set Your Preferences",
+      "description": "Select your preferences to see potential matches that meet your criteria.",
+      "button": "Start Searching"
+    },
     "header": {
       "discover": "Discover",
       "open_filters": "Open filters",

@@ -1,234 +1,143 @@
+// MultiSelectChips.js
 import React from "react";
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
+  StyleSheet,
   ScrollView,
-  Animated,
 } from "react-native";
-import { COLORS } from "../../constants/colors";
+import { Ionicons } from "@expo/vector-icons";
 
-class MultiSelectChips extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      animatedValues: {},
-    };
-  }
-
-  componentDidMount() {
-    this.initializeAnimatedValues();
-  }
-
-  componentDidUpdate(prevProps) {
-    // Check if items array has changed
-    if (prevProps.items !== this.props.items) {
-      this.initializeAnimatedValues();
-    }
-  }
-
-  initializeAnimatedValues = () => {
-    const { items } = this.props;
-    const animatedValues = { ...this.state.animatedValues };
-
-    // Create animated values for new items
-    items.forEach((item) => {
-      if (!animatedValues[item.id]) {
-        animatedValues[item.id] = new Animated.Value(0);
-      }
-    });
-
-    this.setState({ animatedValues }, this.animateChipsIn);
-  };
-
-  animateChipsIn = () => {
-    const { items } = this.props;
-    const animations = items.map((item, index) => {
-      const anim = this.state.animatedValues[item.id];
-      return Animated.timing(anim, {
-        toValue: 1,
-        duration: 300,
-        delay: index * 50,
-        useNativeDriver: true,
-      });
-    });
-
-    Animated.stagger(50, animations).start();
-  };
-
-  // Animate a single chip when selected/deselected
-  animateChipSelect = (id) => {
-    const anim = this.state.animatedValues[id];
-
-    if (anim) {
-      Animated.sequence([
-        Animated.timing(anim, {
-          toValue: 1.1,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-        Animated.timing(anim, {
-          toValue: 1,
-          duration: 100,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  };
-
-  handleToggleItem = (id) => {
-    const { selectedItems, onSelectItem, disabled } = this.props;
-
-    if (disabled) {
-      return;
-    }
-
+const MultiSelectChips = ({
+  items = [],
+  selectedItems = [],
+  onSelectItem,
+  disabled = false,
+  isRTL = false,
+  chipStyle,
+  selectedChipStyle,
+  chipTextStyle,
+  selectedChipTextStyle,
+}) => {
+  // Toggle selection of an item
+  const toggleSelection = (id) => {
+    const isSelected = selectedItems.includes(id);
     let newSelectedItems;
 
-    // Convert to Set for easier operations if array
-    const selectedSet = new Set(selectedItems || []);
-
-    if (selectedSet.has(id)) {
+    if (isSelected) {
       // Remove item if already selected
-      selectedSet.delete(id);
-      newSelectedItems = Array.from(selectedSet);
+      newSelectedItems = selectedItems.filter((itemId) => itemId !== id);
     } else {
       // Add item if not selected
-      newSelectedItems = [...(selectedItems || []), id];
+      newSelectedItems = [...selectedItems, id];
     }
 
-    this.animateChipSelect(id);
     onSelectItem(newSelectedItems);
   };
 
-  render() {
-    const { items, selectedItems, isRTL, disabled } = this.props;
-    const { animatedValues } = this.state;
+  // Check if an item is selected
+  const isSelected = (id) => {
+    return selectedItems.includes(id);
+  };
 
-    // Convert selectedItems to a Set for easier checking
-    const selectedSet = new Set(selectedItems || []);
-
-    return (
+  return (
+    <View style={[styles.container, disabled && styles.containerDisabled]}>
       <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.container,
-          isRTL && styles.containerRTL,
-          disabled && styles.disabledContainer,
-        ]}
+        horizontal={false}
+        showsVerticalScrollIndicator={false}
+        nestedScrollEnabled={true}
+        contentContainerStyle={styles.scrollContent}
       >
-        {items.map((item) => {
-          const isSelected = selectedSet.has(item.id);
-          const animValue = animatedValues[item.id] || new Animated.Value(1);
-
-          // Scale animation for each chip
-          const scale = animValue.interpolate({
-            inputRange: [0, 1, 1.1],
-            outputRange: [0.8, 1, 1.1],
-          });
-
-          // Opacity animation for each chip
-          const opacity = animValue.interpolate({
-            inputRange: [0, 1],
-            outputRange: [0, 1],
-          });
-
-          return (
-            <Animated.View
+        <View style={styles.chipsContainer}>
+          {items.map((item) => (
+            <TouchableOpacity
               key={item.id}
-              style={{
-                transform: [{ scale }],
-                opacity: disabled ? 0.5 : opacity,
-              }}
+              style={[
+                styles.chip,
+                chipStyle,
+                isSelected(item.id) && styles.selectedChip,
+                isSelected(item.id) && selectedChipStyle,
+                disabled && styles.disabledChip,
+              ]}
+              onPress={() => !disabled && toggleSelection(item.id)}
+              activeOpacity={disabled ? 1 : 0.7}
             >
-              <TouchableOpacity
-                style={[styles.chip, isSelected && styles.selectedChip]}
-                onPress={() => this.handleToggleItem(item.id)}
-                activeOpacity={0.7}
-                disabled={disabled}
+              <Text
+                style={[
+                  styles.chipText,
+                  chipTextStyle,
+                  isSelected(item.id) && styles.selectedChipText,
+                  isSelected(item.id) && selectedChipTextStyle,
+                  disabled && styles.disabledChipText,
+                ]}
+                numberOfLines={1}
               >
-                {isSelected && (
-                  <View style={styles.checkIcon}>
-                    <Text style={styles.checkIconText}>✓</Text>
-                  </View>
-                )}
-                <Text
-                  style={[
-                    styles.chipText,
-                    isSelected && styles.selectedChipText,
-                    isRTL && styles.textRTL,
-                  ]}
-                >
-                  {item.name}
-                </Text>
-              </TouchableOpacity>
-            </Animated.View>
-          );
-        })}
+                {item.name}
+              </Text>
+
+              {isSelected(item.id) && (
+                <View style={styles.checkContainer}>
+                  <Ionicons name="checkmark-circle" size={16} color="#4A6FA1" />
+                </View>
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
       </ScrollView>
-    );
-  }
-}
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: "row",
-    flexWrap: "nowrap",
-    paddingVertical: 8,
+    minHeight: 50,
+    maxHeight: 160,
   },
-  containerRTL: {
-    flexDirection: "row-reverse",
-  },
-  disabledContainer: {
+  containerDisabled: {
     opacity: 0.6,
   },
+  scrollContent: {
+    paddingTop: 4,
+    paddingBottom: 4,
+  },
+  chipsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
   chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    backgroundColor: COLORS.white,
-    marginRight: 10,
-    marginBottom: 8,
     flexDirection: "row",
     alignItems: "center",
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 1,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#DDE1E6",
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 8,
+    marginBottom: 8,
   },
   selectedChip: {
-    backgroundColor: COLORS.lightPrimary,
-    borderColor: COLORS.primary,
+    backgroundColor: "#E7EFF8",
+    borderColor: "#4A6FA1",
+  },
+  disabledChip: {
+    backgroundColor: "#F5F7FA",
+    borderColor: "#E5E5E5",
   },
   chipText: {
     fontSize: 14,
-    color: COLORS.text,
+    color: "#555",
   },
   selectedChipText: {
-    fontWeight: "600",
-    color: COLORS.primary,
+    color: "#4A6FA1",
+    fontWeight: "500",
   },
-  textRTL: {
-    textAlign: "right",
+  disabledChipText: {
+    color: "#A1A1A1",
   },
-  checkIcon: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: COLORS.primary,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 6,
-  },
-  checkIconText: {
-    color: COLORS.white,
-    fontSize: 10,
-    fontWeight: "bold",
+  checkContainer: {
+    marginLeft: 4,
   },
 });
 

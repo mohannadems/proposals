@@ -1,3 +1,4 @@
+// Modified userMatchesSlice.js
 import { createSlice, createAsyncThunk, createAction } from "@reduxjs/toolkit";
 import { showMessage } from "react-native-flash-message";
 import api from "../../services/api";
@@ -28,8 +29,19 @@ export const setActiveTab = createAction("userMatches/setActiveTab");
 
 export const fetchUserMatches = createAsyncThunk(
   "userMatches/fetchUserMatches",
-  async (params = {}, { rejectWithValue }) => {
+  async (params = {}, { rejectWithValue, getState }) => {
     try {
+      const state = getState();
+      // Check if filters have been submitted at least once
+      if (!state.userMatches.hasSubmittedFilters && !params.forceLoad) {
+        // Return empty data if filters haven't been submitted yet
+        return {
+          exact_matches: [],
+          suggested_users: [],
+          suggestion_percentage: 0,
+        };
+      }
+
       const requestParams = { ...params };
       if (!requestParams.isFilter) {
         delete requestParams.isFilter;
@@ -155,6 +167,8 @@ const initialState = {
     age_max: null,
     isLikedFilter: false,
   },
+  // Add this flag to track if filters have been submitted
+  hasSubmittedFilters: false,
 };
 
 const formatLikesData = (likes) => {
@@ -219,6 +233,10 @@ const userMatchesSlice = createSlice({
     clearMatchDetails: (state) => {
       state.matchDetails = null;
     },
+    // Add a new reducer to set the filter submission state
+    setHasSubmittedFilters: (state, action) => {
+      state.hasSubmittedFilters = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -258,6 +276,7 @@ const userMatchesSlice = createSlice({
       })
       .addCase(fetchFilteredMatches.fulfilled, (state, action) => {
         state.loading.suggested = false;
+        state.hasSubmittedFilters = true; // Set the flag when matches are successfully fetched
 
         if (action.payload?.suggested_users) {
           state.suggestedMatches = ensureUniqueUsers(
@@ -320,6 +339,7 @@ export const {
   setLikedFilter,
   setActiveTabReducer,
   clearMatchDetails,
+  setHasSubmittedFilters, // Export the new action
 } = userMatchesSlice.actions;
 
 // Selectors
@@ -333,5 +353,7 @@ export const selectActiveFilters = (state) => state.userMatches.activeFilters;
 export const selectMatchDetails = (state) => state.userMatches.matchDetails;
 export const selectLoadingStates = (state) => state.userMatches.loading;
 export const selectErrorStates = (state) => state.userMatches.error;
+export const selectHasSubmittedFilters = (state) =>
+  state.userMatches.hasSubmittedFilters;
 
 export default userMatchesSlice.reducer;

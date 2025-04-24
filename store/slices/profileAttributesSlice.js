@@ -104,6 +104,7 @@ const initialState = {
   zodiacSigns: [],
   sleepHabits: [],
   socialMediaPresence: [],
+  eyeColors: [],
 
   hobbies: [],
   pets: [],
@@ -161,6 +162,7 @@ const profileAttributesSlice = createSlice({
       })
       .addCase(fetchPersonalAttributes.fulfilled, (state, action) => {
         state.loading.personalAttributes = false;
+        state.eyeColors = action.payload.eye_colors || [];
         state.hairColors = action.payload.hair_colors || [];
         state.heights = action.payload.heights || [];
         state.weights = action.payload.weights || [];
@@ -265,7 +267,7 @@ const profileAttributesSlice = createSlice({
 export const { resetProfileAttributes, clearCities, debugState } =
   profileAttributesSlice.actions;
 export default profileAttributesSlice.reducer;
-
+const selectEyeColors = (state) => state.profileAttributes.eyeColors;
 const selectHairColors = (state) => state.profileAttributes.hairColors;
 const selectHeights = (state) => state.profileAttributes.heights;
 const selectWeights = (state) => state.profileAttributes.weights;
@@ -313,6 +315,7 @@ export const selectDirectReligiosityLevels = (state) =>
 
 export const selectPersonalAttributes = createSelector(
   [
+    selectEyeColors,
     selectHairColors,
     selectHeights,
     selectWeights,
@@ -324,6 +327,7 @@ export const selectPersonalAttributes = createSelector(
     selectSocialMediaPresence,
   ],
   (
+    eyeColors,
     hairColors,
     heights,
     weights,
@@ -334,6 +338,7 @@ export const selectPersonalAttributes = createSelector(
     sleepHabits,
     socialMediaPresence
   ) => ({
+    eyeColors,
     hairColors,
     heights,
     weights,

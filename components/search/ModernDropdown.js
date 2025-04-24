@@ -1,19 +1,17 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
-  StyleSheet,
   TouchableOpacity,
+  StyleSheet,
   Modal,
   FlatList,
   TextInput,
   Animated,
   Dimensions,
-  TouchableWithoutFeedback,
-  Platform,
 } from "react-native";
-import { COLORS } from "../../constants/colors";
-
+import { Ionicons } from "@expo/vector-icons";
+import COLORS from "../../constants/colors";
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 const ModernDropdown = ({
@@ -21,10 +19,8 @@ const ModernDropdown = ({
   value,
   items = [],
   onValueChange,
-  required = false,
   placeholder = "Select an option",
   disabled = false,
-  containerStyle,
   isRTL = false,
 }) => {
   const [modalVisible, setModalVisible] = useState(false);
@@ -32,30 +28,34 @@ const ModernDropdown = ({
   const [filteredItems, setFilteredItems] = useState(items);
   const modalAnimation = useRef(new Animated.Value(0)).current;
 
-  // Find the selected item label
+  // Get the selected item's label
   const selectedItem = items.find((item) => item.value === value);
   const displayText = selectedItem ? selectedItem.label : placeholder;
 
-  // Reset filtered items when source items change
-  useEffect(() => {
-    setFilteredItems(items);
-  }, [items]);
+  const handleSearch = (text) => {
+    setSearchText(text);
+    if (text.trim() === "") {
+      setFilteredItems(items);
+    } else {
+      const filtered = items.filter((item) =>
+        item.label.toLowerCase().includes(text.toLowerCase())
+      );
+      setFilteredItems(filtered);
+    }
+  };
 
   const handleSelect = (item) => {
     onValueChange(item.value);
     animateModalOut();
   };
 
-  // Handle clearing the selection
   const handleClear = () => {
     onValueChange(null);
   };
 
   const animateModalIn = () => {
-    // Reset search state when opening modal
     setSearchText("");
     setFilteredItems(items);
-
     setModalVisible(true);
     Animated.timing(modalAnimation, {
       toValue: 1,
@@ -76,25 +76,6 @@ const ModernDropdown = ({
     });
   };
 
-  const handleSearch = (text) => {
-    setSearchText(text);
-    if (text.trim() === "") {
-      setFilteredItems(items);
-    } else {
-      const filtered = items.filter((item) =>
-        item.label.toLowerCase().includes(text.toLowerCase())
-      );
-      setFilteredItems(filtered);
-    }
-  };
-
-  // Function to reset search and show all items
-  const resetSearch = () => {
-    setSearchText("");
-    setFilteredItems(items);
-  };
-
-  // Animations for modal
   const slideTranslation = modalAnimation.interpolate({
     inputRange: [0, 1],
     outputRange: [SCREEN_HEIGHT, 0],
@@ -106,27 +87,21 @@ const ModernDropdown = ({
   });
 
   return (
-    <View style={[styles.container, containerStyle]}>
-      <View style={styles.labelContainer}>
-        <Text style={styles.label}>
-          {label} {required && <Text style={styles.requiredMarker}>*</Text>}
-        </Text>
-
-        {value !== null && !required && !disabled && (
+    <View style={[styles.container, disabled && styles.containerDisabled]}>
+      <View style={styles.headerContainer}>
+        <Text style={styles.label}>{label}</Text>
+        {value !== null && !disabled && (
           <TouchableOpacity onPress={handleClear} style={styles.clearButton}>
-            <Text style={styles.clearButtonText}>
-              {isRTL ? "مسح" : "Clear"}
-            </Text>
+            <Text style={styles.clearButtonText}>Clear</Text>
           </TouchableOpacity>
         )}
       </View>
 
       <TouchableOpacity
         style={[
-          styles.dropdown,
-          !selectedItem && styles.dropdownEmpty,
-          value === null && required && styles.dropdownError,
-          disabled && styles.dropdownDisabled,
+          styles.dropdownButton,
+          disabled && styles.dropdownButtonDisabled,
+          !selectedItem && styles.dropdownButtonEmpty,
         ]}
         onPress={disabled ? null : animateModalIn}
         activeOpacity={disabled ? 1 : 0.7}
@@ -134,21 +109,21 @@ const ModernDropdown = ({
         <Text
           style={[
             styles.dropdownText,
-            !selectedItem && styles.placeholder,
+            !selectedItem && styles.placeholderText,
             disabled && styles.disabledText,
           ]}
           numberOfLines={1}
         >
           {displayText}
         </Text>
-        <View style={[styles.iconContainer, disabled && styles.disabledIcon]}>
-          <View style={[styles.downArrow, disabled && styles.disabledArrow]} />
+        <View style={styles.iconContainer}>
+          <Ionicons
+            name="chevron-down"
+            size={20}
+            color={disabled ? "#CCC" : COLORS.primary}
+          />
         </View>
       </TouchableOpacity>
-
-      {value === null && required && (
-        <Text style={styles.errorText}>This field is required</Text>
-      )}
 
       <Modal
         animationType="none"
@@ -159,11 +134,8 @@ const ModernDropdown = ({
         <View style={styles.modalContainer}>
           <Animated.View
             style={[styles.backdrop, { opacity: backdropOpacity }]}
-          >
-            <TouchableWithoutFeedback onPress={animateModalOut}>
-              <View style={styles.backdropTouchable} />
-            </TouchableWithoutFeedback>
-          </Animated.View>
+            onTouchEnd={animateModalOut}
+          />
 
           <Animated.View
             style={[
@@ -177,17 +149,22 @@ const ModernDropdown = ({
                 onPress={animateModalOut}
                 style={styles.closeButton}
               >
-                <Text style={styles.closeButtonText}>✕</Text>
+                <Ionicons name="close" size={20} color="#333" />
               </TouchableOpacity>
             </View>
 
             <View style={styles.searchContainer}>
+              <Ionicons
+                name="search"
+                size={18}
+                color="#999"
+                style={styles.searchIcon}
+              />
               <TextInput
                 style={styles.searchInput}
                 placeholder="Search..."
                 value={searchText}
                 onChangeText={handleSearch}
-                autoCorrect={false}
                 clearButtonMode="while-editing"
               />
             </View>
@@ -199,41 +176,47 @@ const ModernDropdown = ({
                 <TouchableOpacity
                   style={[
                     styles.optionItem,
-                    value === item.value && styles.selectedItem,
+                    value === item.value && styles.selectedOption,
                   ]}
                   onPress={() => handleSelect(item)}
                 >
                   <Text
                     style={[
                       styles.optionText,
-                      value === item.value && styles.selectedText,
+                      value === item.value && styles.selectedOptionText,
                     ]}
-                    numberOfLines={1}
                   >
                     {item.label}
                   </Text>
                   {value === item.value && (
-                    <View style={styles.checkmark}>
-                      <Text style={styles.checkmarkText}>✓</Text>
-                    </View>
+                    <Ionicons
+                      name="checkmark"
+                      size={20}
+                      color={COLORS.primary}
+                    />
                   )}
                 </TouchableOpacity>
               )}
               ListEmptyComponent={
-                <View style={styles.emptyList}>
-                  <Text style={styles.emptyListText}>
+                <View style={styles.emptyContainer}>
+                  <Text style={styles.emptyText}>
                     No results found for "{searchText}"
                   </Text>
                   <TouchableOpacity
                     style={styles.resetButton}
-                    onPress={resetSearch}
+                    onPress={() => {
+                      setSearchText("");
+                      setFilteredItems(items);
+                    }}
                   >
                     <Text style={styles.resetButtonText}>Show all options</Text>
                   </TouchableOpacity>
                 </View>
               }
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={styles.listContent}
+              contentContainerStyle={
+                filteredItems.length === 0 ? { flex: 1 } : null
+              }
             />
           </Animated.View>
         </View>
@@ -246,7 +229,10 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: 16,
   },
-  labelContainer: {
+  containerDisabled: {
+    opacity: 0.6,
+  },
+  headerContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -255,12 +241,12 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: "500",
-    color: COLORS.text,
+    color: "#333",
   },
   clearButton: {
-    paddingVertical: 2,
-    paddingHorizontal: 8,
-    backgroundColor: COLORS.background,
+    backgroundColor: "rgba(74, 111, 161, 0.1)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 12,
   },
   clearButtonText: {
@@ -268,43 +254,34 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
   },
-  requiredMarker: {
-    color: COLORS.error,
-    fontWeight: "bold",
-  },
-  dropdown: {
-    height: 54,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 12,
-    paddingHorizontal: 16,
+  dropdownButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: COLORS.inputBg,
+    height: 52,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    backgroundColor: "#FFFFFF",
   },
-  dropdownEmpty: {
+  dropdownButtonDisabled: {
+    backgroundColor: "#F5F7FA",
+    borderColor: "#E5E5E5",
+  },
+  dropdownButtonEmpty: {
     borderStyle: "dashed",
-  },
-  dropdownError: {
-    borderColor: COLORS.error,
-    borderWidth: 1.5,
-  },
-  dropdownDisabled: {
-    backgroundColor: "#F5F5F7",
-    borderColor: "#E0E0E5",
-    opacity: 0.7,
   },
   dropdownText: {
     fontSize: 16,
-    color: COLORS.text,
+    color: "#333",
     flex: 1,
   },
-  placeholder: {
-    color: COLORS.lightText,
+  placeholderText: {
+    color: "#A1A1A1",
   },
   disabledText: {
-    color: "#BBBBBB",
+    color: "#A1A1A1",
   },
   iconContainer: {
     width: 24,
@@ -312,59 +289,34 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  disabledIcon: {
-    opacity: 0.5,
-  },
-  downArrow: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 6,
-    borderRightWidth: 6,
-    borderTopWidth: 8,
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
-    borderTopColor: COLORS.lightText,
-  },
-  disabledArrow: {
-    borderTopColor: "#BBBBBB",
-  },
-  errorText: {
-    color: COLORS.error,
-    fontSize: 12,
-    marginTop: 4,
-    marginLeft: 4,
-  },
   modalContainer: {
     flex: 1,
     justifyContent: "flex-end",
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "black",
-  },
-  backdropTouchable: {
-    flex: 1,
+    backgroundColor: "#000",
   },
   modalContent: {
-    backgroundColor: COLORS.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    backgroundColor: "#FFF",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     paddingTop: 16,
-    paddingBottom: Platform.OS === "ios" ? 34 : 24,
+    paddingBottom: 24,
     maxHeight: SCREEN_HEIGHT * 0.7,
   },
   modalHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    position: "relative",
     paddingHorizontal: 20,
     marginBottom: 16,
-    position: "relative",
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-    color: COLORS.darkText || COLORS.text,
+    fontWeight: "600",
+    color: "#333",
   },
   closeButton: {
     position: "absolute",
@@ -372,83 +324,69 @@ const styles = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: COLORS.background,
+    backgroundColor: "#F5F7FA",
     alignItems: "center",
     justifyContent: "center",
   },
-  closeButtonText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: COLORS.text,
-  },
   searchContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F5F7FA",
+    marginHorizontal: 20,
+    marginBottom: 12,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    height: 46,
+  },
+  searchIcon: {
+    marginRight: 8,
   },
   searchInput: {
-    backgroundColor: COLORS.background,
-    borderRadius: 12,
-    height: 44,
-    paddingHorizontal: 16,
+    flex: 1,
+    height: "100%",
     fontSize: 16,
-  },
-  listContent: {
-    paddingHorizontal: 20,
-    flexGrow: 1,
   },
   optionItem: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     paddingVertical: 14,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+    borderBottomColor: "#F0F0F4",
   },
-  selectedItem: {
-    backgroundColor: COLORS.lightPrimary + "50", // 50% opacity
+  selectedOption: {
+    backgroundColor: "rgba(74, 111, 161, 0.05)",
   },
   optionText: {
     fontSize: 16,
-    color: COLORS.text,
-    flex: 1,
+    color: "#333",
   },
-  selectedText: {
-    fontWeight: "bold",
+  selectedOptionText: {
+    fontWeight: "600",
     color: COLORS.primary,
   },
-  checkmark: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: COLORS.primary,
+  emptyContainer: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 8,
+    padding: 20,
   },
-  checkmarkText: {
-    color: COLORS.white,
-    fontSize: 14,
-    fontWeight: "bold",
-  },
-  emptyList: {
-    paddingVertical: 30,
-    alignItems: "center",
-  },
-  emptyListText: {
+  emptyText: {
     fontSize: 16,
-    color: COLORS.lightText,
-    marginBottom: 16,
+    color: "#999",
     textAlign: "center",
+    marginBottom: 16,
   },
   resetButton: {
-    paddingVertical: 8,
+    backgroundColor: "rgba(74, 111, 161, 0.1)",
     paddingHorizontal: 16,
-    backgroundColor: COLORS.lightPrimary || "rgba(65, 105, 225, 0.1)",
+    paddingVertical: 10,
     borderRadius: 8,
   },
   resetButtonText: {
     color: COLORS.primary,
     fontWeight: "500",
-    fontSize: 14,
   },
 });
 

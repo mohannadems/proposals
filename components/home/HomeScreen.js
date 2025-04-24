@@ -1,12 +1,10 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useContext } from "react";
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   Image,
-  Dimensions,
-  Animated,
   StyleSheet,
 } from "react-native";
 import wrappedScreen from "../../components/profile/wrappedScreen";
@@ -83,59 +81,13 @@ const LandingPage = () => {
   const { t, isRTL } = useContext(LanguageContext);
   const styles = createHomeStyles(isRTL);
 
-  const scrollY = new Animated.Value(0);
-  const fadeAnim = new Animated.Value(0);
-  const featureAnims = features.map(() => new Animated.Value(0));
-  const testimonialAnims = testimonials.map(() => new Animated.Value(0));
-
   useEffect(() => {
     dispatch(fetchProfile());
   }, [dispatch]);
 
-  useEffect(() => {
-    fadeAnim.setValue(0);
-    featureAnims.forEach((anim) => anim.setValue(0));
-    testimonialAnims.forEach((anim) => anim.setValue(0));
-
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 1000,
-      useNativeDriver: true,
-    }).start();
-
-    Animated.stagger(
-      300,
-      featureAnims.map((anim) =>
-        Animated.timing(anim, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        })
-      )
-    ).start();
-
-    Animated.stagger(
-      300,
-      testimonialAnims.map((anim) =>
-        Animated.timing(anim, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        })
-      )
-    ).start();
-  }, [isRTL]);
-
-  const headerHeight = scrollY.interpolate({
-    inputRange: [0, 200],
-    outputRange: [350, 250],
-    extrapolate: "clamp",
-  });
-
   const safeTranslate = (key, fallback) => {
     try {
       const translated = t(key);
-      console.log(`Translation for ${key}:`, translated);
       return translated || fallback;
     } catch (error) {
       console.error(`Translation error for ${key}:`, error);
@@ -145,22 +97,15 @@ const LandingPage = () => {
 
   return (
     <View style={styles.container}>
-      <Animated.ScrollView
-        style={styles.scrollView}
-        onScroll={Animated.event(
-          [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-          { useNativeDriver: false }
-        )}
-        scrollEventThrottle={16}
-      >
-        <Animated.View style={[styles.heroContainer, { height: headerHeight }]}>
+      <ScrollView style={styles.scrollView} scrollEventThrottle={16}>
+        <View style={[styles.heroContainer, { height: 300 }]}>
           <LinearGradient
             colors={COLORS.primaryGradient || ["#6366F1", "#8B5CF6"]}
             style={styles.gradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <Animated.View style={[styles.heroContent, { opacity: fadeAnim }]}>
+            <View style={styles.heroContent}>
               <Text style={styles.heroTitle}>
                 {safeTranslate("home.find_match", "Find Your Match")}
               </Text>
@@ -182,9 +127,9 @@ const LandingPage = () => {
                   </Text>
                 </View>
               </TouchableOpacity>
-            </Animated.View>
+            </View>
           </LinearGradient>
-        </Animated.View>
+        </View>
 
         <View style={styles.statsContainer}>
           <View style={styles.statsCard}>
@@ -217,23 +162,7 @@ const LandingPage = () => {
           </Text>
           <View style={styles.featuresGrid}>
             {features.map((feature, index) => (
-              <Animated.View
-                key={index}
-                style={[
-                  styles.featureCardContainer,
-                  {
-                    opacity: featureAnims[index],
-                    transform: [
-                      {
-                        translateY: featureAnims[index].interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [50, 0],
-                        }),
-                      },
-                    ],
-                  },
-                ]}
-              >
+              <View key={index} style={styles.featureCardContainer}>
                 <View style={[styles.featureCard, { height: feature.height }]}>
                   <LinearGradient
                     colors={[COLORS.white, "#F8F9FA"]}
@@ -254,7 +183,7 @@ const LandingPage = () => {
                     </Text>
                   </LinearGradient>
                 </View>
-              </Animated.View>
+              </View>
             ))}
           </View>
         </View>
@@ -269,24 +198,7 @@ const LandingPage = () => {
             style={styles.testimonialScroll}
           >
             {testimonials.map((testimonial, index) => (
-              <Animated.View
-                key={index}
-                style={[
-                  styles.testimonialCard,
-                  {
-                    opacity: testimonialAnims[index],
-                    transform: [
-                      { scaleX: isRTL ? -1 : 1 },
-                      {
-                        translateX: testimonialAnims[index].interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [50, 0],
-                        }),
-                      },
-                    ],
-                  },
-                ]}
-              >
+              <View key={index} style={styles.testimonialCard}>
                 <View style={styles.testimonialContentView}>
                   <View style={styles.testimonialImageWrapper}>
                     <Image
@@ -313,11 +225,11 @@ const LandingPage = () => {
                     )}
                   </Text>
                 </View>
-              </Animated.View>
+              </View>
             ))}
           </ScrollView>
         </View>
-      </Animated.ScrollView>
+      </ScrollView>
     </View>
   );
 };

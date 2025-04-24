@@ -88,6 +88,7 @@ const LifestyleSection = ({ isRTL = false, t }) => {
   }, [smoking_status, lifestyleInterests.smokingTools, setValue, watch]);
 
   const {
+    eyeColors = [],
     hairColors = [],
     heights = [],
     weights = [],
@@ -392,6 +393,21 @@ const LifestyleSection = ({ isRTL = false, t }) => {
               name="hair_color_id"
               label={_t ? _t("profile.lifestyle.hair_color") : "Hair Color"}
               items={hairColors}
+              leftIcon={
+                <MaterialIcon
+                  name="color-lens"
+                  size={20}
+                  color={COLORS.primary}
+                />
+              }
+              required
+              isRTL={_isRTL}
+            />
+            <AnimatedDropdown
+              control={control}
+              name="eye_colors_id"
+              label={_t ? _t("profile.lifestyle.eye_colors") : "Eye Colors"}
+              items={eyeColors}
               leftIcon={
                 <MaterialIcon
                   name="color-lens"

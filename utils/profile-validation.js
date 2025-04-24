@@ -187,6 +187,7 @@ export const stepFields = {
     "height", //
     "weight", //
     "hair_color_id", //
+    "eye_colors",
     "skin_color_id", //
     "marital_status_id", //
     "number_of_children", //
@@ -227,6 +228,7 @@ export const initialProfileState = {
   origin_id: null,
   height: null,
   weight: null,
+  eye_colors: null,
   hair_color_id: null,
   skin_color_id: null,
   educational_level_id: null,
@@ -270,6 +272,7 @@ export const initialFormState = {
   educational_level_id: null,
   specialization_id: null,
   employment_status: null,
+  eye_colors: null,
   smoking_status: null,
   smoking_tools: [],
   drinking_status_id: null,

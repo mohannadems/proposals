@@ -1,48 +1,37 @@
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
-  useMemo,
-  useContext,
-} from "react";
+// AdvancedSearchScreen.js
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   View,
-  Text,
-  Animated,
-  Platform,
-  KeyboardAvoidingView,
-  StatusBar,
-  Alert,
+  ScrollView,
   StyleSheet,
+  Animated,
+  Alert,
+  SafeAreaView,
+  Text,
+  KeyboardAvoidingView,
+  Platform,
+  StatusBar,
+  TouchableOpacity,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "expo-router";
-import { authService } from "../../services/auth.service";
-import { COLORS } from "../../constants/colors";
-import withProfileCompletion from "../../components/profile/withProfileCompletion";
-import LoadingScreen from "../../components/partner/LoadingScreen";
-import ErrorView from "../../components/partner/ErrorView";
-
-import SearchHeader from "../../components/partner/SearchHeader";
+import { Ionicons } from "@expo/vector-icons";
+import COLORS from "../../constants/colors";
 import FilterProgressTracker from "../../components/search/FilterProgressTracker";
-import BasicInfoFilterSection from "../../components/search/BasicInfoFilterSection";
-import EducationFilterSection from "../../components/search/EducationFilterSection";
-import PersonalFilterSection from "../../components/search/PersonalFilterSection";
-import LifestyleFilterSection from "../../components/search/LifestyleFilterSection";
+import FilterSection from "../../components/search/FilterSection";
+import ModernDropdown from "../../components/search/ModernDropdown";
+import AgeRangeSelector from "../../components/search/AgeRangeSelector";
+import SmokerSelector from "../../components/search/SmokerSelector";
 import SearchActionButtons from "../../components/search/SearchActionButtons";
-import SavedPreferencesMessage from "../../components/search/SavedPreferencesMessage";
-
+import MultiSelectChips from "../../components/search/MultiSelectChips";
+import withProfileCompletion from "../../components/profile/withProfileCompletion";
 import {
-  getSavedPreferences,
-  submitSearchPreferences,
   updatePreference,
+  submitSearchPreferences,
   resetPreferences,
-  setInitialLoadComplete,
-  clearError,
-  manuallySetLoading,
-  selectIsBasicSectionComplete,
+  getSavedPreferences,
 } from "../../store/slices/searchSlice";
+
 import {
   fetchAllProfileData,
   selectGeographic,
@@ -54,112 +43,24 @@ import {
   selectDirectMarriageBudget,
   selectDirectReligiosityLevels,
 } from "../../store/slices/profileAttributesSlice";
-import { LanguageContext } from "../../contexts/LanguageContext";
+import { SceneStyleInterpolators } from "@react-navigation/bottom-tabs";
+import { setHasSubmittedFilters } from "../../store/slices/userMatchesSlice";
+const MAX_FILTERS = 10;
 
-import createUnifiedSearchStyles from "../../styles/SearchScreen";
-
-const STICKY_HEADER_HEIGHT = 50;
-const FILTER_TRACKER_HEIGHT = 180;
-
-const SECTIONS = [
-  {
-    id: "basic",
-    title: "Basic Information",
-    titleKey: "search.sections.basic.title",
-  },
-  {
-    id: "education",
-    title: "Education & Career",
-    titleKey: "search.sections.education.title",
-  },
-  {
-    id: "personal",
-    title: "Personal Attributes",
-    titleKey: "search.sections.personal.title",
-  },
-  {
-    id: "lifestyle",
-    title: "Lifestyle & Interests",
-    titleKey: "search.sections.lifestyle.title",
-  },
-];
-
-const UnifiedSearchScreen = () => {
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const getPresetLabel = useCallback(
-    (min, max) => {
-      if (min === 18 && max === 25)
-        return t ? t("age_presets.young_adult") : "Young Adult (18-25)";
-      if (min === 26 && max === 35)
-        return t ? t("age_presets.early_career") : "Early Career (26-35)";
-      if (min === 36 && max === 45)
-        return t ? t("age_presets.established") : "Established (36-45)";
-      if (min === 46 && max === 70)
-        return t ? t("age_presets.mature") : "Mature (46-70)";
-      return t ? t("age_presets.all_ages") : "All Ages (18-70)";
-    },
-    [t]
-  );
-  const handleAgeRangePreset = useCallback(
-    (min, max) => {
-      const isAgeFilterAlreadySet =
-        preferences.preferred_age_min !== 18 ||
-        preferences.preferred_age_max !== 70;
-      const wouldBeNewFilter =
-        !isAgeFilterAlreadySet && (min !== 18 || max !== 70);
-
-      if (isMaxFiltersSelected && wouldBeNewFilter) {
-        Alert.alert(
-          t ? t("search.max_filters.title") : "Maximum Filters Reached",
-          t
-            ? t("search.max_filters.message")
-            : "You've selected the maximum of 10 filters for the perfect match. To add this filter, please remove another one first.",
-          [{ text: t ? t("common.ok") : "OK" }]
-        );
-        return;
-      }
-
-      handlePreferenceChange("preferred_age_min", min);
-      handlePreferenceChange("preferred_age_max", max);
-    },
-    [handlePreferenceChange, preferences, isMaxFiltersSelected, t]
-  );
-  const { t, isRTL } = useContext(LanguageContext);
-  const styles = createUnifiedSearchStyles(isRTL);
-  const [preferencesUserId, setPreferencesUserId] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [isMounted, setIsMounted] = useState(true);
-  const [retryCount, setRetryCount] = useState(0);
-  const [selectedFiltersCount, setSelectedFiltersCount] = useState(0);
-  const [validationErrors, setValidationErrors] = useState({});
-
-  const [sectionOffsets, setSectionOffsets] = useState({});
-  const [currentStickySection, setCurrentStickySection] = useState(null);
-
-  const sectionRefs = useRef({
-    basic: React.createRef(),
-    education: React.createRef(),
-    personal: React.createRef(),
-    lifestyle: React.createRef(),
-  });
-
-  const MAX_FILTERS = 10;
-
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scrollViewRef = useRef(null);
-
+const AdvancedSearchScreen = () => {
   const dispatch = useDispatch();
   const router = useRouter();
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const scrollViewRef = useRef(null);
 
-  const {
-    preferences,
-    loading,
-    error: reduxError,
-    initialLoadComplete,
-  } = useSelector((state) => state.search);
+  // State
+  const [isLoading, setIsLoading] = useState(true);
+  const [selectedFiltersCount, setSelectedFiltersCount] = useState(0);
+  const [validationErrors, setValidationErrors] = useState({});
+  const [hasSearched, setHasSearched] = useState(false);
 
+  // Redux state
+  const { preferences, loading } = useSelector((state) => state.search);
   const geographic = useSelector(selectGeographic);
   const personalAttributes = useSelector(selectPersonalAttributes);
   const professionalEducational = useSelector(selectProfessionalEducational);
@@ -167,333 +68,151 @@ const UnifiedSearchScreen = () => {
   const cities = useSelector(selectCities);
   const marriageBudget = useSelector(selectDirectMarriageBudget);
   const religiosityLevels = useSelector(selectDirectReligiosityLevels);
-  const authState = useSelector((state) => state.auth);
 
+  // Derived state
+  const isMaxFiltersSelected = selectedFiltersCount >= MAX_FILTERS;
   const selectedCountryId = preferences.preferred_country_id;
 
-  const matchPercentage = useMemo(() => {
-    return Math.min(
-      Math.round((selectedFiltersCount / MAX_FILTERS) * 100),
-      100
-    );
-  }, [selectedFiltersCount]);
+  // Check for smoking validation error
+  const hasSmokingError =
+    preferences.preferred_smoking_status === true &&
+    (!preferences.preferred_smoking_tools ||
+      preferences.preferred_smoking_tools.length === 0);
 
-  const isMaxFiltersSelected = useMemo(() => {
-    return selectedFiltersCount >= MAX_FILTERS;
-  }, [selectedFiltersCount]);
-
-  const hasSmokingError = useMemo(() => {
-    return (
-      preferences.preferred_smoking_status === true &&
-      (!preferences.preferred_smoking_tools ||
-        preferences.preferred_smoking_tools.length === 0)
-    );
-  }, [
-    preferences.preferred_smoking_status,
-    preferences.preferred_smoking_tools,
-  ]);
-
+  // Initialize data
   useEffect(() => {
-    if (!scrollY || Object.keys(sectionOffsets).length === 0) return;
+    const initializeScreen = async () => {
+      setIsLoading(true);
 
-    const scrollListener = scrollY.addListener(({ value }) => {
-      const adjustedScrollY = value + FILTER_TRACKER_HEIGHT;
+      try {
+        // Fetch all required data
+        await dispatch(fetchAllProfileData()).unwrap();
+        await dispatch(getSavedPreferences()).unwrap();
 
-      let currentSection = null;
-      const sections = Object.entries(sectionOffsets);
-
-      sections.sort((a, b) => a[1] - b[1]);
-
-      for (let i = sections.length - 1; i >= 0; i--) {
-        const [section, offset] = sections[i];
-        if (adjustedScrollY >= offset) {
-          currentSection = section;
-          break;
+        // Fetch cities if country is selected
+        if (preferences.preferred_country_id) {
+          dispatch(fetchCitiesByCountry(preferences.preferred_country_id));
         }
+      } catch (error) {
+        console.error("Error initializing search screen:", error);
+        Alert.alert("Error", "Failed to load search data. Please try again.");
+      } finally {
+        setIsLoading(false);
+        countSelectedFilters();
       }
-
-      if (currentSection !== currentStickySection) {
-        setCurrentStickySection(currentSection);
-      }
-    });
-
-    return () => {
-      scrollY.removeListener(scrollListener);
     };
-  }, [scrollY, sectionOffsets, currentStickySection]);
 
-  const measureSectionOffsets = useCallback(() => {
-    Object.entries(sectionRefs.current).forEach(([key, ref]) => {
-      if (ref.current) {
-        ref.current.measureInWindow((x, y, width, height) => {
-          setSectionOffsets((prev) => ({
-            ...prev,
-            [key]: y,
-          }));
-        });
-      }
-    });
-  }, []);
+    initializeScreen();
+  }, [dispatch]);
 
-  const getCurrentSectionTitle = useCallback(() => {
-    if (!currentStickySection) return "";
-
-    const section = SECTIONS.find((s) => s.id === currentStickySection);
-    return t ? t(section.titleKey) : section.title;
-  }, [currentStickySection, t]);
-
+  // Fetch cities when country changes
   useEffect(() => {
     if (selectedCountryId) {
       dispatch(fetchCitiesByCountry(selectedCountryId));
     }
   }, [selectedCountryId, dispatch]);
 
-  useEffect(() => {
-    if (isLoading) {
-      const fallbackTimer = setTimeout(() => {
-        dispatch(manuallySetLoading(false));
-        setIsLoading(false);
-      }, 10000);
-
-      return () => clearTimeout(fallbackTimer);
-    }
-  }, [isLoading, dispatch]);
-
-  useEffect(() => {
-    setIsMounted(true);
-    const timer = setTimeout(() => {
-      initializeScreen();
-    }, 100);
-
-    return () => {
-      clearTimeout(timer);
-      setIsMounted(false);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!isLoading && initialLoadComplete) {
-      const timer = setTimeout(() => {
-        measureSectionOffsets();
-      }, 500);
-
-      return () => clearTimeout(timer);
-    }
-  }, [isLoading, initialLoadComplete, measureSectionOffsets]);
-
-  useEffect(() => {
-    if (!isMounted || isLoading) return;
-
-    const checkAuthStatus = async () => {
-      try {
-        const newUserId = await authService.getUserId();
-
-        if (newUserId !== preferencesUserId) {
-          setPreferencesUserId(newUserId);
-          initializeScreen();
-        } else if (authState.isAuthenticated) {
-          const preferencesExist = Object.keys(preferences).some(
-            (key) =>
-              preferences[key] !== null &&
-              preferences[key] !== undefined &&
-              preferences[key] !== "" &&
-              (typeof preferences[key] !== "object" ||
-                Object.keys(preferences[key]).length > 0)
-          );
-
-          if (!preferencesExist) {
-            initializeScreen();
-          } else {
-            countSelectedFilters();
-          }
-        }
-      } catch (error) {
-        console.error("Error checking auth status:", error);
-      }
-    };
-
-    checkAuthStatus();
-  }, [authState, isLoading, preferencesUserId]);
-
-  useEffect(() => {
-    if (!isLoading && isMounted) {
-      countSelectedFilters();
-    }
-  }, [preferences, isLoading]);
-
-  useEffect(() => {
-    if (!isLoading) {
-      startEntryAnimation();
-    }
-  }, [isLoading]);
-
-  const initializeScreen = async () => {
-    if (!isMounted) return;
-
-    setIsLoading(true);
-    setError(null);
-    dispatch(clearError());
-
-    try {
-      const userId = await authService.getUserId();
-      setPreferencesUserId(userId);
-
-      await dispatch(fetchAllProfileData()).unwrap();
-
-      try {
-        await dispatch(getSavedPreferences()).unwrap();
-        dispatch(setInitialLoadComplete(true));
-
-        if (preferences.preferred_country_id) {
-          dispatch(fetchCitiesByCountry(preferences.preferred_country_id));
-        }
-
-        setTimeout(() => {
-          if (isMounted) {
-            countSelectedFilters();
-          }
-        }, 300);
-      } catch (prefsError) {
-        console.error(
-          "[UnifiedSearchScreen] Error loading preferences:",
-          prefsError
-        );
-        dispatch(setInitialLoadComplete(true));
-        setError(t("search.errors.preferences_load"));
-      }
-    } catch (error) {
-      console.error(
-        "[UnifiedSearchScreen] Error initializing search screen:",
-        error
-      );
-      if (isMounted) {
-        setError(t("search.errors.data_load"));
-        dispatch(setInitialLoadComplete(true));
-      }
-    } finally {
-      if (isMounted) {
-        setIsLoading(false);
-        dispatch(manuallySetLoading(false));
-        startEntryAnimation();
-      }
-    }
-  };
-
-  const startEntryAnimation = () => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 600,
-      useNativeDriver: true,
-    }).start();
-  };
-
+  // Count selected filters
   const countSelectedFilters = useCallback(() => {
-    if (!isMounted) return;
+    let count = 0;
 
-    try {
-      let count = 0;
+    // Basic information
+    if (preferences.preferred_nationality_id) count++;
+    if (preferences.preferred_origin_id) count++;
+    if (preferences.preferred_country_id) count++;
+    if (preferences.preferred_city_id) count++;
 
-      if (preferences.preferred_nationality_id) count++;
-      if (preferences.preferred_origin_id) count++;
-      if (preferences.preferred_country_id) count++;
-      if (preferences.preferred_city_id) count++;
-      if (
-        preferences.preferred_age_min !== 18 ||
-        preferences.preferred_age_max !== 70
-      )
-        count++;
+    // Age range (only count if not default 18-70)
+    if (
+      preferences.preferred_age_min !== 18 ||
+      preferences.preferred_age_max !== 70
+    )
+      count++;
 
-      if (preferences.preferred_educational_level_id) count++;
-      if (preferences.preferred_specialization_id) count++;
-      if (preferences.preferred_employment_status !== null) count++;
-      if (preferences.preferred_job_title_id) count++;
-      if (preferences.preferred_financial_status_id) count++;
-      if (preferences.preferred_marriage_budget_id) count++;
+    // Education & Career
+    if (preferences.preferred_educational_level_id) count++;
+    if (preferences.preferred_specialization_id) count++;
+    if (preferences.preferred_employment_status !== null) count++;
+    if (preferences.preferred_job_title_id) count++;
+    if (preferences.preferred_financial_status_id) count++;
+    if (preferences.preferred_marriage_budget_id) count++;
 
-      if (preferences.preferred_height_id) count++;
-      if (preferences.preferred_weight_id) count++;
-      if (preferences.preferred_marital_status_id) count++;
-      if (preferences.preferred_social_media_presence_id) count++;
+    // Personal Attributes
+    if (preferences.preferred_height_id) count++;
+    if (preferences.preferred_weight_id) count++;
+    if (preferences.preferred_marital_status_id) count++;
+    if (preferences.preferred_social_media_presence_id) count++;
 
-      if (preferences.preferred_smoking_status !== null) count++;
-      if (preferences.preferred_drinking_status_id) count++;
-      if (preferences.preferred_sports_activity_id) count++;
-      if (preferences.preferred_sleep_habit_id) count++;
-      if (
-        preferences.preferred_pets_id &&
-        preferences.preferred_pets_id.length > 0
-      )
-        count++;
-      if (preferences.preferred_religiosity_level_id) count++;
+    // Lifestyle
+    if (preferences.preferred_smoking_status !== null) count++;
+    if (preferences.preferred_drinking_status_id) count++;
+    if (preferences.preferred_sports_activity_id) count++;
+    if (preferences.preferred_sleep_habit_id) count++;
+    if (
+      preferences.preferred_pets_id &&
+      preferences.preferred_pets_id.length > 0
+    )
+      count++;
+    if (preferences.preferred_religiosity_level_id) count++;
 
-      setSelectedFiltersCount(count);
-    } catch (error) {
-      console.error("Error counting selected filters:", error);
-    }
-  }, [preferences, isMounted]);
+    setSelectedFiltersCount(count);
+  }, [preferences]);
 
+  // Update filters count when preferences change
+  useEffect(() => {
+    countSelectedFilters();
+  }, [preferences, countSelectedFilters]);
+
+  // Handle preference change
   const handlePreferenceChange = useCallback(
     (field, value) => {
       const isAdding = value !== null && preferences[field] === null;
 
       if (isMaxFiltersSelected && isAdding) {
         Alert.alert(
-          t ? t("search.max_filters.title") : "Maximum Filters Reached",
-          t
-            ? t("search.max_filters.message")
-            : "You've selected the maximum of 10 filters for the perfect match. To add this filter, please remove another one first.",
-          [{ text: t ? t("common.ok") : "OK" }]
+          "Maximum Filters Reached",
+          "You've selected the maximum of 10 filters for the perfect match. To add this filter, please remove another one first.",
+          [{ text: "OK" }]
         );
         return;
       }
 
       dispatch(updatePreference({ field, value }));
 
+      // Reset city if country changes
       if (field === "preferred_country_id") {
         dispatch(updatePreference({ field: "preferred_city_id", value: null }));
       }
-
-      setTimeout(() => countSelectedFilters(), 100);
     },
-    [dispatch, countSelectedFilters, preferences, isMaxFiltersSelected, t]
+    [dispatch, preferences, isMaxFiltersSelected]
   );
 
-  const handleSearch = useCallback(async () => {
-    setIsLoading(true);
+  // Handle age range change
+  const handleAgeRangeChange = useCallback(
+    (min, max) => {
+      const isAgeFilterAlreadySet =
+        preferences.preferred_age_min !== 18 ||
+        preferences.preferred_age_max !== 70;
 
-    try {
-      await dispatch(submitSearchPreferences(preferences)).unwrap();
-      setHasSearched(true);
-      router.push("/(tabs)/matches");
-    } catch (error) {
-      console.error("Error submitting search preferences:", error);
-      Alert.alert(t("common.error"), t("search.errors.submit_preferences"));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [dispatch, preferences, router, t]);
+      const wouldBeNewFilter =
+        !isAgeFilterAlreadySet && (min !== 18 || max !== 70);
 
-  const handleReset = useCallback(() => {
-    Alert.alert(t("search.reset_title"), t("search.reset_message"), [
-      { text: t("common.cancel"), style: "cancel" },
-      {
-        text: t("search.reset_button"),
-        style: "destructive",
-        onPress: () => {
-          dispatch(resetPreferences());
-          countSelectedFilters();
-          Alert.alert(t("common.success"), t("search.reset_success"));
-        },
-      },
-    ]);
-  }, [dispatch, countSelectedFilters, t]);
+      if (isMaxFiltersSelected && wouldBeNewFilter) {
+        Alert.alert(
+          "Maximum Filters Reached",
+          "You've selected the maximum of 10 filters for the perfect match. To add this filter, please remove another one first.",
+          [{ text: "OK" }]
+        );
+        return;
+      }
 
-  const handleRetry = useCallback(() => {
-    setRetryCount((prev) => prev + 1);
-    setError(null);
-    initializeScreen();
-  }, []);
+      handlePreferenceChange("preferred_age_min", min);
+      handlePreferenceChange("preferred_age_max", max);
+    },
+    [handlePreferenceChange, preferences, isMaxFiltersSelected]
+  );
 
+  // Check if a filter is disabled
   const isFilterDisabled = useCallback(
     (field) => {
       return isMaxFiltersSelected && preferences[field] === null;
@@ -501,61 +220,112 @@ const UnifiedSearchScreen = () => {
     [isMaxFiltersSelected, preferences]
   );
 
-  if (isLoading && !initialLoadComplete) {
+  // Handle search action
+  const handleSearch = useCallback(async () => {
+    // Check for validation errors
+    if (hasSmokingError) {
+      setValidationErrors((prev) => ({
+        ...prev,
+        smokingTools: true,
+      }));
+      Alert.alert(
+        "Validation Error",
+        "Please select at least one smoking tool."
+      );
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      await dispatch(submitSearchPreferences(preferences)).unwrap();
+      dispatch(setHasSubmittedFilters(true));
+
+      setHasSearched(true);
+      router.push("/(tabs)/matches");
+    } catch (error) {
+      console.error("Error submitting search preferences:", error);
+      Alert.alert("Error", "Failed to submit preferences. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [dispatch, preferences, router, hasSmokingError]);
+
+  // Handle reset filters
+  const handleReset = useCallback(() => {
+    Alert.alert(
+      "Reset Filters",
+      "Are you sure you want to reset all filters?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Reset",
+          style: "destructive",
+          onPress: () => {
+            dispatch(resetPreferences());
+            setValidationErrors({});
+            Alert.alert("Success", "All filters have been reset.");
+          },
+        },
+      ]
+    );
+  }, [dispatch]);
+
+  // Handle smoking tools change
+  const handleSmokingToolsChange = useCallback(
+    (tools) => {
+      handlePreferenceChange("preferred_smoking_tools", tools);
+
+      if (tools.length > 0) {
+        setValidationErrors((prev) => ({
+          ...prev,
+          smokingTools: false,
+        }));
+      }
+    },
+    [handlePreferenceChange]
+  );
+
+  if (isLoading && !preferences) {
     return (
-      <LoadingScreen
-        message={t("search.loading_preferences")}
-        onRetry={() => {
-          setIsLoading(false);
-          dispatch(manuallySetLoading(false));
-          setTimeout(() => {
-            initializeScreen();
-          }, 500);
-        }}
-      />
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>Loading preferences...</Text>
+      </View>
     );
   }
 
-  if (error) {
-    return <ErrorView error={error} onRetry={handleRetry} />;
-  }
-
   return (
-    <>
-      <SearchHeader t={t} />
-      <View style={styles.FilterProgressTracker}>
-        <FilterProgressTracker
-          t={t}
-          selectedFiltersCount={selectedFiltersCount}
-          maxFilters={MAX_FILTERS}
-          matchPercentage={matchPercentage}
-          isMaxFiltersSelected={isMaxFiltersSelected}
-          scrollY={scrollY}
-          styles={styles}
-          isRTL={isRTL}
-        />
+    <View style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+
+      <View style={styles.header}>
+        <View style={styles.headerContent}>
+          <Ionicons
+            name="search"
+            size={24}
+            color="#FFFFFF"
+            style={styles.headerIcon}
+          />
+          <Text style={styles.headerTitle}>Find Matches</Text>
+        </View>
+        <Text style={styles.headerSubtitle}>
+          Select up to 10 filters for your perfect match
+        </Text>
       </View>
 
-      {/* Sticky section header */}
-      {currentStickySection && (
-        <Animated.View
-          style={[
-            stickyStyles.stickyHeader,
-            {
-              top: FILTER_TRACKER_HEIGHT, // Position below the FilterProgressTracker
-              flexDirection: isRTL ? "row-reverse" : "row",
-            },
-          ]}
-        >
-          <Text style={stickyStyles.stickyHeaderText}>
-            {getCurrentSectionTitle()}
-          </Text>
-        </Animated.View>
-      )}
+      {/* Progress Tracker */}
+      <FilterProgressTracker
+        selectedFiltersCount={selectedFiltersCount}
+        maxFilters={MAX_FILTERS}
+        scrollY={scrollY}
+        isRTL={false}
+      />
 
       <KeyboardAvoidingView
         style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : null}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
       >
         <Animated.ScrollView
           ref={scrollViewRef}
@@ -564,80 +334,444 @@ const UnifiedSearchScreen = () => {
             [{ nativeEvent: { contentOffset: { y: scrollY } } }],
             { useNativeDriver: true }
           )}
-          scrollEventThrottle={8}
-          onLayout={measureSectionOffsets}
+          scrollEventThrottle={16}
+          showsVerticalScrollIndicator={false}
         >
-          <StatusBar
-            barStyle="light-content"
-            backgroundColor={COLORS.primary}
-          />
+          {/* Basic Information Section */}
+          <FilterSection title="Basic Information">
+            <ModernDropdown
+              label="Nationality"
+              value={preferences.preferred_nationality_id}
+              items={(geographic?.nationalities || []).map((item) => ({
+                label: item.name,
+                value: item.id,
+              }))}
+              onValueChange={(value) =>
+                handlePreferenceChange("preferred_nationality_id", value)
+              }
+              placeholder="Select nationality (optional)"
+              disabled={isFilterDisabled("preferred_nationality_id")}
+            />
 
-          {/* Basic Info Section with ref for sticky header */}
-          <View ref={sectionRefs.current.basic}>
-            <BasicInfoFilterSection
-              t={t}
-              isRTL={isRTL}
-              preferences={preferences}
-              geographic={geographic}
-              personalAttributes={personalAttributes}
-              cities={cities}
-              handlePreferenceChange={handlePreferenceChange}
-              handleAgeRangePreset={handleAgeRangePreset}
-              getPresetLabel={getPresetLabel}
-              isFilterDisabled={isFilterDisabled}
+            <ModernDropdown
+              label="Origin"
+              value={preferences.preferred_origin_id}
+              items={(personalAttributes?.origins || []).map((item) => ({
+                label: item.name,
+                value: item.id,
+              }))}
+              onValueChange={(value) =>
+                handlePreferenceChange("preferred_origin_id", value)
+              }
+              placeholder="Select origin (optional)"
+              disabled={isFilterDisabled("preferred_origin_id")}
+            />
+
+            <ModernDropdown
+              label="Country"
+              value={preferences.preferred_country_id}
+              items={(geographic?.countries || []).map((item) => ({
+                label: item.name,
+                value: item.id,
+              }))}
+              onValueChange={(value) =>
+                handlePreferenceChange("preferred_country_id", value)
+              }
+              placeholder="Select country (optional)"
+              disabled={isFilterDisabled("preferred_country_id")}
+            />
+
+            {preferences.preferred_country_id &&
+              cities &&
+              cities.length > 0 && (
+                <ModernDropdown
+                  label="City"
+                  value={preferences.preferred_city_id}
+                  items={cities.map((item) => ({
+                    label: item.name,
+                    value: item.id,
+                  }))}
+                  onValueChange={(value) =>
+                    handlePreferenceChange("preferred_city_id", value)
+                  }
+                  placeholder="Select city (optional)"
+                  disabled={isFilterDisabled("preferred_city_id")}
+                />
+              )}
+
+            <AgeRangeSelector
+              minAge={preferences.preferred_age_min || 18}
+              maxAge={preferences.preferred_age_max || 70}
+              onChange={handleAgeRangeChange}
+              isFilterDisabled={isFilterDisabled("preferred_age_min")}
               isMaxFiltersSelected={isMaxFiltersSelected}
-              styles={styles}
             />
-          </View>
+          </FilterSection>
 
-          {/* Education Section with ref for sticky header */}
-          <View ref={sectionRefs.current.education}>
-            <EducationFilterSection
-              t={t}
-              isRTL={isRTL}
-              preferences={preferences}
-              professionalEducational={professionalEducational}
-              geographic={geographic}
-              marriageBudget={marriageBudget}
-              handlePreferenceChange={handlePreferenceChange}
-              isFilterDisabled={isFilterDisabled}
-              styles={styles}
+          {/* Education & Career Section */}
+          <FilterSection title="Education & Career">
+            <ModernDropdown
+              label="Educational Level"
+              value={preferences.preferred_educational_level_id}
+              items={(professionalEducational?.educationalLevels || []).map(
+                (item) => ({
+                  label: item.name,
+                  value: item.id,
+                })
+              )}
+              onValueChange={(value) =>
+                handlePreferenceChange("preferred_educational_level_id", value)
+              }
+              placeholder="Select educational level (optional)"
+              disabled={isFilterDisabled("preferred_educational_level_id")}
             />
-          </View>
 
-          {/* Personal Section with ref for sticky header */}
-          <View ref={sectionRefs.current.personal}>
-            <PersonalFilterSection
-              t={t}
-              isRTL={isRTL}
-              preferences={preferences}
-              personalAttributes={personalAttributes}
-              handlePreferenceChange={handlePreferenceChange}
-              isFilterDisabled={isFilterDisabled}
-              styles={styles}
+            <ModernDropdown
+              label="Specialization"
+              value={preferences.preferred_specialization_id}
+              items={(professionalEducational?.specializations || []).map(
+                (item) => ({
+                  label: item.name,
+                  value: item.id,
+                })
+              )}
+              onValueChange={(value) =>
+                handlePreferenceChange("preferred_specialization_id", value)
+              }
+              placeholder="Select specialization (optional)"
+              disabled={isFilterDisabled("preferred_specialization_id")}
             />
-          </View>
 
-          {/* Lifestyle Section with ref for sticky header */}
-          <View ref={sectionRefs.current.lifestyle}>
-            <LifestyleFilterSection
-              t={t}
-              isRTL={isRTL}
-              preferences={preferences}
-              lifestyleInterests={lifestyleInterests}
-              personalAttributes={personalAttributes}
-              religiosityLevels={religiosityLevels}
-              handlePreferenceChange={handlePreferenceChange}
-              isFilterDisabled={isFilterDisabled}
+            <View style={styles.toggleSection}>
+              <View style={styles.toggleHeader}>
+                <Text style={styles.toggleLabel}>Employment Status</Text>
+                {preferences.preferred_employment_status !== null && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      handlePreferenceChange(
+                        "preferred_employment_status",
+                        null
+                      );
+                      if (preferences.preferred_job_title_id) {
+                        handlePreferenceChange("preferred_job_title_id", null);
+                      }
+                    }}
+                    style={styles.clearButton}
+                  >
+                    <Text style={styles.clearButtonText}>Clear</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {preferences.preferred_employment_status !== null ? (
+                <View style={styles.toggleContainer}>
+                  <TouchableOpacity
+                    style={[
+                      styles.toggleButton,
+                      preferences.preferred_employment_status === true &&
+                        styles.toggleButtonActive,
+                    ]}
+                    onPress={() =>
+                      handlePreferenceChange(
+                        "preferred_employment_status",
+                        true
+                      )
+                    }
+                  >
+                    <Text
+                      style={[
+                        styles.toggleText,
+                        preferences.preferred_employment_status === true &&
+                          styles.toggleTextActive,
+                      ]}
+                    >
+                      Employed
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.toggleButton,
+                      preferences.preferred_employment_status === false &&
+                        styles.toggleButtonActive,
+                    ]}
+                    onPress={() => {
+                      handlePreferenceChange(
+                        "preferred_employment_status",
+                        false
+                      );
+                      if (preferences.preferred_job_title_id) {
+                        handlePreferenceChange("preferred_job_title_id", null);
+                      }
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.toggleText,
+                        preferences.preferred_employment_status === false &&
+                          styles.toggleTextActive,
+                      ]}
+                    >
+                      Unemployed
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.addButton}
+                  onPress={() =>
+                    handlePreferenceChange("preferred_employment_status", true)
+                  }
+                  disabled={isFilterDisabled("preferred_employment_status")}
+                >
+                  <Text style={styles.addButtonText}>
+                    Add employment preference
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {preferences.preferred_employment_status === true && (
+              <ModernDropdown
+                label="Job Title"
+                value={preferences.preferred_job_title_id}
+                items={(professionalEducational?.jobTitles || []).map(
+                  (item) => ({
+                    label: item.name,
+                    value: item.id,
+                  })
+                )}
+                onValueChange={(value) =>
+                  handlePreferenceChange("preferred_job_title_id", value)
+                }
+                placeholder="Select job title (optional)"
+                disabled={isFilterDisabled("preferred_job_title_id")}
+              />
+            )}
+
+            <ModernDropdown
+              label="Financial Status"
+              value={preferences.preferred_financial_status_id}
+              items={(geographic?.financialStatuses || []).map((item) => ({
+                label: item.name,
+                value: item.id,
+              }))}
+              onValueChange={(value) =>
+                handlePreferenceChange("preferred_financial_status_id", value)
+              }
+              placeholder="Select financial status (optional)"
+              disabled={isFilterDisabled("preferred_financial_status_id")}
+            />
+
+            <ModernDropdown
+              label="Marriage Budget"
+              value={preferences.preferred_marriage_budget_id}
+              items={(marriageBudget || []).map((item) => ({
+                label: item.name || item.budget || `Budget ${item.id}`,
+                value: item.id,
+              }))}
+              onValueChange={(value) =>
+                handlePreferenceChange("preferred_marriage_budget_id", value)
+              }
+              placeholder="Select marriage budget (optional)"
+              disabled={isFilterDisabled("preferred_marriage_budget_id")}
+            />
+          </FilterSection>
+
+          {/* Personal Attributes Section */}
+          <FilterSection title="Personal Attributes">
+            <ModernDropdown
+              label="Height"
+              value={preferences.preferred_height_id}
+              items={(personalAttributes?.heights || []).map((item) => ({
+                label: item.name,
+                value: item.id,
+              }))}
+              onValueChange={(value) =>
+                handlePreferenceChange("preferred_height_id", value)
+              }
+              placeholder="Select height (optional)"
+              disabled={isFilterDisabled("preferred_height_id")}
+            />
+
+            <ModernDropdown
+              label="Weight"
+              value={preferences.preferred_weight_id}
+              items={(personalAttributes?.weights || []).map((item) => ({
+                label: item.name,
+                value: item.id,
+              }))}
+              onValueChange={(value) =>
+                handlePreferenceChange("preferred_weight_id", value)
+              }
+              placeholder="Select weight (optional)"
+              disabled={isFilterDisabled("preferred_weight_id")}
+            />
+
+            <ModernDropdown
+              label="Marital Status"
+              value={preferences.preferred_marital_status_id}
+              items={(personalAttributes?.maritalStatuses || []).map(
+                (item) => ({
+                  label: item.name,
+                  value: item.id,
+                })
+              )}
+              onValueChange={(value) =>
+                handlePreferenceChange("preferred_marital_status_id", value)
+              }
+              placeholder="Select marital status (optional)"
+              disabled={isFilterDisabled("preferred_marital_status_id")}
+            />
+
+            <ModernDropdown
+              label="Social Media Presence"
+              value={preferences.preferred_social_media_presence_id}
+              items={[
+                { label: "Active on social media", value: 1 },
+                { label: "Moderate social media use", value: 2 },
+                { label: "Limited social media use", value: 3 },
+                { label: "No social media presence", value: 4 },
+              ]}
+              onValueChange={(value) =>
+                handlePreferenceChange(
+                  "preferred_social_media_presence_id",
+                  value
+                )
+              }
+              placeholder="Select social media presence (optional)"
+              disabled={isFilterDisabled("preferred_social_media_presence_id")}
+            />
+          </FilterSection>
+
+          {/* Lifestyle Section */}
+          <FilterSection title="Lifestyle & Habits">
+            <SmokerSelector
+              isSmoker={preferences.preferred_smoking_status}
+              onSmokerChange={(value) =>
+                handlePreferenceChange("preferred_smoking_status", value)
+              }
+              selectedTools={preferences.preferred_smoking_tools || []}
+              onToolsChange={handleSmokingToolsChange}
+              smokingTools={lifestyleInterests?.smokingTools || []}
+              isFilterDisabled={isFilterDisabled("preferred_smoking_status")}
               isMaxFiltersSelected={isMaxFiltersSelected}
-              validationErrors={validationErrors}
-              setValidationErrors={setValidationErrors}
-              styles={styles}
+              validationError={validationErrors.smokingTools}
             />
-          </View>
 
+            <ModernDropdown
+              label="Drinking Status"
+              value={preferences.preferred_drinking_status_id}
+              items={(lifestyleInterests?.drinkingStatuses || []).map(
+                (item) => ({
+                  label: item.name,
+                  value: item.id,
+                })
+              )}
+              onValueChange={(value) =>
+                handlePreferenceChange("preferred_drinking_status_id", value)
+              }
+              placeholder="Select drinking status (optional)"
+              disabled={isFilterDisabled("preferred_drinking_status_id")}
+            />
+
+            <ModernDropdown
+              label="Sports Activity"
+              value={preferences.preferred_sports_activity_id}
+              items={(lifestyleInterests?.sportsActivities || []).map(
+                (item) => ({
+                  label: item.name,
+                  value: item.id,
+                })
+              )}
+              onValueChange={(value) =>
+                handlePreferenceChange("preferred_sports_activity_id", value)
+              }
+              placeholder="Select sports activity (optional)"
+              disabled={isFilterDisabled("preferred_sports_activity_id")}
+            />
+
+            <ModernDropdown
+              label="Sleep Habit"
+              value={preferences.preferred_sleep_habit_id}
+              items={(personalAttributes?.sleepHabits || []).map((item) => ({
+                label: item.name,
+                value: item.id,
+              }))}
+              onValueChange={(value) =>
+                handlePreferenceChange("preferred_sleep_habit_id", value)
+              }
+              placeholder="Select sleep habit (optional)"
+              disabled={isFilterDisabled("preferred_sleep_habit_id")}
+            />
+
+            <View style={styles.petsSection}>
+              <View style={styles.petsHeader}>
+                <Text style={styles.petsLabel}>Pets</Text>
+                {preferences.preferred_pets_id?.length > 0 && (
+                  <TouchableOpacity
+                    onPress={() =>
+                      handlePreferenceChange("preferred_pets_id", [])
+                    }
+                    style={styles.clearButton}
+                  >
+                    <Text style={styles.clearButtonText}>Clear</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              <MultiSelectChips
+                items={(lifestyleInterests?.pets || []).map((item) => ({
+                  id: item.id,
+                  name: item.name,
+                }))}
+                selectedItems={preferences.preferred_pets_id || []}
+                onSelectItem={(items) => {
+                  // Check if this is a new filter selection
+                  const isNewSelection =
+                    !preferences.preferred_pets_id ||
+                    preferences.preferred_pets_id.length === 0;
+
+                  if (
+                    isMaxFiltersSelected &&
+                    isNewSelection &&
+                    items.length > 0
+                  ) {
+                    Alert.alert(
+                      "Maximum Filters Reached",
+                      "You've selected the maximum of 10 filters for the perfect match. To add this filter, please remove another one first.",
+                      [{ text: "OK" }]
+                    );
+                    return;
+                  }
+
+                  handlePreferenceChange("preferred_pets_id", items);
+                }}
+                disabled={isFilterDisabled("preferred_pets_id")}
+                chipStyle={styles.petChip}
+                selectedChipStyle={styles.selectedPetChip}
+                chipTextStyle={styles.petChipText}
+                selectedChipTextStyle={styles.selectedPetChipText}
+              />
+            </View>
+
+            <ModernDropdown
+              label="Religiosity Level"
+              value={preferences.preferred_religiosity_level_id}
+              items={(religiosityLevels || []).map((item) => ({
+                label: item.name,
+                value: item.id,
+              }))}
+              onValueChange={(value) =>
+                handlePreferenceChange("preferred_religiosity_level_id", value)
+              }
+              placeholder="Select religiosity level (optional)"
+              disabled={isFilterDisabled("preferred_religiosity_level_id")}
+            />
+          </FilterSection>
+
+          {/* Action Buttons */}
           <SearchActionButtons
-            t={t}
             loading={loading}
             hasSmokingError={hasSmokingError}
             selectedFiltersCount={selectedFiltersCount}
@@ -645,37 +779,173 @@ const UnifiedSearchScreen = () => {
             handleReset={handleReset}
           />
 
-          {hasSearched && <SavedPreferencesMessage t={t} />}
+          {/* Bottom Spacing */}
+          <View style={styles.bottomSpacing} />
         </Animated.ScrollView>
       </KeyboardAvoidingView>
-    </>
+    </View>
   );
 };
 
-const stickyStyles = StyleSheet.create({
-  stickyHeader: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    height: STICKY_HEADER_HEIGHT,
-    backgroundColor: COLORS.background,
-    zIndex: 999,
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#F5F7FA",
+  },
+  header: {
+    backgroundColor: COLORS.primary,
+    paddingVertical: 35,
+    paddingTop: 55,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
     elevation: 4,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eaeaea",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    marginBottom: 12,
+  },
+  headerContent: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 16,
   },
-  stickyHeaderText: {
-    fontSize: 16,
+  headerIcon: {
+    marginRight: 10,
+  },
+  headerTitle: {
+    fontSize: 24,
     fontWeight: "700",
+    color: "#FFFFFF",
+    textAlign: "center",
+    letterSpacing: 0.5,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: "rgba(255, 255, 255, 0.8)",
+    textAlign: "center",
+    marginTop: 4,
+  },
+  container: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F5F7FA",
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#555",
+  },
+  bottomSpacing: {
+    height: 40,
+  },
+  toggleSection: {
+    marginBottom: 16,
+  },
+  toggleHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  toggleLabel: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#333",
+  },
+  clearButton: {
+    backgroundColor: "rgba(74, 111, 161, 0.1)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  clearButtonText: {
     color: COLORS.primary,
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  toggleContainer: {
+    flexDirection: "row",
+  },
+  toggleButton: {
+    flex: 1,
+    height: 46,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F5F7FA",
+    borderWidth: 1,
+    borderColor: "#DDE1E6",
+  },
+  toggleButtonActive: {
+    backgroundColor: COLORS.primary,
+    borderColor: COLORS.primary,
+  },
+  toggleText: {
+    fontSize: 16,
+    color: "#666",
+  },
+  toggleTextActive: {
+    color: "#FFFFFF",
+    fontWeight: "500",
+  },
+  addButton: {
+    height: 48,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F5F7FA",
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: "#A1A1A1",
+    borderRadius: 8,
+  },
+  addButtonText: {
+    color: COLORS.primary,
+    fontSize: 16,
+  },
+  petsSection: {
+    marginBottom: 16,
+  },
+  petsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  petsLabel: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: "#333",
+  },
+  petChip: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#DDE1E6",
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  selectedPetChip: {
+    backgroundColor: "#E7EFF8",
+    borderColor: COLORS.primary,
+  },
+  petChipText: {
+    fontSize: 14,
+    color: "#555",
+  },
+  selectedPetChipText: {
+    color: COLORS.primary,
+    fontWeight: "500",
   },
 });
-
-export default withProfileCompletion(UnifiedSearchScreen);
+export default withProfileCompletion(AdvancedSearchScreen);
