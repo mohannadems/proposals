@@ -15,7 +15,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import COLORS from "../../constants/colors";
-
+import { useRouter } from "expo-router";
 const { width, height } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.9;
 const HEADER_HEIGHT = Platform.OS === "ios" ? 100 : 80;
@@ -84,9 +84,9 @@ const LIKED_USERS = [
 ];
 
 const LikedMeScreen = () => {
-  const [selectedTab, setSelectedTab] = useState("all"); 
+  const [selectedTab, setSelectedTab] = useState("all");
   const scrollY = useRef(new Animated.Value(0)).current;
-
+  const route = useRouter();
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, 50],
     outputRange: [1, 0.9],
@@ -193,7 +193,12 @@ const LikedMeScreen = () => {
                 colors={COLORS.primaryGradient}
                 style={styles.primaryButtonGradient}
               >
-                <Text style={styles.primaryButtonText}>Connect</Text>
+                <Text
+                  onPress={() => route.push("/(subscription)/PaymentScreen")}
+                  style={styles.primaryButtonText}
+                >
+                  Connect
+                </Text>
               </LinearGradient>
             </TouchableOpacity>
           </View>

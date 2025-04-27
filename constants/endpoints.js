@@ -24,4 +24,5 @@ export const ENDPOINTS = {
   MATCHES: "/matches",
   GET_LIKES: "/getlikes",
   REPORT_USER: "/report-user",
+  SUBSCRIPTION_CARDS: "/subscription-cards",
 };

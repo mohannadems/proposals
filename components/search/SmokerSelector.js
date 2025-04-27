@@ -1,4 +1,3 @@
-// SmokerSelector.js
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import MultiSelectChips from "./MultiSelectChips";

@@ -10,7 +10,7 @@ import {
   REGISTER,
 } from "redux-persist";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import subscriptionReducer from "./slices/subscriptionSlice";
 import authReducer from "./slices/auth.slice";
 import profileReducer from "./slices/profile.slice";
 import profileCompletionReducer from "./slices/profileCompletionSlice";
@@ -69,6 +69,7 @@ const appReducer = combineReducers({
   userMatches: persistedReducers.userMatches,
   userProfile: persistedReducers.userProfile,
   report: reportReducer,
+  subscription: subscriptionReducer,
 });
 
 const rootReducer = (state, action) => {

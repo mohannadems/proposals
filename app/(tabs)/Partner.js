@@ -29,7 +29,9 @@ import {
   updatePreference,
   submitSearchPreferences,
   resetPreferences,
+  setHasSearched,
   getSavedPreferences,
+  selectHasSearched,
 } from "../../store/slices/searchSlice";
 
 import {
@@ -53,13 +55,11 @@ const AdvancedSearchScreen = () => {
   const scrollY = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef(null);
 
-  // State
   const [isLoading, setIsLoading] = useState(true);
   const [selectedFiltersCount, setSelectedFiltersCount] = useState(0);
   const [validationErrors, setValidationErrors] = useState({});
-  const [hasSearched, setHasSearched] = useState(false);
+  const hasSearched = useSelector(selectHasSearched);
 
-  // Redux state
   const { preferences, loading } = useSelector((state) => state.search);
   const geographic = useSelector(selectGeographic);
   const personalAttributes = useSelector(selectPersonalAttributes);
@@ -69,27 +69,22 @@ const AdvancedSearchScreen = () => {
   const marriageBudget = useSelector(selectDirectMarriageBudget);
   const religiosityLevels = useSelector(selectDirectReligiosityLevels);
 
-  // Derived state
   const isMaxFiltersSelected = selectedFiltersCount >= MAX_FILTERS;
   const selectedCountryId = preferences.preferred_country_id;
 
-  // Check for smoking validation error
   const hasSmokingError =
     preferences.preferred_smoking_status === true &&
     (!preferences.preferred_smoking_tools ||
       preferences.preferred_smoking_tools.length === 0);
 
-  // Initialize data
   useEffect(() => {
     const initializeScreen = async () => {
       setIsLoading(true);
 
       try {
-        // Fetch all required data
         await dispatch(fetchAllProfileData()).unwrap();
         await dispatch(getSavedPreferences()).unwrap();
 
-        // Fetch cities if country is selected
         if (preferences.preferred_country_id) {
           dispatch(fetchCitiesByCountry(preferences.preferred_country_id));
         }
@@ -105,31 +100,26 @@ const AdvancedSearchScreen = () => {
     initializeScreen();
   }, [dispatch]);
 
-  // Fetch cities when country changes
   useEffect(() => {
     if (selectedCountryId) {
       dispatch(fetchCitiesByCountry(selectedCountryId));
     }
   }, [selectedCountryId, dispatch]);
 
-  // Count selected filters
   const countSelectedFilters = useCallback(() => {
     let count = 0;
 
-    // Basic information
     if (preferences.preferred_nationality_id) count++;
     if (preferences.preferred_origin_id) count++;
     if (preferences.preferred_country_id) count++;
     if (preferences.preferred_city_id) count++;
 
-    // Age range (only count if not default 18-70)
     if (
       preferences.preferred_age_min !== 18 ||
       preferences.preferred_age_max !== 70
     )
       count++;
 
-    // Education & Career
     if (preferences.preferred_educational_level_id) count++;
     if (preferences.preferred_specialization_id) count++;
     if (preferences.preferred_employment_status !== null) count++;
@@ -137,13 +127,11 @@ const AdvancedSearchScreen = () => {
     if (preferences.preferred_financial_status_id) count++;
     if (preferences.preferred_marriage_budget_id) count++;
 
-    // Personal Attributes
     if (preferences.preferred_height_id) count++;
     if (preferences.preferred_weight_id) count++;
     if (preferences.preferred_marital_status_id) count++;
     if (preferences.preferred_social_media_presence_id) count++;
 
-    // Lifestyle
     if (preferences.preferred_smoking_status !== null) count++;
     if (preferences.preferred_drinking_status_id) count++;
     if (preferences.preferred_sports_activity_id) count++;
@@ -158,12 +146,10 @@ const AdvancedSearchScreen = () => {
     setSelectedFiltersCount(count);
   }, [preferences]);
 
-  // Update filters count when preferences change
   useEffect(() => {
     countSelectedFilters();
   }, [preferences, countSelectedFilters]);
 
-  // Handle preference change
   const handlePreferenceChange = useCallback(
     (field, value) => {
       const isAdding = value !== null && preferences[field] === null;
@@ -179,7 +165,6 @@ const AdvancedSearchScreen = () => {
 
       dispatch(updatePreference({ field, value }));
 
-      // Reset city if country changes
       if (field === "preferred_country_id") {
         dispatch(updatePreference({ field: "preferred_city_id", value: null }));
       }
@@ -187,7 +172,6 @@ const AdvancedSearchScreen = () => {
     [dispatch, preferences, isMaxFiltersSelected]
   );
 
-  // Handle age range change
   const handleAgeRangeChange = useCallback(
     (min, max) => {
       const isAgeFilterAlreadySet =
@@ -212,7 +196,6 @@ const AdvancedSearchScreen = () => {
     [handlePreferenceChange, preferences, isMaxFiltersSelected]
   );
 
-  // Check if a filter is disabled
   const isFilterDisabled = useCallback(
     (field) => {
       return isMaxFiltersSelected && preferences[field] === null;
@@ -220,9 +203,7 @@ const AdvancedSearchScreen = () => {
     [isMaxFiltersSelected, preferences]
   );
 
-  // Handle search action
   const handleSearch = useCallback(async () => {
-    // Check for validation errors
     if (hasSmokingError) {
       setValidationErrors((prev) => ({
         ...prev,
@@ -240,8 +221,7 @@ const AdvancedSearchScreen = () => {
     try {
       await dispatch(submitSearchPreferences(preferences)).unwrap();
       dispatch(setHasSubmittedFilters(true));
-
-      setHasSearched(true);
+      dispatch(setHasSearched(true));
       router.push("/(tabs)/matches");
     } catch (error) {
       console.error("Error submitting search preferences:", error);
@@ -251,7 +231,6 @@ const AdvancedSearchScreen = () => {
     }
   }, [dispatch, preferences, router, hasSmokingError]);
 
-  // Handle reset filters
   const handleReset = useCallback(() => {
     Alert.alert(
       "Reset Filters",

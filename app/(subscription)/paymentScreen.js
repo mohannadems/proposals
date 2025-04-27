@@ -1,748 +1,288 @@
-import React, { useState, useRef, useEffect } from "react";
+// screens/PaymentScreen.js
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  Platform,
   ScrollView,
-  KeyboardAvoidingView,
-  Animated,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
   Dimensions,
 } from "react-native";
+import { useDispatch, useSelector } from "react-redux";
 import { LinearGradient } from "expo-linear-gradient";
-import { BlurView } from "expo-blur";
-import { Feather } from "@expo/vector-icons";
-import { MotiView, MotiText, AnimatePresence } from "moti";
-import * as Haptics from "expo-haptics";
-import Svg, {
-  Defs,
-  Rect,
-  LinearGradient as SvgGradient,
-  Stop,
-} from "react-native-svg";
-import { SharedElement } from "react-navigation-shared-element";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import SubscriptionCard from "../../components/subscriptions/SubscriptionCard";
+import COLORS from "../../constants/colors";
+import {
+  fetchSubscriptionCards,
+  selectPlan,
+} from "../../store/slices/subscriptionSlice";
+import { useRouter } from "expo-router";
 
-const { width, height } = Dimensions.get("window");
-const CARD_ASPECT_RATIO = 1.586;
-const CARD_WIDTH = width * 0.85;
-const CARD_HEIGHT = CARD_WIDTH / CARD_ASPECT_RATIO;
+const { width } = Dimensions.get("window");
 
-const COLORS = {
-  primary: "#9e086c",
-  secondary: "#5856D6",
-  background: "#F8F9FA",
-  white: "#FFFFFF",
-  text: "#1C1C1E",
-  error: "#FF3B30",
-  success: "#34C759",
-  border: "#E5E5EA",
-  primaryGradient: ["#9e086c", "#9e086c"],
-  cardGradient: ["#2C3E50", "#3498DB"],
-  goldGradient: ["#FFD700", "#FFA500"],
-};
+const PaymentScreen = ({ route }) => {
+  const dispatch = useDispatch();
+  const router = useRouter();
+  const { subscriptionCards, loading, error, selectedPlan } = useSelector(
+    (state) => state.subscription
+  );
+  const [selectedCardIndex, setSelectedCardIndex] = useState(null);
 
-const CreditCard = ({ cardDetails, isFlipped, rotateY }) => {
-  const shimmerValue = useRef(new Animated.Value(0)).current;
+  const params = route?.params || {};
+  const { preselectedPlan } = params;
 
   useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(shimmerValue, {
-          toValue: 1,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(shimmerValue, {
-          toValue: 0,
-          duration: 2000,
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
-  }, []);
+    dispatch(fetchSubscriptionCards());
+  }, [dispatch]);
 
-  const translateX = shimmerValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: [-width, width],
-  });
+  useEffect(() => {
+    if (preselectedPlan && subscriptionCards.length > 0) {
+      const index = subscriptionCards.findIndex(
+        (plan) => plan.package_name === preselectedPlan.package_name
+      );
+      if (index !== -1) {
+        handleSelectPlan(subscriptionCards[index], index);
+      }
+    }
+  }, [preselectedPlan, subscriptionCards]);
+
+  const handleSelectPlan = (plan, index) => {
+    setSelectedCardIndex(index);
+    dispatch(selectPlan(plan));
+  };
+
+  const handleSubscribe = () => {
+    if (!selectedPlan) {
+      Alert.alert(
+        "Please select a plan",
+        "You need to choose a subscription plan to continue.",
+        [{ text: "OK", style: "default" }]
+      );
+      return;
+    }
+    router.push({
+      pathname: "/(subscription)/CheckoutScreen",
+      params: {
+        package_name: selectedPlan.package_name,
+        price: selectedPlan.price,
+        contact_limit: selectedPlan.contact_limit,
+      },
+    });
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
 
   return (
-    <Animated.View
-      style={[
-        styles.cardContainer,
-        {
-          transform: [
-            {
-              rotateY: rotateY.interpolate({
-                inputRange: [0, 180],
-                outputRange: ["0deg", "180deg"],
-              }),
-            },
-          ],
-        },
-      ]}
-    >
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <LinearGradient
-        colors={COLORS.cardGradient}
-        style={styles.card}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+        colors={COLORS.primaryGradient}
+        style={styles.headerGradient}
       >
-        <View style={StyleSheet.absoluteFill}>
-          <Animated.View
-            style={[
-              styles.shimmer,
-              {
-                transform: [{ translateX }],
-              },
-            ]}
-          />
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
+            <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Choose Your Plan</Text>
+          <View style={styles.placeholder} />
         </View>
+      </LinearGradient>
 
-        {!isFlipped ? (
-          <View style={styles.cardContent}>
-            <View style={styles.cardHeader}>
-              <View style={styles.chip} />
-              <Feather
-                name="wifi"
-                size={24}
-                color={COLORS.white}
-                style={{ transform: [{ rotate: "90deg" }] }}
-              />
-            </View>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <Text style={styles.title}>Upgrade Your Experience</Text>
+        <Text style={styles.subtitle}>
+          Select the perfect plan for your needs
+        </Text>
 
-            <Text style={styles.cardNumber}>
-              {cardDetails.number || "•••• •••• •••• ••••"}
-            </Text>
-
-            <View style={styles.cardFooter}>
-              <View>
-                <Text style={styles.cardLabel}>Card Holder</Text>
-                <Text style={styles.cardValue}>
-                  {cardDetails.name || "YOUR NAME"}
-                </Text>
-              </View>
-              <View>
-                <Text style={styles.cardLabel}>Expires</Text>
-                <Text style={styles.cardValue}>
-                  {cardDetails.expiry || "MM/YY"}
-                </Text>
-              </View>
-            </View>
-          </View>
-        ) : (
-          <View style={styles.cardBack}>
-            <View style={styles.magneticStrip} />
-            <View style={styles.cvvContainer}>
-              <Text style={styles.cvvLabel}>CVV</Text>
-              <View style={styles.cvvStrip}>
-                <Text style={styles.cvvText}>{cardDetails.cvv || "•••"}</Text>
-              </View>
-            </View>
+        {error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
           </View>
         )}
-      </LinearGradient>
-    </Animated.View>
-  );
-};
 
-const PaymentMethodButton = ({ icon, label, selected, onPress }) => (
-  <MotiView
-    animate={{
-      scale: selected ? 1 : 0.95,
-      opacity: selected ? 1 : 0.7,
-    }}
-    transition={{
-      type: "spring",
-      damping: 20,
-    }}
-  >
-    <TouchableOpacity
-      onPress={onPress}
-      style={[styles.methodButton, selected && styles.methodButtonSelected]}
-    >
-      <LinearGradient
-        colors={selected ? COLORS.primaryGradient : ["#FFF", "#F8F9FA"]}
-        style={styles.methodGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      >
-        <BlurView
-          intensity={selected ? 0 : 80}
-          style={StyleSheet.absoluteFill}
-        />
-        <Feather
-          name={icon}
-          size={24}
-          color={selected ? COLORS.white : COLORS.text}
-        />
-        <Text
-          style={[styles.methodLabel, selected && styles.methodLabelSelected]}
-        >
-          {label}
-        </Text>
-      </LinearGradient>
-    </TouchableOpacity>
-  </MotiView>
-);
-
-const FormInput = ({
-  label,
-  icon,
-  value,
-  onChangeText,
-  keyboardType,
-  maxLength,
-  secureTextEntry,
-  onFocus,
-  onBlur,
-}) => (
-  <MotiView
-    style={styles.inputGroup}
-    animate={{ opacity: 1, translateY: 0 }}
-    from={{ opacity: 0, translateY: 20 }}
-    transition={{ type: "timing", duration: 500 }}
-  >
-    <Text style={styles.label}>{label}</Text>
-    <View style={styles.inputContainer}>
-      <Feather
-        name={icon}
-        size={20}
-        color={COLORS.text}
-        style={styles.inputIcon}
-      />
-      <TextInput
-        style={styles.input}
-        value={value}
-        onChangeText={onChangeText}
-        keyboardType={keyboardType}
-        maxLength={maxLength}
-        secureTextEntry={secureTextEntry}
-        onFocus={onFocus}
-        onBlur={onBlur}
-        placeholderTextColor="rgba(28, 28, 30, 0.3)"
-      />
-    </View>
-  </MotiView>
-);
-
-export default function PremiumPaymentScreen() {
-  const [cardDetails, setCardDetails] = useState({
-    number: "",
-    name: "",
-    expiry: "",
-    cvv: "",
-  });
-  const [selectedMethod, setSelectedMethod] = useState("card");
-  const [loading, setLoading] = useState(false);
-  const [isCvvFocused, setIsCvvFocused] = useState(false);
-
-  const rotateY = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.spring(rotateY, {
-      toValue: isCvvFocused ? 180 : 0,
-      friction: 8,
-      tension: 40,
-      useNativeDriver: true,
-    }).start();
-  }, [isCvvFocused]);
-
-  const formatCardNumber = (text) => {
-    const cleaned = text.replace(/\s/g, "");
-    const formatted = cleaned.match(/.{1,4}/g)?.join(" ") || "";
-    return formatted;
-  };
-
-  const formatExpiry = (text) => {
-    const cleaned = text.replace(/\D/g, "");
-    if (cleaned.length >= 2) {
-      return `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}`;
-    }
-    return cleaned;
-  };
-
-  const handlePayment = async () => {
-    setLoading(true);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-    setTimeout(() => {
-      setLoading(false);
-    }, 2000);
-  };
-
-  return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-    >
-      <LinearGradient
-        colors={["rgba(182,81,101,0.1)", "rgba(88,86,214,0.1)"]}
-        style={StyleSheet.absoluteFill}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-      />
-
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-      >
-        <MotiView
-          from={{ opacity: 0, translateY: 50 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ type: "spring", duration: 1500 }}
-        >
-          <View style={styles.header}>
-            <TouchableOpacity style={styles.backButton}>
-              <Feather name="arrow-left" size={24} color={COLORS.text} />
-            </TouchableOpacity>
-            <View style={styles.headerTitleContainer}>
-              <Text style={styles.headerTitle}>Complete Payment</Text>
-              <Text style={styles.headerSubtitle}>Premium Subscription</Text>
-            </View>
-          </View>
-
-          <View style={styles.cardPreviewContainer}>
-            <CreditCard
-              cardDetails={cardDetails}
-              isFlipped={isCvvFocused}
-              rotateY={rotateY}
+        <View style={styles.cardsContainer}>
+          {subscriptionCards.map((plan, index) => (
+            <SubscriptionCard
+              key={index}
+              plan={plan}
+              isSelected={selectedCardIndex === index}
+              onSelect={handleSelectPlan}
+              index={index}
             />
+          ))}
+        </View>
+
+        <View style={styles.featuresList}>
+          <Text style={styles.allPlansTitle}>All Plans Include:</Text>
+          <View style={styles.featureRow}>
+            <Ionicons
+              name="checkmark-circle"
+              size={20}
+              color={COLORS.primary}
+            />
+            <Text style={styles.featureText}>Unlimited swipes</Text>
           </View>
-
-          <View style={styles.paymentMethods}>
-            {[
-              { id: "card", icon: "credit-card", label: "Credit Card" },
-              { id: "apple", icon: "smartphone", label: "Apple Pay" },
-              { id: "google", icon: "smartphone", label: "Google Pay" },
-            ].map((method) => (
-              <PaymentMethodButton
-                key={method.id}
-                icon={method.icon}
-                label={method.label}
-                selected={selectedMethod === method.id}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setSelectedMethod(method.id);
-                }}
-              />
-            ))}
+          <View style={styles.featureRow}>
+            <Ionicons
+              name="checkmark-circle"
+              size={20}
+              color={COLORS.primary}
+            />
+            <Text style={styles.featureText}>Message encryption</Text>
           </View>
-
-          <AnimatePresence>
-            {selectedMethod === "card" && (
-              <MotiView
-                from={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                style={styles.formContainer}
-              >
-                <FormInput
-                  label="Card Number"
-                  icon="credit-card"
-                  value={cardDetails.number}
-                  onChangeText={(text) =>
-                    setCardDetails((prev) => ({
-                      ...prev,
-                      number: formatCardNumber(text),
-                    }))
-                  }
-                  keyboardType="numeric"
-                  maxLength={19}
-                />
-
-                <FormInput
-                  label="Cardholder Name"
-                  icon="user"
-                  value={cardDetails.name}
-                  onChangeText={(text) =>
-                    setCardDetails((prev) => ({
-                      ...prev,
-                      name: text.toUpperCase(),
-                    }))
-                  }
-                />
-
-                <View style={styles.row}>
-                  <View
-                    style={[styles.inputGroup, { flex: 1, marginRight: 10 }]}
-                  >
-                    <FormInput
-                      label="Expiry Date"
-                      icon="calendar"
-                      value={cardDetails.expiry}
-                      onChangeText={(text) =>
-                        setCardDetails((prev) => ({
-                          ...prev,
-                          expiry: formatExpiry(text),
-                        }))
-                      }
-                      keyboardType="numeric"
-                      maxLength={5}
-                    />
-                  </View>
-
-                  <View
-                    style={[styles.inputGroup, { flex: 1, marginLeft: 10 }]}
-                  >
-                    <FormInput
-                      label="CVV"
-                      icon="lock"
-                      value={cardDetails.cvv}
-                      onChangeText={(text) =>
-                        setCardDetails((prev) => ({
-                          ...prev,
-                          cvv: text,
-                        }))
-                      }
-                      keyboardType="numeric"
-                      maxLength={3}
-                      secureTextEntry
-                      onFocus={() => setIsCvvFocused(true)}
-                      onBlur={() => setIsCvvFocused(false)}
-                      style={{ flex: 1, marginLeft: 10 }}
-                    />
-                  </View>
-                </View>
-              </MotiView>
-            )}
-          </AnimatePresence>
-        </MotiView>
+          <View style={styles.featureRow}>
+            <Ionicons
+              name="checkmark-circle"
+              size={20}
+              color={COLORS.primary}
+            />
+            <Text style={styles.featureText}>Profile visibility control</Text>
+          </View>
+        </View>
       </ScrollView>
 
-      <MotiView
-        from={{ opacity: 0, translateY: 50 }}
-        animate={{ opacity: 1, translateY: 0 }}
-        transition={{ type: "spring", delay: 500 }}
-        style={styles.footer}
-      >
-        <View style={styles.priceContainer}>
-          <Text style={styles.priceLabel}>Total</Text>
-          <Text style={styles.priceValue}>$19.99</Text>
-        </View>
-
+      <View style={styles.footer}>
         <TouchableOpacity
-          style={styles.payButton}
-          onPress={handlePayment}
-          disabled={loading}
+          style={[
+            styles.subscribeButton,
+            !selectedPlan && styles.subscribeButtonDisabled,
+          ]}
+          onPress={handleSubscribe}
+          disabled={!selectedPlan}
         >
           <LinearGradient
-            colors={COLORS.primaryGradient}
-            style={styles.payButtonGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
+            colors={selectedPlan ? COLORS.primaryGradient : ["#ccc", "#aaa"]}
+            style={styles.buttonGradient}
           >
-            {loading ? (
-              <MotiView
-                from={{ rotate: "0deg" }}
-                animate={{ rotate: "360deg" }}
-                transition={{ type: "timing", duration: 1000, loop: true }}
-              >
-                <Feather name="loader" size={24} color={COLORS.white} />
-              </MotiView>
-            ) : (
-              <>
-                <Text style={styles.payButtonText}>Pay Now</Text>
-                <Feather
-                  name="arrow-right"
-                  size={20}
-                  color={COLORS.white}
-                  style={{ marginLeft: 8 }}
-                />
-              </>
-            )}
+            <Text style={styles.buttonText}>
+              {selectedPlan
+                ? `Subscribe to ${selectedPlan.package_name}`
+                : "Select a Plan"}
+            </Text>
           </LinearGradient>
         </TouchableOpacity>
-
-        <View style={styles.secureNote}>
-          <Feather name="shield" size={16} color={COLORS.text} />
-          <Text style={styles.secureText}>Secure and encrypted payment</Text>
-        </View>
-      </MotiView>
-    </KeyboardAvoidingView>
+      </View>
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
   },
-  scrollView: {
+  loadingContainer: {
     flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  headerGradient: {
+    paddingTop: 20,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingTop: Platform.OS === "ios" ? 60 : 40,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    justifyContent: "space-between",
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.9)",
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  headerTitleContainer: {
-    marginLeft: 12,
+    padding: 8,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 20,
+    fontWeight: "bold",
+    color: COLORS.white,
+  },
+  placeholder: {
+    width: 40,
+  },
+  content: {
+    flex: 1,
+    padding: 20,
+  },
+  title: {
+    fontSize: 28,
     fontWeight: "bold",
     color: COLORS.text,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    color: COLORS.text,
-    opacity: 0.6,
-    marginTop: 4,
-  },
-  cardPreviewContainer: {
-    alignItems: "center",
-    marginVertical: 20,
-    height: CARD_HEIGHT,
-  },
-  cardContainer: {
-    width: CARD_WIDTH,
-    height: CARD_HEIGHT,
-    backfaceVisibility: "hidden",
-  },
-  card: {
-    flex: 1,
-    borderRadius: 20,
-    padding: 24,
-    overflow: "hidden",
-  },
-  shimmer: {
-    width: "100%",
-    height: "100%",
-    opacity: 0.1,
-    transform: [{ skewX: "-20deg" }],
-    backgroundColor: COLORS.white,
-  },
-  cardContent: {
-    flex: 1,
-    justifyContent: "space-between",
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  chip: {
-    width: 45,
-    height: 34,
-    backgroundColor: "#FFD700",
-    borderRadius: 8,
-    opacity: 0.8,
-  },
-  cardNumber: {
-    fontSize: 22,
-    color: COLORS.white,
-    letterSpacing: 2,
-    textShadowColor: "rgba(0,0,0,0.2)",
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-  cardFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  cardLabel: {
-    fontSize: 10,
-    color: COLORS.white,
-    opacity: 0.8,
-    marginBottom: 4,
-  },
-  cardValue: {
-    fontSize: 16,
-    color: COLORS.white,
-    letterSpacing: 1,
-  },
-  cardBack: {
-    flex: 1,
-    transform: [{ rotateY: "180deg" }],
-  },
-  magneticStrip: {
-    height: 40,
-    backgroundColor: "#000",
-    marginVertical: 20,
-  },
-  cvvContainer: {
-    padding: 20,
-  },
-  cvvLabel: {
-    fontSize: 12,
-    color: COLORS.white,
-    opacity: 0.8,
     marginBottom: 8,
   },
-  cvvStrip: {
-    backgroundColor: COLORS.white,
-    padding: 10,
-    borderRadius: 4,
-  },
-  cvvText: {
+  subtitle: {
     fontSize: 16,
-    textAlign: "right",
-    letterSpacing: 2,
+    color: "#666",
+    marginBottom: 24,
   },
-  paymentMethods: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    marginBottom: 20,
+  cardsContainer: {
+    gap: 16,
   },
-  methodButton: {
-    flex: 1,
-    marginHorizontal: 6,
+  featuresList: {
+    marginTop: 32,
+    backgroundColor: COLORS.white,
     borderRadius: 16,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  methodButtonSelected: {
-    shadowColor: COLORS.primary,
-    shadowOpacity: 0.2,
-  },
-  methodGradient: {
-    padding: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    height: 90,
-  },
-  methodLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: COLORS.text,
-    marginTop: 8,
-  },
-  methodLabelSelected: {
-    color: COLORS.white,
-  },
-  formContainer: {
     padding: 20,
+    marginBottom: 32,
   },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: "600",
+  allPlansTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
     color: COLORS.text,
-    marginBottom: 8,
+    marginBottom: 16,
   },
-  inputContainer: {
+  featureRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: COLORS.white,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    height: 56,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    marginBottom: 12,
   },
-  inputIcon: {
-    marginRight: 12,
-    opacity: 0.5,
-  },
-  input: {
-    flex: 1,
+  featureText: {
     fontSize: 16,
     color: COLORS.text,
-  },
-  row: {
-    flexDirection: "row",
+    marginLeft: 12,
   },
   footer: {
     padding: 20,
-    paddingBottom: Platform.OS === "ios" ? 40 : 20,
-    backgroundColor: "rgba(255,255,255,0.9)",
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: -4,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 8,
+    backgroundColor: COLORS.white,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border,
   },
-  priceContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  priceLabel: {
-    fontSize: 16,
-    color: COLORS.text,
-    opacity: 0.7,
-  },
-  priceValue: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: COLORS.text,
-  },
-  payButton: {
-    borderRadius: 30,
+  subscribeButton: {
     overflow: "hidden",
-    shadowColor: COLORS.primary,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    borderRadius: 12,
   },
-  payButtonGradient: {
+  subscribeButtonDisabled: {
+    opacity: 0.6,
+  },
+  buttonGradient: {
     paddingVertical: 16,
-    flexDirection: "row",
+    paddingHorizontal: 24,
     alignItems: "center",
-    justifyContent: "center",
   },
-  payButtonText: {
+  buttonText: {
     color: COLORS.white,
     fontSize: 18,
     fontWeight: "bold",
   },
-  secureNote: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    marginTop: 16,
+  errorContainer: {
+    backgroundColor: "#ffebee",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
   },
-  secureText: {
-    fontSize: 14,
-    color: COLORS.text,
-    marginLeft: 8,
-    opacity: 0.7,
+  errorText: {
+    color: COLORS.error,
+    textAlign: "center",
   },
 });
+
+export default PaymentScreen;

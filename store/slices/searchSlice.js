@@ -75,6 +75,7 @@ const initialState = {
   searchResults: [],
   loading: false,
   error: null,
+  hasSearched: false,
   success: false,
   hasLoadedPreferences: false,
   initialLoadComplete: false,
@@ -138,6 +139,9 @@ const searchSlice = createSlice({
     manuallySetLoading: (state, action) => {
       state.loading = action.payload;
     },
+    setHasSearched: (state, action) => {
+      state.hasSearched = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -188,10 +192,11 @@ export const {
   resetSearchState,
   setInitialLoadComplete,
   clearError,
+  setHasSearched,
   manuallySetLoading,
 } = searchSlice.actions;
 
-// Selectors
+export const selectHasSearched = (state) => state.search.hasSearched;
 export const selectPreferences = (state) => state.search.preferences;
 export const selectSearchResults = (state) => state.search.searchResults;
 export const selectSearchLoading = (state) => state.search.loading;

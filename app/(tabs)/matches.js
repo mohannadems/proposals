@@ -35,6 +35,7 @@ import createStyles from "../../styles/matches";
 import withProfileCompletion from "../../components/profile/withProfileCompletion";
 import { useImageUtils } from "../../hooks/useImageUtils";
 import { fetchProfileCompletionData } from "../../store/slices/profileCompletionSlice";
+import { selectHasSearched } from "../../store/slices/searchSlice";
 import {
   fetchUserMatches,
   fetchFilteredMatches,
@@ -469,6 +470,8 @@ const LoadingIndicator = memo(({ styles }) => (
 ));
 
 const MatchesScreen = () => {
+  const hasSearched = useSelector(selectHasSearched);
+
   const { t, isRTL } = useContext(LanguageContext);
   const styles = createStyles(isRTL);
 
@@ -696,9 +699,9 @@ const MatchesScreen = () => {
         ? t("matches.sections.more_profiles_liked")
         : t("matches.sections.suggested_matches"),
     [activeFilter, t]
-  ); // Add the renderContent function right before the return statement
+  );
   const renderContent = () => {
-    if (!hasSubmittedFilters) {
+    if (!hasSubmittedFilters && !hasSearched) {
       return (
         <NoFiltersPlaceholder
           styles={styles}
