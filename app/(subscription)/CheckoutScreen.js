@@ -1,5 +1,5 @@
 // screens/CheckoutScreen.js
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import {
   View,
   Text,
@@ -11,16 +11,19 @@ import {
   Platform,
   Alert,
   Animated,
+  I18nManager,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import COLORS from "../../constants/colors";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { LanguageContext } from "../../contexts/LanguageContext";
 
 const CheckoutScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { isRTL, t } = useContext(LanguageContext);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
   const [cardNumber, setCardNumber] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
@@ -37,15 +40,49 @@ const CheckoutScreen = () => {
       }
     : null;
 
+  // Check if the plan name is already in Arabic
+  const isArabicName = /[\u0600-\u06FF]/.test(plan?.package_name || "");
+
+  // Map Arabic to English for badge letter
+  const arabicToEnglishMap = {
+    أساسي: "Basic",
+    بريميوم: "Premium",
+    ذهبي: "Gold",
+  };
+
+  // Get the appropriate badge letter
+  const badgeLetter = plan
+    ? isArabicName
+      ? plan.package_name.charAt(0)
+      : plan.package_name.charAt(0)
+    : "";
+
   const paymentMethods = [
-    { id: "card", icon: "card", label: "Credit/Debit Card" },
-    { id: "apple", icon: "logo-apple", label: "Apple Pay" },
-    { id: "google", icon: "logo-google", label: "Google Pay" },
+    {
+      id: "card",
+      icon: "card",
+      label: t ? t("checkout.credit_card") : "Credit/Debit Card",
+    },
+    {
+      id: "apple",
+      icon: "logo-apple",
+      label: t ? t("checkout.apple_pay") : "Apple Pay",
+    },
+    {
+      id: "google",
+      icon: "logo-google",
+      label: t ? t("checkout.google_pay") : "Google Pay",
+    },
   ];
 
   const handlePayment = () => {
     if (!selectedPaymentMethod) {
-      Alert.alert("Payment Method", "Please select a payment method");
+      Alert.alert(
+        t ? t("checkout.payment_method") : "Payment Method",
+        t
+          ? t("checkout.select_payment_method")
+          : "Please select a payment method"
+      );
       return;
     }
 
@@ -53,7 +90,10 @@ const CheckoutScreen = () => {
       selectedPaymentMethod === "card" &&
       (!cardNumber || !expiryDate || !cvv || !cardHolderName)
     ) {
-      Alert.alert("Card Details", "Please fill in all card details");
+      Alert.alert(
+        t ? t("checkout.card_details") : "Card Details",
+        t ? t("checkout.fill_card_details") : "Please fill in all card details"
+      );
       return;
     }
 
@@ -71,7 +111,11 @@ const CheckoutScreen = () => {
       }),
     ]).start(() => {
       // Implement payment logic here
-      alert("Payment processing would happen here");
+      alert(
+        t
+          ? t("checkout.payment_processing")
+          : "Payment processing would happen here"
+      );
     });
   };
 
@@ -94,10 +138,16 @@ const CheckoutScreen = () => {
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
           <Ionicons name="warning-outline" size={60} color={COLORS.error} />
-          <Text style={styles.errorTitle}>Oops!</Text>
-          <Text style={styles.errorText}>No plan selected</Text>
-          <Text style={styles.errorSubtext}>
-            Please go back and select a plan to continue.
+          <Text style={[styles.errorTitle, isRTL && styles.textRTL]}>
+            {t ? t("checkout.oops") : "Oops!"}
+          </Text>
+          <Text style={[styles.errorText, isRTL && styles.textRTL]}>
+            {t ? t("checkout.no_plan_selected") : "No plan selected"}
+          </Text>
+          <Text style={[styles.errorSubtext, isRTL && styles.textRTL]}>
+            {t
+              ? t("checkout.go_back_select")
+              : "Please go back and select a plan to continue."}
           </Text>
           <TouchableOpacity
             style={styles.errorButton}
@@ -107,7 +157,9 @@ const CheckoutScreen = () => {
               colors={COLORS.primaryGradient}
               style={styles.errorButtonGradient}
             >
-              <Text style={styles.errorButtonText}>Go Back</Text>
+              <Text style={styles.errorButtonText}>
+                {t ? t("common.go_back") : "Go Back"}
+              </Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
@@ -125,14 +177,20 @@ const CheckoutScreen = () => {
           colors={COLORS.primaryGradient}
           style={styles.headerGradient}
         >
-          <View style={styles.header}>
+          <View style={[styles.header, isRTL && styles.headerRTL]}>
             <TouchableOpacity
               onPress={() => router.back()}
               style={styles.backButton}
             >
-              <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+              <Ionicons
+                name={isRTL ? "arrow-forward" : "arrow-back"}
+                size={24}
+                color={COLORS.white}
+              />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Checkout</Text>
+            <Text style={styles.headerTitle}>
+              {t ? t("checkout.checkout") : "Checkout"}
+            </Text>
             <View style={styles.placeholder} />
           </View>
         </LinearGradient>
@@ -144,43 +202,65 @@ const CheckoutScreen = () => {
         >
           {/* Order Summary */}
           <View style={styles.orderSummary}>
-            <Text style={styles.sectionTitle}>Order Summary</Text>
+            <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>
+              {t ? t("checkout.order_summary") : "Order Summary"}
+            </Text>
             <LinearGradient
               colors={[COLORS.white, "#f8f9fa"]}
               style={styles.summaryCard}
             >
-              <View style={styles.planHeader}>
+              <View style={[styles.planHeader, isRTL && styles.planHeaderRTL]}>
                 <View style={styles.planBadge}>
                   <LinearGradient
                     colors={COLORS.primaryGradient}
                     style={styles.planBadgeGradient}
                   >
-                    <Text style={styles.planBadgeText}>
-                      {plan.package_name.charAt(0)}
-                    </Text>
+                    <Text style={styles.planBadgeText}>{badgeLetter}</Text>
                   </LinearGradient>
                 </View>
                 <View style={styles.planInfo}>
-                  <Text style={styles.planName}>{plan.package_name} Plan</Text>
-                  <Text style={styles.planDescription}>
-                    {plan.contact_limit} contacts per month
+                  <Text style={[styles.planName, isRTL && styles.textRTL]}>
+                    {plan.package_name} {t ? t("checkout.plan") : "Plan"}
+                  </Text>
+                  <Text
+                    style={[styles.planDescription, isRTL && styles.textRTL]}
+                  >
+                    {t
+                      ? t("checkout.contacts_per_month", {
+                          count: plan.contact_limit,
+                        })
+                      : `${plan.contact_limit} contacts per month`}
                   </Text>
                 </View>
               </View>
 
               <View style={styles.priceBreakdown}>
-                <View style={styles.priceRow}>
-                  <Text style={styles.priceLabel}>Monthly Subscription</Text>
+                <View style={[styles.priceRow, isRTL && styles.priceRowRTL]}>
+                  <Text style={[styles.priceLabel, isRTL && styles.textRTL]}>
+                    {t
+                      ? t("checkout.monthly_subscription")
+                      : "Monthly Subscription"}
+                  </Text>
                   <Text style={styles.priceValue}>${plan.price}</Text>
                 </View>
-                <View style={styles.priceRow}>
-                  <Text style={styles.priceLabel}>Discount</Text>
+                <View style={[styles.priceRow, isRTL && styles.priceRowRTL]}>
+                  <Text style={[styles.priceLabel, isRTL && styles.textRTL]}>
+                    {t ? t("checkout.discount") : "Discount"}
+                  </Text>
                   <Text style={[styles.priceValue, styles.discountText]}>
                     -$0.00
                   </Text>
                 </View>
-                <View style={[styles.priceRow, styles.totalRow]}>
-                  <Text style={styles.totalLabel}>Total Amount</Text>
+                <View
+                  style={[
+                    styles.priceRow,
+                    styles.totalRow,
+                    isRTL && styles.priceRowRTL,
+                  ]}
+                >
+                  <Text style={[styles.totalLabel, isRTL && styles.textRTL]}>
+                    {t ? t("checkout.total_amount") : "Total Amount"}
+                  </Text>
                   <Text style={styles.totalValue}>${plan.price}</Text>
                 </View>
               </View>
@@ -189,7 +269,9 @@ const CheckoutScreen = () => {
 
           {/* Payment Methods */}
           <View style={styles.paymentSection}>
-            <Text style={styles.sectionTitle}>Payment Method</Text>
+            <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>
+              {t ? t("checkout.payment_method") : "Payment Method"}
+            </Text>
             <View style={styles.paymentMethods}>
               {paymentMethods.map((method) => (
                 <TouchableOpacity
@@ -198,6 +280,7 @@ const CheckoutScreen = () => {
                     styles.paymentMethod,
                     selectedPaymentMethod === method.id &&
                       styles.selectedPaymentMethod,
+                    isRTL && styles.paymentMethodRTL,
                   ]}
                   onPress={() => setSelectedPaymentMethod(method.id)}
                 >
@@ -215,6 +298,7 @@ const CheckoutScreen = () => {
                       styles.paymentMethodText,
                       selectedPaymentMethod === method.id &&
                         styles.selectedPaymentMethodText,
+                      isRTL && styles.textRTL,
                     ]}
                   >
                     {method.label}
@@ -234,24 +318,33 @@ const CheckoutScreen = () => {
           {/* Card Details Form */}
           {selectedPaymentMethod === "card" && (
             <View style={styles.cardForm}>
-              <Text style={styles.sectionTitle}>Card Details</Text>
+              <Text style={[styles.sectionTitle, isRTL && styles.textRTL]}>
+                {t ? t("checkout.card_details") : "Card Details"}
+              </Text>
               <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Card Number</Text>
+                <Text style={[styles.inputLabel, isRTL && styles.textRTL]}>
+                  {t ? t("checkout.card_number") : "Card Number"}
+                </Text>
                 <TextInput
-                  style={styles.input}
-                  placeholder="1234 5678 9012 3456"
+                  style={[styles.input, isRTL && styles.inputRTL]}
+                  placeholder={
+                    isRTL ? "3456 9012 5678 1234" : "1234 5678 9012 3456"
+                  }
                   value={cardNumber}
                   onChangeText={(text) => setCardNumber(formatCardNumber(text))}
                   keyboardType="numeric"
                   maxLength={19}
+                  textAlign={isRTL ? "right" : "left"}
                 />
               </View>
 
-              <View style={styles.row}>
+              <View style={[styles.row, isRTL && styles.rowRTL]}>
                 <View style={[styles.inputContainer, styles.halfWidth]}>
-                  <Text style={styles.inputLabel}>Expiry Date</Text>
+                  <Text style={[styles.inputLabel, isRTL && styles.textRTL]}>
+                    {t ? t("checkout.expiry_date") : "Expiry Date"}
+                  </Text>
                   <TextInput
-                    style={styles.input}
+                    style={[styles.input, isRTL && styles.inputRTL]}
                     placeholder="MM/YY"
                     value={expiryDate}
                     onChangeText={(text) =>
@@ -259,31 +352,38 @@ const CheckoutScreen = () => {
                     }
                     keyboardType="numeric"
                     maxLength={5}
+                    textAlign={isRTL ? "right" : "left"}
                   />
                 </View>
 
                 <View style={[styles.inputContainer, styles.halfWidth]}>
-                  <Text style={styles.inputLabel}>CVV</Text>
+                  <Text style={[styles.inputLabel, isRTL && styles.textRTL]}>
+                    {t ? t("checkout.cvv") : "CVV"}
+                  </Text>
                   <TextInput
-                    style={styles.input}
+                    style={[styles.input, isRTL && styles.inputRTL]}
                     placeholder="123"
                     value={cvv}
                     onChangeText={setCvv}
                     keyboardType="numeric"
                     maxLength={3}
                     secureTextEntry
+                    textAlign={isRTL ? "right" : "left"}
                   />
                 </View>
               </View>
 
               <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Cardholder Name</Text>
+                <Text style={[styles.inputLabel, isRTL && styles.textRTL]}>
+                  {t ? t("checkout.cardholder_name") : "Cardholder Name"}
+                </Text>
                 <TextInput
-                  style={styles.input}
-                  placeholder="John Doe"
+                  style={[styles.input, isRTL && styles.inputRTL]}
+                  placeholder={isRTL ? "محمد أحمد" : "John Doe"}
                   value={cardHolderName}
                   onChangeText={setCardHolderName}
                   autoCapitalize="words"
+                  textAlign={isRTL ? "right" : "left"}
                 />
               </View>
             </View>
@@ -300,17 +400,32 @@ const CheckoutScreen = () => {
             <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
               <LinearGradient
                 colors={COLORS.primaryGradient}
-                style={styles.payButtonGradient}
+                style={[
+                  styles.payButtonGradient,
+                  isRTL && styles.payButtonGradientRTL,
+                ]}
               >
-                <Text style={styles.payButtonText}>Pay ${plan.price}</Text>
-                <Ionicons name="arrow-forward" size={20} color={COLORS.white} />
+                <Text style={styles.payButtonText}>
+                  {t
+                    ? t("checkout.pay_amount", { amount: plan.price })
+                    : `Pay $${plan.price}`}
+                </Text>
+                <Ionicons
+                  name={isRTL ? "arrow-back" : "arrow-forward"}
+                  size={20}
+                  color={COLORS.white}
+                />
               </LinearGradient>
             </Animated.View>
           </TouchableOpacity>
 
-          <View style={styles.securePayment}>
+          <View
+            style={[styles.securePayment, isRTL && styles.securePaymentRTL]}
+          >
             <Ionicons name="shield-checkmark" size={16} color="#666" />
-            <Text style={styles.secureText}>Secure Payment</Text>
+            <Text style={styles.secureText}>
+              {t ? t("checkout.secure_payment") : "Secure Payment"}
+            </Text>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -331,6 +446,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  headerRTL: {
+    flexDirection: "row-reverse",
   },
   backButton: {
     padding: 8,
@@ -360,6 +478,9 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     marginBottom: 16,
   },
+  textRTL: {
+    textAlign: "right",
+  },
   summaryCard: {
     borderRadius: 16,
     padding: 20,
@@ -373,6 +494,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 20,
+  },
+  planHeaderRTL: {
+    flexDirection: "row-reverse",
   },
   planBadge: {
     width: 50,
@@ -413,6 +537,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 12,
+  },
+  priceRowRTL: {
+    flexDirection: "row-reverse",
   },
   priceLabel: {
     fontSize: 14,
@@ -457,6 +584,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "transparent",
   },
+  paymentMethodRTL: {
+    flexDirection: "row-reverse",
+  },
   selectedPaymentMethod: {
     borderColor: COLORS.primary,
     backgroundColor: "#f8f9fa",
@@ -465,6 +595,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     marginLeft: 12,
+    marginRight: 12,
     color: "#666",
   },
   selectedPaymentMethodText: {
@@ -491,9 +622,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
   },
+  inputRTL: {
+    textAlign: "right",
+  },
   row: {
     flexDirection: "row",
     gap: 16,
+  },
+  rowRTL: {
+    flexDirection: "row-reverse",
   },
   halfWidth: {
     flex: 1,
@@ -515,21 +652,29 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
   },
+  payButtonGradientRTL: {
+    flexDirection: "row-reverse",
+  },
   payButtonText: {
     color: COLORS.white,
     fontSize: 18,
     fontWeight: "bold",
     marginRight: 8,
+    marginLeft: 8,
   },
   securePayment: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
   },
+  securePaymentRTL: {
+    flexDirection: "row-reverse",
+  },
   secureText: {
     fontSize: 14,
     color: "#666",
     marginLeft: 4,
+    marginRight: 4,
   },
   errorContainer: {
     flex: 1,

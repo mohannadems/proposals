@@ -1,4 +1,60 @@
 {
+  "checkout": {
+    "checkout": "الدفع",
+    "credit_card": "بطاقة الائتمان/الخصم",
+    "apple_pay": "آبل باي",
+    "google_pay": "جوجل باي",
+    "payment_method": "طريقة الدفع",
+    "select_payment_method": "يرجى اختيار طريقة الدفع",
+    "card_details": "تفاصيل البطاقة",
+    "fill_card_details": "يرجى ملء جميع تفاصيل البطاقة",
+    "payment_processing": "سيتم معالجة الدفع هنا",
+    "oops": "عذراً!",
+    "no_plan_selected": "لم يتم اختيار أي خطة",
+    "go_back_select": "يرجى الرجوع واختيار خطة للمتابعة.",
+    "order_summary": "ملخص الطلب",
+    "plan": "خطة",
+    "contacts_per_month": "{{count}} جهة اتصال شهرياً",
+    "monthly_subscription": "الاشتراك الشهري",
+    "discount": "الخصم",
+    "total_amount": "المبلغ الإجمالي",
+    "card_number": "رقم البطاقة",
+    "expiry_date": "تاريخ الانتهاء",
+    "cvv": "رمز الأمان",
+    "cardholder_name": "اسم حامل البطاقة",
+    "pay_amount": "ادفع {{amount}}$",
+    "secure_payment": "دفع آمن"
+  },
+  "common": {
+    "go_back": "رجوع"
+  },
+  "subscription": {
+    "choose_plan": "اختر خطتك",
+    "upgrade_experience": "قم بترقية تجربتك",
+    "select_perfect_plan": "اختر الخطة المثالية لاحتياجاتك",
+    "all_plans_include": "جميع الخطط تشمل:",
+    "unlimited_swipes": "تمريرات غير محدودة",
+    "message_encryption": "تشفير الرسائل",
+    "profile_visibility": "التحكم في ظهور الملف الشخصي",
+    "select_plan_title": "يرجى اختيار خطة",
+    "select_plan_message": "تحتاج إلى اختيار خطة اشتراك للمتابعة.",
+    "subscribe_to": "اشترك في {{plan}}",
+    "select_plan": "اختر خطة",
+    "most_popular": "الأكثر شعبية",
+    "per_month": "/شهريًا",
+    "contact_with_people": "التواصل مع {{count}} شخص",
+    "advanced_matching": "خوارزمية مطابقة متقدمة",
+    "premium_matching": "مطابقة مميزة وتعزيز الملف الشخصي",
+    "vip_support": "دعم عملاء VIP",
+    "plans": {
+      "basic": "أساسي",
+      "premium": "مميز",
+      "gold": "ذهبي",
+      "Basic": "أساسي",
+      "Premium": "مميز",
+      "Gold": "ذهبي"
+    }
+  },
   "report": {
     "title": "الإبلاغ عن {{name}}",
     "select_reason": "يرجى اختيار سبب الإبلاغ:",
@@ -140,6 +196,19 @@
   },
 
   "profile": {
+    "change_language_title": "تغيير اللغة",
+    "change_language_message": "هل تريد تغيير اللغة من {{from}} إلى {{to}}؟",
+    "language_changed_restart": "تم تغيير اللغة بنجاح. سيتم إعادة تشغيل التطبيق لتطبيق التغييرات.",
+    "language_change_error": "فشل تغيير اللغة. يرجى المحاولة مرة أخرى.",
+    "language_changed": "تم تغيير اللغة بنجاح",
+    "language": "اللغة",
+    "subscription": "الاشتراك",
+    "upgrade_plan": "ترقية خطتك",
+    "logout": "تسجيل الخروج",
+    "logout_title": "تسجيل الخروج",
+    "logout_message": "هل أنت متأكد أنك تريد تسجيل الخروج؟",
+    "logout_failed": "فشل تسجيل الخروج",
+    "logout_error": "غير قادر على تسجيل الخروج. يرجى المحاولة مرة أخرى.",
     "update_photo": "تحديث صورة الملف الشخصي",
     "update_photo_hint": "انقر مرتين لاختيار صورة جديدة",
     "logout_title": "تسجيل الخروج",
@@ -157,6 +226,13 @@
       "active": "نشط",
       "inactive": "غير نشط",
       "pending": "قيد الانتظار"
+    },
+    "common": {
+      "confirm": "تأكيد",
+      "cancel": "إلغاء",
+      "ok": "موافق",
+      "error": "خطأ",
+      "success": "نجاح"
     },
 
     "sections": {

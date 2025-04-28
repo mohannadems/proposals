@@ -18,10 +18,14 @@ import {
   Alert,
   I18nManager,
 } from "react-native";
+import { Updates } from "expo-updates";
+
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useDispatch, useSelector } from "react-redux";
 import { MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { COLORS } from "../../constants/colors";
+import ProfileDropdownMenu from "../../components/profile/ProfileDropdownMenu";
 import {
   fetchProfile,
   updateProfilePhoto,
@@ -184,7 +188,8 @@ const ProfileSection = ({ title, children, fields, profile }) => {
 };
 
 const ProfileScreen = () => {
-  const { isRTL, t } = useContext(LanguageContext);
+  const { isRTL, t, locale, changeLanguage } = useContext(LanguageContext);
+
   const fetchedRef = useRef(false);
   const isFirstMount = useRef(true);
 
@@ -299,7 +304,51 @@ const ProfileScreen = () => {
       ]
     );
   }, [dispatch, router, t]);
+  const handleLanguageChange = async (newLanguage) => {
+    // Get the current language from LanguageContext
+    const currentLanguage = locale; // Note: it's 'locale' not 'language'
 
+    // First, ask the user if they want to change the language
+    const targetLanguageText = newLanguage === "ar" ? "العربية" : "English";
+    const currentLanguageText =
+      currentLanguage === "ar" ? "العربية" : "English";
+
+    Alert.alert(
+      t ? t("profile.change_language_title") : "Change Language",
+      t
+        ? t("profile.change_language_message", {
+            from: currentLanguageText,
+            to: targetLanguageText,
+          })
+        : `Do you want to change the language from ${currentLanguageText} to ${targetLanguageText}?`,
+      [
+        {
+          text: t ? t("common.cancel") : "Cancel",
+          style: "cancel",
+        },
+        {
+          text: t ? t("common.confirm") : "Confirm",
+          onPress: async () => {
+            try {
+              // Use changeLanguage from context instead of setLanguage
+              await changeLanguage(newLanguage);
+
+              // The changeLanguage function already handles reloading the app
+              // So we don't need to do anything else here
+            } catch (error) {
+              console.error("Error changing language:", error);
+              Alert.alert(
+                t ? t("common.error") : "Error",
+                t
+                  ? t("profile.language_change_error")
+                  : "Failed to change language. Please try again."
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
   const calculateProgress = () => {
     if (!profile) return 0;
     const allFields = Object.values(sectionFields).flat();
@@ -420,41 +469,46 @@ const ProfileScreen = () => {
           colors={[COLORS.primary, COLORS.secondary]}
           style={styles.header}
         >
-          <TouchableOpacity
-            style={[
-              styles.logoutButton,
-              { right: isRTL ? "auto" : 20, left: isRTL ? 20 : "auto" },
-            ]}
-            onPress={handleLogout}
+          <View
+            style={{
+              position: "absolute",
+              top: Platform.OS === "ios" ? 50 : 20,
+              right: isRTL ? undefined : 20,
+              left: isRTL ? 20 : undefined,
+              zIndex: 10,
+              alignItems: "center",
+            }}
           >
-            <MaterialIcons name="logout" size={24} color={COLORS.white} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.logoutButtonn,
-              {
-                right: isRTL ? "auto" : 20,
-                left: isRTL ? 20 : "auto",
-                top: isRTL ? 170 : 170,
-              },
-            ]}
-            onPress={() =>
-              router.push({
-                pathname: "../(profile)/seeMyProfile",
-                params: { userId: profile.id },
-              })
-            }
-          >
-            <MaterialIcons
-              name="remove-red-eye"
-              size={24}
-              color={COLORS.white}
+            <ProfileDropdownMenu
+              onLogout={handleLogout}
+              onLanguageChange={handleLanguageChange}
             />
-          </TouchableOpacity>
 
-          <LanguageSelector />
-
+            <TouchableOpacity
+              style={[
+                styles.logoutButtonn,
+                {
+                  marginTop: 16,
+                  position: "relative",
+                  top: 0,
+                  right: 0,
+                  left: 0,
+                },
+              ]}
+              onPress={() =>
+                router.push({
+                  pathname: "../(profile)/seeMyProfile",
+                  params: { userId: profile.id },
+                })
+              }
+            >
+              <MaterialIcons
+                name="remove-red-eye"
+                size={24}
+                color={COLORS.white}
+              />
+            </TouchableOpacity>
+          </View>
           <View
             style={styles.profileHeader}
             accessibilityLabel="Profile Header"

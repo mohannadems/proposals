@@ -706,7 +706,6 @@ const AdvancedSearchScreen = () => {
                 }))}
                 selectedItems={preferences.preferred_pets_id || []}
                 onSelectItem={(items) => {
-                  // Check if this is a new filter selection
                   const isNewSelection =
                     !preferences.preferred_pets_id ||
                     preferences.preferred_pets_id.length === 0;

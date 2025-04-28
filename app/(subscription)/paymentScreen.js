@@ -1,5 +1,5 @@
 // screens/PaymentScreen.js
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Dimensions,
+  I18nManager,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { LinearGradient } from "expo-linear-gradient";
@@ -21,12 +22,14 @@ import {
   selectPlan,
 } from "../../store/slices/subscriptionSlice";
 import { useRouter } from "expo-router";
+import { LanguageContext } from "../../contexts/LanguageContext";
 
 const { width } = Dimensions.get("window");
 
 const PaymentScreen = ({ route }) => {
   const dispatch = useDispatch();
   const router = useRouter();
+  const { isRTL, t } = useContext(LanguageContext);
   const { subscriptionCards, loading, error, selectedPlan } = useSelector(
     (state) => state.subscription
   );
@@ -58,9 +61,11 @@ const PaymentScreen = ({ route }) => {
   const handleSubscribe = () => {
     if (!selectedPlan) {
       Alert.alert(
-        "Please select a plan",
-        "You need to choose a subscription plan to continue.",
-        [{ text: "OK", style: "default" }]
+        t ? t("subscription.select_plan_title") : "Please select a plan",
+        t
+          ? t("subscription.select_plan_message")
+          : "You need to choose a subscription plan to continue.",
+        [{ text: t ? t("common.ok") : "OK", style: "default" }]
       );
       return;
     }
@@ -88,22 +93,36 @@ const PaymentScreen = ({ route }) => {
         colors={COLORS.primaryGradient}
         style={styles.headerGradient}
       >
-        <View style={styles.header}>
+        <View style={[styles.header, isRTL && styles.headerRTL]}>
           <TouchableOpacity
             onPress={() => router.back()}
             style={styles.backButton}
           >
-            <Ionicons name="arrow-back" size={24} color={COLORS.white} />
+            <Ionicons
+              name={isRTL ? "arrow-forward" : "arrow-back"}
+              size={24}
+              color={COLORS.white}
+            />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Choose Your Plan</Text>
+          <Text style={styles.headerTitle}>
+            {t ? t("subscription.choose_plan") : "Choose Your Plan"}
+          </Text>
           <View style={styles.placeholder} />
         </View>
       </LinearGradient>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Upgrade Your Experience</Text>
-        <Text style={styles.subtitle}>
-          Select the perfect plan for your needs
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={isRTL && { alignItems: "flex-end" }}
+      >
+        <Text style={[styles.title, isRTL && styles.textRTL]}>
+          {t ? t("subscription.upgrade_experience") : "Upgrade Your Experience"}
+        </Text>
+        <Text style={[styles.subtitle, isRTL && styles.textRTL]}>
+          {t
+            ? t("subscription.select_perfect_plan")
+            : "Select the perfect plan for your needs"}
         </Text>
 
         {error && (
@@ -120,35 +139,61 @@ const PaymentScreen = ({ route }) => {
               isSelected={selectedCardIndex === index}
               onSelect={handleSelectPlan}
               index={index}
+              isRTL={isRTL}
             />
           ))}
         </View>
 
         <View style={styles.featuresList}>
-          <Text style={styles.allPlansTitle}>All Plans Include:</Text>
-          <View style={styles.featureRow}>
+          <Text style={[styles.allPlansTitle, isRTL && styles.textRTL]}>
+            {t ? t("subscription.all_plans_include") : "All Plans Include:"}
+          </Text>
+          <View style={[styles.featureRow, isRTL && styles.featureRowRTL]}>
             <Ionicons
               name="checkmark-circle"
               size={20}
               color={COLORS.primary}
             />
-            <Text style={styles.featureText}>Unlimited swipes</Text>
+            <Text
+              style={[
+                styles.featureText,
+                isRTL ? styles.featureTextRTL : styles.featureTextLTR,
+              ]}
+            >
+              {t ? t("subscription.unlimited_swipes") : "Unlimited swipes"}
+            </Text>
           </View>
-          <View style={styles.featureRow}>
+          <View style={[styles.featureRow, isRTL && styles.featureRowRTL]}>
             <Ionicons
               name="checkmark-circle"
               size={20}
               color={COLORS.primary}
             />
-            <Text style={styles.featureText}>Message encryption</Text>
+            <Text
+              style={[
+                styles.featureText,
+                isRTL ? styles.featureTextRTL : styles.featureTextLTR,
+              ]}
+            >
+              {t ? t("subscription.message_encryption") : "Message encryption"}
+            </Text>
           </View>
-          <View style={styles.featureRow}>
+          <View style={[styles.featureRow, isRTL && styles.featureRowRTL]}>
             <Ionicons
               name="checkmark-circle"
               size={20}
               color={COLORS.primary}
             />
-            <Text style={styles.featureText}>Profile visibility control</Text>
+            <Text
+              style={[
+                styles.featureText,
+                isRTL ? styles.featureTextRTL : styles.featureTextLTR,
+              ]}
+            >
+              {t
+                ? t("subscription.profile_visibility")
+                : "Profile visibility control"}
+            </Text>
           </View>
         </View>
       </ScrollView>
@@ -168,7 +213,13 @@ const PaymentScreen = ({ route }) => {
           >
             <Text style={styles.buttonText}>
               {selectedPlan
-                ? `Subscribe to ${selectedPlan.package_name}`
+                ? t
+                  ? t("subscription.subscribe_to", {
+                      plan: selectedPlan.package_name,
+                    })
+                  : `Subscribe to ${selectedPlan.package_name}`
+                : t
+                ? t("subscription.select_plan")
                 : "Select a Plan"}
             </Text>
           </LinearGradient>
@@ -198,6 +249,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
+  headerRTL: {
+    flexDirection: "row-reverse",
+  },
   backButton: {
     padding: 8,
   },
@@ -224,6 +278,10 @@ const styles = StyleSheet.create({
     color: "#666",
     marginBottom: 24,
   },
+  textRTL: {
+    textAlign: "right",
+    writingDirection: "rtl",
+  },
   cardsContainer: {
     gap: 16,
   },
@@ -245,10 +303,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 12,
   },
+  featureRowRTL: {
+    flexDirection: "row-reverse",
+  },
   featureText: {
     fontSize: 16,
     color: COLORS.text,
+  },
+  featureTextLTR: {
     marginLeft: 12,
+  },
+  featureTextRTL: {
+    marginRight: 12,
+    textAlign: "right",
   },
   footer: {
     padding: 20,

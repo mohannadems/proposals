@@ -1,4 +1,57 @@
 {
+  "checkout": {
+    "checkout": "Checkout",
+    "credit_card": "Credit/Debit Card",
+    "apple_pay": "Apple Pay",
+    "google_pay": "Google Pay",
+    "payment_method": "Payment Method",
+    "select_payment_method": "Please select a payment method",
+    "card_details": "Card Details",
+    "fill_card_details": "Please fill in all card details",
+    "payment_processing": "Payment processing would happen here",
+    "oops": "Oops!",
+    "no_plan_selected": "No plan selected",
+    "go_back_select": "Please go back and select a plan to continue.",
+    "order_summary": "Order Summary",
+    "plan": "Plan",
+    "contacts_per_month": "{{count}} contacts per month",
+    "monthly_subscription": "Monthly Subscription",
+    "discount": "Discount",
+    "total_amount": "Total Amount",
+    "card_number": "Card Number",
+    "expiry_date": "Expiry Date",
+    "cvv": "CVV",
+    "cardholder_name": "Cardholder Name",
+    "pay_amount": "Pay ${{amount}}",
+    "secure_payment": "Secure Payment"
+  },
+  "common": {
+    "go_back": "Go Back"
+  },
+  "subscription": {
+    "choose_plan": "Choose Your Plan",
+    "upgrade_experience": "Upgrade Your Experience",
+    "select_perfect_plan": "Select the perfect plan for your needs",
+    "all_plans_include": "All Plans Include:",
+    "unlimited_swipes": "Unlimited swipes",
+    "message_encryption": "Message encryption",
+    "profile_visibility": "Profile visibility control",
+    "select_plan_title": "Please select a plan",
+    "select_plan_message": "You need to choose a subscription plan to continue.",
+    "subscribe_to": "Subscribe to {{plan}}",
+    "select_plan": "Select a Plan",
+    "most_popular": "MOST POPULAR",
+    "per_month": "/month",
+    "contact_with_people": "Contact with {{count}} people",
+    "advanced_matching": "Advanced matching algorithm",
+    "premium_matching": "Premium matching & profile boost",
+    "vip_support": "VIP customer support",
+    "plans": {
+      "basic": "Basic",
+      "premium": "Premium",
+      "gold": "Gold"
+    }
+  },
   "report": {
     "title": "Report {{name}}",
     "select_reason": "Please select a reason for reporting:",
@@ -140,6 +193,20 @@
   },
 
   "profile": {
+    "change_language_title": "Change Language",
+    "change_language_message": "Do you want to change the language from {{from}} to {{to}}?",
+    "language_changed_restart": "Language changed successfully. The app will restart to apply changes.",
+    "language_change_error": "Failed to change language. Please try again.",
+    "language_changed": "Language changed successfully",
+
+    "language": "Language",
+    "subscription": "Subscription",
+    "upgrade_plan": "Upgrade your plan",
+    "logout": "Logout",
+    "logout_title": "Logout",
+    "logout_message": "Are you sure you want to log out?",
+    "logout_failed": "Logout Failed",
+    "logout_error": "Unable to logout. Please try again.",
     "update_photo": "Update profile photo",
     "update_photo_hint": "Double tap to choose a new profile photo",
     "logout_title": "Logout",
@@ -402,6 +469,13 @@
       "pick_error": "Failed to pick image. Please try again.",
       "remove_error": "Failed to remove image. Please try again.",
       "size_error": "Image size should be less than 5MB"
+    },
+    "common": {
+      "confirm": "Confirm",
+      "cancel": "Cancel",
+      "ok": "OK",
+      "error": "Error",
+      "success": "Success"
     }
   },
   "tabs": {

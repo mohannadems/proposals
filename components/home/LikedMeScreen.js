@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -12,81 +12,67 @@ import {
   Animated,
   Dimensions,
   Platform,
+  ActivityIndicator,
+  Alert,
+  RefreshControl,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import COLORS from "../../constants/colors";
 import { useRouter } from "expo-router";
+import { matchesService } from "../../services/matchesService";
+import { BASE_URL } from "../../constants/endpoints";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 const { width, height } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.9;
 const HEADER_HEIGHT = Platform.OS === "ios" ? 100 : 80;
 
-const LIKED_USERS = [
-  {
-    id: "1",
-    name: "Jessica Parker",
-    age: 28,
-    location: "New York, NY",
-    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330",
-    distance: "5 miles away",
-    matchPercentage: 85,
-    isOnline: true,
-    lastActive: null,
-    interests: ["Photography", "Travel", "Cooking"],
-  },
-  {
-    id: "2",
-    name: "Michael Chen",
-    age: 31,
-    location: "San Francisco, CA",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
-    distance: "12 miles away",
-    matchPercentage: 92,
-    isOnline: false,
-    lastActive: "2h ago",
-    interests: ["Hiking", "Technology", "Movies"],
-  },
-  {
-    id: "3",
-    name: "Sophia Rodriguez",
-    age: 26,
-    location: "Miami, FL",
-    image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80",
-    distance: "8 miles away",
-    matchPercentage: 78,
-    isOnline: true,
-    lastActive: null,
-    interests: ["Fitness", "Music", "Art"],
-  },
-  {
-    id: "4",
-    name: "David Kim",
-    age: 29,
-    location: "Chicago, IL",
-    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e",
-    distance: "15 miles away",
-    matchPercentage: 88,
-    isOnline: false,
-    lastActive: "5h ago",
-    interests: ["Reading", "Gaming", "Coffee"],
-  },
-  {
-    id: "5",
-    name: "Emma Wilson",
-    age: 27,
-    location: "Austin, TX",
-    image: "https://images.unsplash.com/photo-1544005313-94ddf0286df2",
-    distance: "3 miles away",
-    matchPercentage: 95,
-    isOnline: true,
-    lastActive: null,
-    interests: ["Yoga", "Painting", "Dancing"],
-  },
-];
-
 const LikedMeScreen = () => {
-  const [selectedTab, setSelectedTab] = useState("all");
+  const [likes, setLikes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [currentLanguage, setCurrentLanguage] = useState("en");
+
   const scrollY = useRef(new Animated.Value(0)).current;
-  const route = useRouter();
+  const router = useRouter();
+
+  // Load language preference
+  useEffect(() => {
+    const loadLanguage = async () => {
+      try {
+        const lang = (await AsyncStorage.getItem("userLanguage")) || "en";
+        setCurrentLanguage(lang);
+      } catch (error) {
+        console.error("Error loading language:", error);
+      }
+    };
+    loadLanguage();
+  }, []);
+
+  const fetchLikesData = async () => {
+    try {
+      setError(null);
+      const likesData = await matchesService.getLikes();
+      setLikes(likesData);
+    } catch (error) {
+      console.error("Error fetching likes:", error);
+      setError(error.message || "Error fetching likes");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLikesData();
+  }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchLikesData();
+  };
+
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, 50],
     outputRange: [1, 0.9],
@@ -99,15 +85,61 @@ const LikedMeScreen = () => {
     extrapolate: "clamp",
   });
 
-  const renderInterestTag = (interest) => (
-    <View key={interest} style={styles.interestTag}>
-      <Text style={styles.interestText}>{interest}</Text>
-    </View>
-  );
+  const handleCardPress = (user) => {
+    router.push({
+      pathname: "/(profile)/matchProfile",
+      params: {
+        userId: user.id,
+        fromTab: "likes",
+      },
+    });
+  };
+
+  const handleLikeBack = async (user) => {
+    const likeBackText =
+      currentLanguage === "ar" ? "إعجاب متبادل" : "Like Back";
+    const confirmText =
+      currentLanguage === "ar"
+        ? `هل أنت متأكد أنك تريد الإعجاب بـ ${user.first_name}؟`
+        : `Are you sure you want to like ${user.first_name} back?`;
+    const cancelText = currentLanguage === "ar" ? "إلغاء" : "Cancel";
+    const yesText = currentLanguage === "ar" ? "نعم" : "Yes";
+
+    Alert.alert(likeBackText, confirmText, [
+      {
+        text: cancelText,
+        style: "cancel",
+      },
+      {
+        text: yesText,
+        onPress: async () => {
+          try {
+            // TODO: Implement your like API call here
+            // await matchesService.likeUser(user.id);
+            console.log("Liking back user:", user.id);
+            await fetchLikesData();
+          } catch (error) {
+            const errorText =
+              currentLanguage === "ar"
+                ? "فشل في الإعجاب. يرجى المحاولة مرة أخرى."
+                : "Failed to like user back. Please try again.";
+            Alert.alert(currentLanguage === "ar" ? "خطأ" : "Error", errorText);
+          }
+        },
+      },
+    ]);
+  };
 
   const renderProfileCard = ({ item, index }) => {
+    const user = item.liked_user;
     const gradientDirection =
       index % 2 === 0 ? ["#9e086c", "#c7097e"] : ["#c7097e", "#9e086c"];
+
+    const mainPhoto =
+      user.photos?.find((photo) => photo.is_main) || user.photos?.[0];
+    const imageUrl = mainPhoto?.url
+      ? `${mainPhoto.url.startsWith("http") ? "" : BASE_URL}${mainPhoto.url}`
+      : "https://via.placeholder.com/500x500";
 
     return (
       <Animated.View
@@ -126,86 +158,119 @@ const LikedMeScreen = () => {
           },
         ]}
       >
-        <View style={styles.cardImageContainer}>
-          <Image
-            source={{ uri: `${item.image}?w=500&h=500&fit=crop` }}
-            style={styles.profileImage}
-          />
-          <LinearGradient
-            colors={["transparent", "rgba(0,0,0,0.7)"]}
-            style={styles.imageGradient}
-            start={{ x: 0, y: 0.6 }}
-            end={{ x: 0, y: 1 }}
-          />
-          <View style={styles.onlineIndicatorContainer}>
-            <View
-              style={[
-                styles.onlineIndicator,
-                {
-                  backgroundColor: item.isOnline
-                    ? COLORS.success
-                    : "transparent",
-                },
-              ]}
+        <TouchableOpacity
+          onPress={() => handleCardPress(user)}
+          activeOpacity={0.9}
+        >
+          <View style={styles.cardImageContainer}>
+            <Image
+              source={{ uri: imageUrl }}
+              style={styles.profileImage}
+              resizeMode="cover"
             />
-            <Text style={styles.onlineText}>
-              {item.isOnline ? "Online" : item.lastActive}
-            </Text>
-          </View>
-
-          <View style={styles.matchBadge}>
             <LinearGradient
-              colors={gradientDirection}
-              style={styles.matchBadgeGradient}
-            >
-              <Text style={styles.matchPercentage}>
-                {item.matchPercentage}%
+              colors={["transparent", "rgba(0,0,0,0.7)"]}
+              style={styles.imageGradient}
+              start={{ x: 0, y: 0.6 }}
+              end={{ x: 0, y: 1 }}
+            />
+          </View>
+
+          <View style={styles.cardContent}>
+            <View style={styles.nameContainer}>
+              <Text style={styles.name}>
+                {user.first_name} {user.last_name}
               </Text>
-              <Text style={styles.matchLabel}>Match</Text>
-            </LinearGradient>
-          </View>
-        </View>
+              <TouchableOpacity style={styles.favoriteButton}>
+                <View style={styles.favoriteIconContainer}>
+                  <Text style={styles.favoriteIcon}>♥</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
 
-        <View style={styles.cardContent}>
-          <View style={styles.nameContainer}>
-            <Text style={styles.name}>
-              {item.name}, <Text style={styles.age}>{item.age}</Text>
-            </Text>
-            <TouchableOpacity style={styles.favoriteButton}>
-              <View style={styles.favoriteIconContainer}>
-                <Text style={styles.favoriteIcon}>♥</Text>
-              </View>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.locationContainer}>
-            <Text style={styles.location}>{item.location}</Text>
-            <Text style={styles.distance}>{item.distance}</Text>
-          </View>
-
-          <View style={styles.interestsContainer}>
-            {item.interests.map(renderInterestTag)}
-          </View>
-
-          <View style={styles.actionButtonsContainer}>
-            <TouchableOpacity style={styles.primaryButton}>
-              <LinearGradient
-                colors={COLORS.primaryGradient}
-                style={styles.primaryButtonGradient}
+            <View style={styles.actionButtonsContainer}>
+              <TouchableOpacity
+                style={styles.primaryButton}
+                onPress={() => handleLikeBack(user)}
               >
-                <Text
-                  onPress={() => route.push("/(subscription)/PaymentScreen")}
-                  style={styles.primaryButtonText}
+                <LinearGradient
+                  colors={COLORS.primaryGradient}
+                  style={styles.primaryButtonGradient}
                 >
-                  Connect
-                </Text>
-              </LinearGradient>
-            </TouchableOpacity>
+                  <Text style={styles.primaryButtonText}>
+                    {currentLanguage === "ar" ? "إعجاب متبادل" : "Like Back"}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        </TouchableOpacity>
       </Animated.View>
     );
   };
+
+  if (loading && !refreshing) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={fetchLikesData}>
+          <Text style={styles.retryButtonText}>
+            {currentLanguage === "ar" ? "إعادة المحاولة" : "Retry"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (!likes || likes.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar
+          backgroundColor={COLORS.background}
+          barStyle="dark-content"
+        />
+
+        <Animated.View
+          style={[
+            styles.header,
+            {
+              opacity: headerOpacity,
+              transform: [{ translateY: headerTranslate }],
+            },
+          ]}
+        >
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>
+              {currentLanguage === "ar" ? "معجبون بك" : "Likes You"}
+            </Text>
+          </View>
+        </Animated.View>
+
+        <View
+          style={[styles.centerContent, { paddingTop: HEADER_HEIGHT + 20 }]}
+        >
+          <Text style={styles.noLikesText}>
+            {currentLanguage === "ar"
+              ? "لم يعجب بك أحد بعد"
+              : "No one has liked you yet"}
+          </Text>
+          <Text style={styles.noLikesSubtext}>
+            {currentLanguage === "ar"
+              ? "استمر في التمرير للعثور على تطابقاتك!"
+              : "Keep swiping to find your matches!"}
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -221,17 +286,19 @@ const LikedMeScreen = () => {
         ]}
       >
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>Likes You</Text>
+          <Text style={styles.headerTitle}>
+            {currentLanguage === "ar" ? "معجبون بك" : "Likes You"}
+          </Text>
         </View>
       </Animated.View>
 
       <Animated.FlatList
-        data={LIKED_USERS}
+        data={likes}
         renderItem={renderProfileCard}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={[
           styles.listContainer,
-          { paddingTop: HEADER_HEIGHT + 20 }, // Adjust top padding to account for header
+          { paddingTop: HEADER_HEIGHT + 20 },
         ]}
         showsVerticalScrollIndicator={false}
         onScroll={Animated.event(
@@ -239,6 +306,14 @@ const LikedMeScreen = () => {
           { useNativeDriver: true }
         )}
         scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={COLORS.primary}
+            colors={[COLORS.primary]}
+          />
+        }
       />
     </SafeAreaView>
   );
@@ -264,7 +339,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   headerTitle: {
-    fontSize: width * 0.09, // Responsive font size
+    fontSize: width * 0.09,
     fontWeight: "800",
     color: COLORS.white,
     letterSpacing: -0.5,
@@ -285,11 +360,11 @@ const styles = StyleSheet.create({
     elevation: 16,
     width: CARD_WIDTH,
     alignSelf: "center",
-    transform: [{ translateY: 0 }], // This helps with the shadow rendering on Android
+    transform: [{ translateY: 0 }],
   },
   cardImageContainer: {
     position: "relative",
-    height: height * 0.25, // Responsive image height
+    height: height * 0.25,
   },
   profileImage: {
     width: "100%",
@@ -302,50 +377,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     height: 80,
-  },
-  onlineIndicatorContainer: {
-    position: "absolute",
-    top: 16,
-    left: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.5)",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  onlineIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  onlineText: {
-    color: COLORS.white,
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  matchBadge: {
-    position: "absolute",
-    top: 16,
-    right: 16,
-    borderRadius: 16,
-    overflow: "hidden",
-  },
-  matchBadgeGradient: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    alignItems: "center",
-  },
-  matchPercentage: {
-    color: COLORS.white,
-    fontWeight: "bold",
-    fontSize: 16,
-  },
-  matchLabel: {
-    color: COLORS.white,
-    fontSize: 10,
-    opacity: 0.8,
   },
   cardContent: {
     padding: 20,
@@ -360,9 +391,6 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "700",
     color: COLORS.text,
-  },
-  age: {
-    fontWeight: "600",
   },
   favoriteButton: {
     width: 36,
@@ -381,40 +409,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
-  locationContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  location: {
-    fontSize: 14,
-    color: COLORS.text,
-    opacity: 0.7,
-    marginRight: 8,
-  },
-  distance: {
-    fontSize: 14,
-    color: COLORS.secondary,
-    fontWeight: "500",
-  },
-  interestsContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginBottom: 20,
-  },
-  interestTag: {
-    backgroundColor: "rgba(88, 86, 214, 0.1)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  interestText: {
-    color: COLORS.secondary,
-    fontSize: 12,
-    fontWeight: "500",
-  },
   actionButtonsContainer: {
     flexDirection: "row",
     justifyContent: "center",
@@ -423,7 +417,6 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 16,
     overflow: "hidden",
-    marginLeft: 8,
   },
   primaryButtonGradient: {
     paddingVertical: 14,
@@ -434,18 +427,39 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 16,
   },
-  secondaryButton: {
+  centerContent: {
     flex: 1,
-    backgroundColor: "rgba(158, 8, 108, 0.1)",
-    paddingVertical: 14,
-    borderRadius: 16,
+    justifyContent: "center",
     alignItems: "center",
-    marginRight: 8,
   },
-  secondaryButtonText: {
-    color: COLORS.primary,
-    fontWeight: "600",
+  errorText: {
     fontSize: 16,
+    color: COLORS.error || "#ff0000",
+    marginBottom: 16,
+    textAlign: "center",
+    paddingHorizontal: 20,
+  },
+  retryButton: {
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: COLORS.white,
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  noLikesText: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: COLORS.text,
+    marginBottom: 8,
+  },
+  noLikesSubtext: {
+    fontSize: 16,
+    color: COLORS.textLight || COLORS.text,
+    opacity: 0.7,
   },
 });
 

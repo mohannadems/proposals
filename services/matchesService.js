@@ -2,9 +2,43 @@ import api from "./api";
 import { ENDPOINTS } from "../constants/endpoints";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// Service to handle matches-related API calls
 export const matchesService = {
-  // Get user preferences (for spotlight section)
+  getLikes: async () => {
+    try {
+      // API will automatically add the language header from interceptor
+      const response = await api.get(ENDPOINTS.GET_LIKES);
+
+      if (!response.data) {
+        throw new Error("No data received from server");
+      }
+
+      if (!response.data.likes) {
+        throw new Error("Invalid response structure");
+      }
+
+      return response.data.likes;
+    } catch (error) {
+      console.error("Error fetching likes:", error);
+
+      if (error.response) {
+        throw {
+          message: error.response.data?.message || "Error fetching likes",
+          status: error.response.status,
+        };
+      } else if (error.request) {
+        throw {
+          message:
+            "No response from server. Please check your internet connection.",
+          status: 0,
+        };
+      } else {
+        throw {
+          message: error.message || "Error fetching likes",
+          status: 0,
+        };
+      }
+    }
+  },
   getUserMatches: async () => {
     try {
       const response = await api.get(ENDPOINTS.GET_USER_PREFERENCES);
@@ -17,7 +51,6 @@ export const matchesService = {
     }
   },
 
-  // Get filtered users (for quick matches section)
   getFilteredMatches: async (filterParams = {}) => {
     try {
       const response = await api.get(ENDPOINTS.FILTER_USERS, {
@@ -33,7 +66,6 @@ export const matchesService = {
     }
   },
 
-  // Store filter preferences locally
   saveFilterPreferences: async (filters) => {
     try {
       await AsyncStorage.setItem("match_filters", JSON.stringify(filters));
@@ -42,7 +74,6 @@ export const matchesService = {
     }
   },
 
-  // Get stored filter preferences
   getFilterPreferences: async () => {
     try {
       const filters = await AsyncStorage.getItem("match_filters");

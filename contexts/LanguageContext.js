@@ -146,7 +146,7 @@ export const LanguageProvider = ({ children }) => {
             setLocale(lang);
             setIsRTL(shouldBeRTL);
             alert(
-              "Please restart the app for RTL layout changes to take effect."
+              "Please restart the app for RTL layout changes to take effect.Language changed. Please manually reload the app to see changes."
             );
           }
         } else {
