@@ -100,6 +100,13 @@ const ProfileDropdownMenu = ({ onLogout, onLanguageChange }) => {
       color: COLORS.primary,
     },
     {
+      icon: "confirmation-number",
+      label: t ? t("profile.tickets") : "My Tickets",
+      sublabel: t ? t("profile.support_tickets") : "View your support tickets",
+      onPress: () => router.push("/(tickets)/TicketScreen"),
+      color: COLORS.primary,
+    },
+    {
       icon: "crown",
       customIcon: true,
       label: t ? t("profile.subscription") : "Subscription",

@@ -5,18 +5,17 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export const matchesService = {
   getLikes: async () => {
     try {
-      // API will automatically add the language header from interceptor
       const response = await api.get(ENDPOINTS.GET_LIKES);
 
       if (!response.data) {
         throw new Error("No data received from server");
       }
 
-      if (!response.data.likes) {
+      if (!response.data.liked_by) {
         throw new Error("Invalid response structure");
       }
 
-      return response.data.likes;
+      return response.data.liked_by;
     } catch (error) {
       console.error("Error fetching likes:", error);
 

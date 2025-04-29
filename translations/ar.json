@@ -195,7 +195,33 @@
     "clear": "مسح"
   },
 
+  "status": {
+    "in_progress": "الانتظار",
+    "open": "مفتوح",
+    "pending": "قيد الانتظار",
+    "closed": "مغلق",
+    "resolved": "تم الحل"
+  },
+  "tickets": {
+    "createFirst": "عمل لأول مرة",
+    "noTicketsTitle": "ليس لديك طلبات",
+    "noRepliesYet": "لا توجد ردود بعد",
+    "conversation": "المحادثة",
+    "descriptionTitle": "الوصف",
+    "ticketDetails": "تفاصيل التذكرة",
+    "myTickets": "تذاكري",
+    "newTicket": "تذكرة جديدة",
+    "subjectPlaceholder": "الموضوع",
+    "descriptionPlaceholder": "وصف المشكلة...",
+    "replyPlaceholder": "اكتب ردك...",
+    "reply": "إرسال الرد",
+    "noTickets": "لا توجد لديك أي تذاكر بعد.",
+    "ticketCreated": "تم إنشاء التذكرة بنجاح!",
+    "replyAdded": "تم إرسال الرد بنجاح!"
+  },
   "profile": {
+    "tickets": "تذاكري",
+    "support_tickets": "عرض تذاكر الدعم الخاصة بك",
     "change_language_title": "تغيير اللغة",
     "change_language_message": "هل تريد تغيير اللغة من {{from}} إلى {{to}}؟",
     "language_changed_restart": "تم تغيير اللغة بنجاح. سيتم إعادة تشغيل التطبيق لتطبيق التغييرات.",

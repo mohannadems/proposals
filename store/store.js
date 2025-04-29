@@ -9,6 +9,7 @@ import {
   PURGE,
   REGISTER,
 } from "redux-persist";
+import ticketReducer from "./slices/ticketSlice";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import subscriptionReducer from "./slices/subscriptionSlice";
 import authReducer from "./slices/auth.slice";
@@ -70,6 +71,7 @@ const appReducer = combineReducers({
   userProfile: persistedReducers.userProfile,
   report: reportReducer,
   subscription: subscriptionReducer,
+  ticket: ticketReducer,
 });
 
 const rootReducer = (state, action) => {

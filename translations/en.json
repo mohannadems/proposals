@@ -192,7 +192,36 @@
     "clear": "Clear"
   },
 
+  "status": {
+    "in_progress": "In Progress",
+    "open": "Open",
+    "pending": "Pending",
+    "closed": "Closed",
+    "resolved": "Resolved"
+  },
+  "tickets": {
+    "createFirst": "Create First",
+    "noTicketsTitle": "You have no tickets yet.",
+    "description": "Description",
+    "subject": "Subject",
+    "noRepliesYet": "No Replies Yet",
+    "conversation": "Conversation",
+    "descriptionTitle": "Description",
+    "ticketDetails": "Ticket Details",
+    "myTickets": "My Tickets",
+    "newTicket": "New Ticket",
+    "subjectPlaceholder": "Subject",
+    "descriptionPlaceholder": "Describe your issue...",
+    "replyPlaceholder": "Write your reply...",
+    "reply": "Send Reply",
+    "noTickets": "You have no tickets yet.",
+    "ticketCreated": "Ticket created successfully!",
+    "replyAdded": "Reply sent successfully!",
+    "viewDetails": "Show Details"
+  },
   "profile": {
+    "tickets": "My Tickets",
+    "support_tickets": "View your support tickets",
     "change_language_title": "Change Language",
     "change_language_message": "Do you want to change the language from {{from}} to {{to}}?",
     "language_changed_restart": "Language changed successfully. The app will restart to apply changes.",
