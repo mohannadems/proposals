@@ -25,6 +25,6 @@ export const ENDPOINTS = {
   GET_LIKES: "/getlikes",
   REPORT_USER: "/report-user",
   SUBSCRIPTION_CARDS: "/subscription-cards",
-  GET_LIKES: "/liked-by",
+  GET_LIKED_BY_ME: "/liked-by",
   TICKETS: "/tickets",
 };

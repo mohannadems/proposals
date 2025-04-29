@@ -5,7 +5,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 export const matchesService = {
   getLikes: async () => {
     try {
-      const response = await api.get(ENDPOINTS.GET_LIKES);
+      const response = await api.get(ENDPOINTS.GET_LIKED_BY_ME);
 
       if (!response.data) {
         throw new Error("No data received from server");
