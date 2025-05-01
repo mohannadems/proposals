@@ -323,25 +323,19 @@ const LifestyleSection = ({ isRTL = false, t, userGender }) => {
         <CardHeader {...cardConfigs.personal} isRTL={_isRTL} t={_t} />
         <AnimatedFormContainer isRTL={_isRTL}>
           <FormRow isRTL={_isRTL}>
-            {userGender !== "female" && (
-              <AnimatedDropdown
-                control={control}
-                name="marital_status_id"
-                label={
-                  _t ? _t("profile.lifestyle.marital_status") : "Marital Status"
-                }
-                items={maritalStatuses}
-                leftIcon={
-                  <MaterialIcon
-                    name="people"
-                    size={20}
-                    color={COLORS.primary}
-                  />
-                }
-                required
-                isRTL={_isRTL}
-              />
-            )}
+            <AnimatedDropdown
+              control={control}
+              name="marital_status_id"
+              label={
+                _t ? _t("profile.lifestyle.marital_status") : "Marital Status"
+              }
+              items={maritalStatuses}
+              leftIcon={
+                <MaterialIcon name="people" size={20} color={COLORS.primary} />
+              }
+              required
+              isRTL={_isRTL}
+            />
             <AnimatedDropdown
               required
               control={control}
