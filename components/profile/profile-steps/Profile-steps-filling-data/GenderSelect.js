@@ -1,19 +1,45 @@
-import React from "react";
+import React, { useContext } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { COLORS } from "../../../../constants/colors";
+import { LanguageContext } from "../../../../contexts/LanguageContext";
 
-const GenderSelect = ({ value, onChange, error, touched }) => {
+const GenderSelect = ({ value, onChange, error, touched, isRTL, t }) => {
+  // Use the language context if props aren't provided directly
+  const languageContext = useContext(LanguageContext);
+  const _isRTL =
+    isRTL !== undefined
+      ? isRTL
+      : languageContext
+      ? languageContext.isRTL
+      : false;
+  const _t = t || (languageContext ? languageContext.t : null);
+
+  // Define genders with translated labels
   const genders = [
-    { value: "male", icon: "man", label: "Male" },
-    { value: "female", icon: "woman", label: "Female" },
+    {
+      value: "male",
+      icon: "man",
+      label: _t ? _t("register.male") : "Male",
+    },
+    {
+      value: "female",
+      icon: "woman",
+      label: _t ? _t("register.female") : "Female",
+    },
   ];
+
+  // Reverse the array if RTL to maintain the correct visual order
+  const orderedGenders = _isRTL ? [...genders].reverse() : genders;
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Gender</Text>
+      <Text style={[styles.label, _isRTL && styles.rtlText]}>
+        {_t ? _t("register.gender") : "Gender"}
+      </Text>
+
       <View style={styles.optionsContainer}>
-        {genders.map((gender) => (
+        {orderedGenders.map((gender) => (
           <TouchableOpacity
             key={gender.value}
             style={[
@@ -32,6 +58,7 @@ const GenderSelect = ({ value, onChange, error, touched }) => {
               style={[
                 styles.optionText,
                 value === gender.value && styles.selectedText,
+                _isRTL && styles.rtlOptionText,
               ]}
             >
               {gender.label}
@@ -39,7 +66,12 @@ const GenderSelect = ({ value, onChange, error, touched }) => {
           </TouchableOpacity>
         ))}
       </View>
-      {error && touched && <Text style={styles.errorText}>{error}</Text>}
+
+      {error && touched && (
+        <Text style={[styles.errorText, _isRTL && styles.rtlText]}>
+          {error}
+        </Text>
+      )}
     </View>
   );
 };
@@ -47,11 +79,15 @@ const GenderSelect = ({ value, onChange, error, touched }) => {
 const styles = StyleSheet.create({
   container: {
     marginBottom: 16,
+    width: "100%",
   },
   label: {
     fontSize: 16,
     marginBottom: 8,
     color: COLORS.text,
+  },
+  rtlText: {
+    textAlign: "right",
   },
   optionsContainer: {
     flexDirection: "row",
@@ -76,6 +112,10 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontSize: 16,
     color: COLORS.text,
+  },
+  rtlOptionText: {
+    marginLeft: 0,
+    marginRight: 8,
   },
   selectedText: {
     color: COLORS.primary,

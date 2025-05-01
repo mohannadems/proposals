@@ -33,10 +33,9 @@ export const validateField = (field, value, formData = {}) => {
 
     case "phone_number":
       if (!processedValue.trim()) return "Phone number is required";
-      // Remove non-digit characters for validation
-      const cleanedPhone = processedValue.replace(/\D/g, "");
-      if (!/^[0-9]{10}$/.test(cleanedPhone))
-        return "Please enter a valid 10-digit phone number";
+      const phoneRegex = /^00[1-9]\d{6,14}$/;
+      if (!phoneRegex.test(processedValue.trim()))
+        return "Please enter a valid phone number starting with your country code (e.g. 00962)";
       return "";
 
     case "password":

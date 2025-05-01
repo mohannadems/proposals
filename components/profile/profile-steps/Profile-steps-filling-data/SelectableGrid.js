@@ -26,6 +26,9 @@ const COLORS = {
 };
 
 const SelectableGrid = ({
+  none = false, // Whether to show "None of the above" option
+  noneText = "None of the above", // Custom text for the "None" option
+  noneId = "none", // Custom ID for the "None" option
   control,
   name,
   items,
@@ -62,6 +65,22 @@ const SelectableGrid = ({
   };
 
   const handleSelect = (item) => {
+    // Handle the "None of the above" option
+    if (item.id === noneId) {
+      if (!multiple) {
+        // In single selection mode, just select the "None" option
+        onChange(noneId);
+        setIsOpen(false);
+        return;
+      } else {
+        // In multiple selection mode, clear other selections
+        onChange([noneId]);
+        setIsOpen(false);
+        return;
+      }
+    }
+
+    // If selecting a regular option, remove "None" if it's selected
     if (!multiple) {
       onChange(parseInt(item.id));
       setIsOpen(false);
@@ -69,6 +88,12 @@ const SelectableGrid = ({
     }
 
     const currentSelections = value || [];
+
+    // If "None" is selected and user selects something else, remove "None"
+    if (currentSelections.includes(noneId)) {
+      onChange([parseInt(item.id)]);
+      return;
+    }
 
     if (currentSelections.includes(parseInt(item.id))) {
       onChange(currentSelections.filter((id) => id !== parseInt(item.id)));
@@ -83,14 +108,30 @@ const SelectableGrid = ({
 
   const isSelected = (item) => {
     if (!value) return false;
+
+    if (item.id === noneId) {
+      return multiple
+        ? Array.isArray(value) && value.includes(noneId)
+        : value === noneId;
+    }
+
     return multiple
-      ? value.includes(parseInt(item.id))
+      ? Array.isArray(value) && value.includes(parseInt(item.id))
       : value === parseInt(item.id);
   };
 
   const getDisplayText = () => {
     if (!value || (Array.isArray(value) && value.length === 0)) {
       return placeholder;
+    }
+
+    // Check if "None" is selected
+    if (!multiple && value === noneId) {
+      return noneText;
+    }
+
+    if (multiple && Array.isArray(value) && value.includes(noneId)) {
+      return noneText;
     }
 
     if (!multiple) {
@@ -108,6 +149,27 @@ const SelectableGrid = ({
 
   const renderSelectedItemsPreview = () => {
     if (!multiple || !value || value.length === 0) return null;
+
+    // If "None" is selected, show it as a chip
+    if (value.includes(noneId)) {
+      return (
+        <View style={styles.selectedItemsContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={styles.selectedItemsRow}>
+              <View key="selected-none" style={styles.selectedItemChip}>
+                <Text style={styles.selectedItemText}>{noneText}</Text>
+                <TouchableOpacity
+                  onPress={() => handleSelect({ id: noneId, name: noneText })}
+                  style={styles.removeButton}
+                >
+                  <Text style={styles.removeButtonText}>×</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      );
+    }
 
     // Sort selected items alphabetically for the preview
     const selectedItemObjects = value
@@ -245,6 +307,37 @@ const SelectableGrid = ({
                       )}
                     </TouchableOpacity>
                   ))}
+
+                  {/* "None of the above" option */}
+                  {none && (
+                    <TouchableOpacity
+                      key={noneId}
+                      style={[
+                        styles.dropdownItem,
+                        styles.noneOption,
+                        isSelected({ id: noneId }) &&
+                          styles.selectedDropdownItem,
+                      ]}
+                      onPress={() =>
+                        handleSelect({ id: noneId, name: noneText })
+                      }
+                    >
+                      <Text
+                        style={[
+                          styles.dropdownItemText,
+                          isSelected({ id: noneId }) &&
+                            styles.selectedDropdownItemText,
+                        ]}
+                      >
+                        {noneText}
+                      </Text>
+                      {isSelected({ id: noneId }) && (
+                        <View style={styles.checkmarkContainer}>
+                          <Text style={styles.checkmark}>✓</Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  )}
                 </ScrollView>
 
                 {multiple && (
@@ -265,7 +358,6 @@ const SelectableGrid = ({
     </View>
   );
 };
-
 const styles = StyleSheet.create({
   container: {
     width: "100%",

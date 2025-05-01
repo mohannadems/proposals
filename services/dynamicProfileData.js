@@ -86,7 +86,7 @@ export const useDynamicProfileData = () => {
     sleep_habits: sleepHabits,
     hair_colors: hairColors,
     heights,
-    eye_colors: eyeColors,
+    eye_color_id: eyeColors,
     weights,
     origins,
     marital_statuses: maritalStatuses,

@@ -19,10 +19,6 @@ export const profileValidationSchema = Yup.object().shape({
     .max(500, "Bio cannot exceed 500 characters")
     .required("Arabic bio is required"),
 
-  gender: Yup.string()
-    .oneOf(["male", "female"], "Please select a gender")
-    .required("Gender is required"),
-
   date_of_birth: Yup.mixed()
     .test(
       "is-date",
@@ -46,10 +42,19 @@ export const profileValidationSchema = Yup.object().shape({
 
   weight: Yup.number().nullable().required("Please select your Weight "),
 
-  hair_color_id: Yup.number().nullable(),
+  // hair_color_id: Yup.number()
+  //   .nullable()
+  //   .when("gender", {
+  //     is: "f",
+  //     then: (schema) => schema.nullable(), // Optional for males
+  //     otherwise: (schema) => schema.required("Please select your hair color"),
+  //   }),
   skin_color_id: Yup.number()
     .nullable()
     .required("Please select your skin color"),
+  eye_color_id: Yup.number()
+    .nullable()
+    .required("Please select your eye color"),
 
   // Education and Work
   educational_level_id: Yup.number()
@@ -79,14 +84,31 @@ export const profileValidationSchema = Yup.object().shape({
   financial_status_id: createNumberValidation("financial status"),
   housing_status_id: Yup.number()
     .nullable()
-    .required("Please select your housing status"),
+    .when("gender ", {
+      is: "male",
+      then: (schema) => schema.required("Please select your housing status"),
+      otherwise: (schema) => schema.nullable(),
+    }),
+
   car_ownership: Yup.boolean()
     .nullable()
     .required("Please select your car ownership status"),
-  marriage_budget_id: createNumberValidation("marriage budget"),
+  marriage_budget_id: Yup.number()
+    .nullable()
+    .when("gender ", {
+      is: "male",
+      then: (schema) => schema.required("Please select your marrige budget"),
+      otherwise: (schema) => schema.nullable(),
+    }),
 
   // Marital and Family
-  marital_status_id: createNumberValidation("marital status"),
+  marital_status_id: Yup.number()
+    .nullable()
+    .when("gender", {
+      is: "male",
+      then: (schema) => schema.required("Marital status is required for males"),
+      otherwise: (schema) => schema.nullable(),
+    }),
   number_of_children: Yup.number()
     .nullable()
     .required("Please select your Number of Children"),
@@ -187,7 +209,7 @@ export const stepFields = {
     "height", //
     "weight", //
     "hair_color_id", //
-    "eye_colors",
+    "eye_color_id",
     "skin_color_id", //
     "marital_status_id", //
     "number_of_children", //
@@ -228,7 +250,7 @@ export const initialProfileState = {
   origin_id: null,
   height: null,
   weight: null,
-  eye_colors: null,
+  eye_color_id: null,
   hair_color_id: null,
   skin_color_id: null,
   educational_level_id: null,
@@ -272,7 +294,7 @@ export const initialFormState = {
   educational_level_id: null,
   specialization_id: null,
   employment_status: null,
-  eye_colors: null,
+  eye_color: null,
   smoking_status: null,
   smoking_tools: [],
   drinking_status_id: null,

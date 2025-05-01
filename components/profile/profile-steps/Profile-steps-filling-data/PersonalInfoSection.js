@@ -20,6 +20,7 @@ const PersonalInfoSection = ({ isRTL = false, t }) => {
     control,
     watch,
     setValue,
+    userGender,
     formState: { errors },
   } = useFormContext();
 
@@ -157,59 +158,6 @@ const PersonalInfoSection = ({ isRTL = false, t }) => {
         required
         isRTL={true}
       />
-
-      <GenderSelector
-        control={control}
-        name="gender"
-        label={t ? t("profile.personal.gender") : "Gender"}
-        required
-        isRTL={isRTL}
-        t={t}
-      />
-
-      {gender === "female" && (
-        <View style={dynamicStyles.hijabSection}>
-          <Text style={dynamicStyles.hijabTitle}>
-            {t ? t("profile.personal.hijab_preference") : "Hijab Preference"}
-            <Text style={dynamicStyles.required}> *</Text>
-          </Text>
-          <View style={dynamicStyles.hijabOptions}>
-            <TouchableOpacity
-              style={[
-                dynamicStyles.hijabOption,
-                watch("hijab_status") === 1 &&
-                  dynamicStyles.hijabOptionSelected,
-              ]}
-              onPress={() => setValue("hijab_status", 1)}
-            >
-              <Icon name="headscarf" size={24} color={COLORS.primary} />
-              <Text style={dynamicStyles.hijabOptionText}>
-                {t ? t("profile.personal.wears_hijab") : "Wears Hijab"}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                dynamicStyles.hijabOption,
-                watch("hijab_status") === 0 &&
-                  dynamicStyles.hijabOptionSelected,
-              ]}
-              onPress={() => setValue("hijab_status", 0)}
-            >
-              <Icon name="user" size={24} color={COLORS.primary} />
-              <Text style={dynamicStyles.hijabOptionText}>
-                {t ? t("profile.personal.no_hijab") : "No Hijab"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-          {errors.hijab_status && (
-            <Text style={dynamicStyles.errorText}>
-              {t
-                ? t("profile.personal.hijab_error")
-                : errors.hijab_status.message}
-            </Text>
-          )}
-        </View>
-      )}
 
       <FormDatePicker
         control={control}

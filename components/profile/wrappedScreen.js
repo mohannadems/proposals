@@ -17,7 +17,6 @@ export const isApiProfileComplete = (userData) => {
   const profile = userData.data?.profile || userData.profile;
 
   if (!profile) {
-    console.log("No profile found in userData");
     return false;
   }
 
@@ -48,19 +47,6 @@ export const isApiProfileComplete = (userData) => {
     profile.photos.length > 0;
 
   const isComplete = filledCount >= criticalFields.length * 0.8 && hasPhotos;
-
-  console.log("Profile Completion Check:", {
-    filledCount,
-    requiredFieldsCount: criticalFields.length,
-    hasPhotos,
-    isComplete,
-    missingFields: criticalFields.filter(
-      (field) =>
-        profile[field] === null ||
-        profile[field] === undefined ||
-        profile[field] === ""
-    ),
-  });
 
   return isComplete;
 };
@@ -97,7 +83,6 @@ export const checkProfileCompletion = (userData) => {
   const profile = userData.data?.profile || userData.profile;
 
   if (!profile) {
-    console.log("Profile data is missing or incomplete");
     return {
       isProfileComplete: false,
       missingFields: ["profile data missing"],
@@ -147,11 +132,6 @@ export const checkProfileCompletion = (userData) => {
 
   const isProfileComplete = missingFields.length === 0;
 
-  console.log("Profile Completion Details:", {
-    isProfileComplete,
-    missingFields,
-  });
-
   return {
     isProfileComplete,
     missingFields,
@@ -171,7 +151,6 @@ const wrappedScreen = (WrappedComponent, ProfileCompletionScreen = null) => {
 
     const isProfileComplete = () => {
       if (!data) {
-        console.log("No profile data available");
         return false;
       }
 
@@ -183,13 +162,6 @@ const wrappedScreen = (WrappedComponent, ProfileCompletionScreen = null) => {
         apiComplete ||
         completeCheck ||
         (!serverProfileIsEmpty && completeCheck);
-
-      console.log("Final Profile Completion Check:", {
-        apiComplete,
-        serverProfileIsEmpty,
-        completeCheck,
-        profileComplete,
-      });
 
       return profileComplete;
     };

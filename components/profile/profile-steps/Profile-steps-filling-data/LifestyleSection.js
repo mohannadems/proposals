@@ -41,7 +41,7 @@ import { cardConfigs } from "./constants";
 import { COLORS } from "../../../../constants/colors";
 import SelectableGrid from "./SelectableGrid";
 
-const LifestyleSection = ({ isRTL = false, t }) => {
+const LifestyleSection = ({ isRTL = false, t, userGender }) => {
   const { isRTL: contextRTL, t: contextT } = useContext(LanguageContext) || {};
   const _isRTL = isRTL !== undefined ? isRTL : contextRTL;
   const _t = t || contextT;
@@ -323,19 +323,25 @@ const LifestyleSection = ({ isRTL = false, t }) => {
         <CardHeader {...cardConfigs.personal} isRTL={_isRTL} t={_t} />
         <AnimatedFormContainer isRTL={_isRTL}>
           <FormRow isRTL={_isRTL}>
-            <AnimatedDropdown
-              control={control}
-              name="marital_status_id"
-              label={
-                _t ? _t("profile.lifestyle.marital_status") : "Marital Status"
-              }
-              items={maritalStatuses}
-              leftIcon={
-                <MaterialIcon name="people" size={20} color={COLORS.primary} />
-              }
-              required
-              isRTL={_isRTL}
-            />
+            {userGender !== "female" && (
+              <AnimatedDropdown
+                control={control}
+                name="marital_status_id"
+                label={
+                  _t ? _t("profile.lifestyle.marital_status") : "Marital Status"
+                }
+                items={maritalStatuses}
+                leftIcon={
+                  <MaterialIcon
+                    name="people"
+                    size={20}
+                    color={COLORS.primary}
+                  />
+                }
+                required
+                isRTL={_isRTL}
+              />
+            )}
             <AnimatedDropdown
               required
               control={control}
@@ -390,27 +396,12 @@ const LifestyleSection = ({ isRTL = false, t }) => {
           <FormRow isRTL={_isRTL}>
             <AnimatedDropdown
               control={control}
-              name="hair_color_id"
-              label={_t ? _t("profile.lifestyle.hair_color") : "Hair Color"}
-              items={hairColors}
-              leftIcon={
-                <MaterialIcon
-                  name="color-lens"
-                  size={20}
-                  color={COLORS.primary}
-                />
-              }
-              required
-              isRTL={_isRTL}
-            />
-            <AnimatedDropdown
-              control={control}
-              name="eye_colors_id"
-              label={_t ? _t("profile.lifestyle.eye_colors") : "Eye Colors"}
+              name="eye_color_id"
+              label={_t ? _t("profile.lifestyle.eye_colors") : "Eye Color"}
               items={eyeColors}
               leftIcon={
                 <MaterialIcon
-                  name="color-lens"
+                  name="visibility"
                   size={20}
                   color={COLORS.primary}
                 />
@@ -437,23 +428,25 @@ const LifestyleSection = ({ isRTL = false, t }) => {
       <AnimatedCard delay={500}>
         <CardHeader {...cardConfigs.lifestyle} isRTL={_isRTL} t={_t} />
         <AnimatedFormContainer isRTL={_isRTL}>
-          <AnimatedDropdown
-            control={control}
-            name="marriage_budget_id"
-            label={
-              _t ? _t("profile.lifestyle.marriage_budget") : "Marriage Budget"
-            }
-            items={marriageBudget}
-            leftIcon={
-              <MaterialIcon
-                name="account-balance-wallet"
-                size={20}
-                color={COLORS.primary}
-              />
-            }
-            required
-            isRTL={_isRTL}
-          />
+          {userGender !== "female" && (
+            <AnimatedDropdown
+              control={control}
+              name="marriage_budget_id"
+              label={
+                _t ? _t("profile.lifestyle.marriage_budget") : "Marriage Budget"
+              }
+              items={marriageBudget}
+              leftIcon={
+                <MaterialIcon
+                  name="account-balance-wallet"
+                  size={20}
+                  color={COLORS.primary}
+                />
+              }
+              required
+              isRTL={_isRTL}
+            />
+          )}
           <AnimatedDropdown
             control={control}
             name="religiosity_level_id"
@@ -471,6 +464,23 @@ const LifestyleSection = ({ isRTL = false, t }) => {
             required
             isRTL={_isRTL}
           />
+          {userGender !== "male" && (
+            <AnimatedDropdown
+              control={control}
+              name="hair_color_id"
+              label={_t ? _t("profile.lifestyle.hair_color") : "Hair Color"}
+              items={hairColors}
+              leftIcon={
+                <MaterialIcon
+                  name="color-lens"
+                  size={20}
+                  color={COLORS.primary}
+                />
+              }
+              required
+              isRTL={_isRTL}
+            />
+          )}
           <AnimatedDropdown
             control={control}
             name="sleep_habit_id"

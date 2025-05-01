@@ -1,13 +1,36 @@
-import React from "react";
+import React, { useContext } from "react";
 import { View, Text } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { registerStyles } from "../../styles/register.styles";
-import { REGISTER_MESSAGES } from "../../constants/register";
+import { LanguageContext } from "../../contexts/LanguageContext";
 
-export const StepIndicator = ({ currentStep }) => {
+export const StepIndicator = ({ currentStep, isRTL, t }) => {
+  // Use context if props aren't provided
+  const languageContext = useContext(LanguageContext);
+  const _isRTL =
+    isRTL !== undefined
+      ? isRTL
+      : languageContext
+      ? languageContext.isRTL
+      : false;
+  const _t = t || (languageContext ? languageContext.t : null);
+
+  // Create dynamic styles for RTL
+  const dynamicStyles = {
+    container: [
+      registerStyles.stepsContainer,
+      _isRTL && { alignItems: "flex-end" },
+    ],
+    stepIndicator: [
+      registerStyles.stepIndicator,
+      _isRTL && { flexDirection: "row-reverse" },
+    ],
+    stepText: [registerStyles.stepText, _isRTL && { textAlign: "right" }],
+  };
+
   return (
-    <View style={registerStyles.stepsContainer}>
-      <View style={registerStyles.stepIndicator}>
+    <View style={dynamicStyles.container}>
+      <View style={dynamicStyles.stepIndicator}>
         <View
           style={[
             registerStyles.stepDot,
@@ -31,8 +54,10 @@ export const StepIndicator = ({ currentStep }) => {
           ]}
         />
       </View>
-      <Text style={registerStyles.stepText}>
-        {REGISTER_MESSAGES.STEP_COUNT.replace("{step}", currentStep)}
+      <Text style={dynamicStyles.stepText}>
+        {_t
+          ? _t("register.step_count").replace("{step}", currentStep)
+          : `Step ${currentStep} of 2`}
       </Text>
     </View>
   );

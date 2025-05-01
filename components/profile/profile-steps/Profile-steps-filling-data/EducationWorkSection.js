@@ -60,7 +60,7 @@ const cardConfigs = {
   },
 };
 
-const EducationWorkSection = ({ isRTL = false, t }) => {
+const EducationWorkSection = ({ isRTL = false, t, userGender }) => {
   const { isRTL: contextRTL, t: contextT } = useContext(LanguageContext) || {};
   const _isRTL = isRTL !== undefined ? isRTL : contextRTL;
   const _t = t || contextT;
@@ -338,18 +338,22 @@ const EducationWorkSection = ({ isRTL = false, t }) => {
             }
             isRTL={_isRTL}
           />
-          <FormDropdown
-            control={control}
-            name="housing_status_id"
-            label={
-              _t ? _t("profile.education.housing_status") : "Housing Status 🏠"
-            }
-            items={housingStatuses}
-            leftIcon={
-              <FeatherIcon name="home" size={20} color={COLORS.primary} />
-            }
-            isRTL={_isRTL}
-          />
+          {userGender !== "female" && (
+            <FormDropdown
+              control={control}
+              name="housing_status_id"
+              label={
+                _t
+                  ? _t("profile.education.housing_status")
+                  : "Housing Status 🏠"
+              }
+              items={housingStatuses}
+              leftIcon={
+                <FeatherIcon name="home" size={20} color={COLORS.primary} />
+              }
+              isRTL={_isRTL}
+            />
+          )}
         </AnimatedFormContainer>
       </AnimatedCard>
 

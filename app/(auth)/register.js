@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   View,
   Text,
@@ -8,27 +8,29 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
+  StyleSheet,
+  Alert,
 } from "react-native";
-import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Haptics from "expo-haptics";
 import { register } from "../../store/slices/auth.slice";
 import { RegisterForm } from "../../components/auth/RegisterForm";
 import { StepIndicator } from "../../components/auth/StepIndicator";
 import { useRegisterForm } from "../../hooks/useRegisterForm";
 import { registerStyles } from "../../styles/register.styles";
-import { REGISTER_MESSAGES } from "../../constants/register";
 import { TermsModal } from "../../components/auth/TermsModal";
-import { StyleSheet } from "react-native";
-import { Alert } from "react-native";
+import { LanguageContext } from "../../contexts/LanguageContext";
 
-const WelcomeMessage = () => (
+const WelcomeMessage = ({ isRTL, t }) => (
   <View style={registerStyles.welcomeContainer}>
     <Text style={registerStyles.welcomeEmoji}>💝</Text>
-    <Text style={registerStyles.title}>{REGISTER_MESSAGES.WELCOME_TITLE}</Text>
-    <Text style={registerStyles.subtitle}>
-      {REGISTER_MESSAGES.WELCOME_SUBTITLE}
+    <Text style={[registerStyles.title, isRTL && { textAlign: "right" }]}>
+      {t("register.welcome_title")}
+    </Text>
+    <Text style={[registerStyles.subtitle, isRTL && { textAlign: "right" }]}>
+      {t("register.welcome_subtitle")}
     </Text>
   </View>
 );
@@ -39,6 +41,7 @@ export default function RegisterScreen() {
   const dispatch = useDispatch();
   const { loading } = useSelector((state) => state.auth);
   const form = useRegisterForm();
+  const { locale, isRTL, changeLanguage, t } = useContext(LanguageContext);
 
   const handleValidationError = (error) => {
     setTermsVisible(false);
@@ -53,11 +56,11 @@ export default function RegisterScreen() {
 
       if (error.errors.email || error.errors.phone_number) {
         Alert.alert(
-          "Registration Error",
+          t("register.registration_error"),
           error.errors.email || error.errors.phone_number,
           [
             {
-              text: "OK",
+              text: t("register.ok"),
               onPress: () => {
                 form.goToStep(1);
               },
@@ -67,15 +70,16 @@ export default function RegisterScreen() {
       }
     } else {
       Alert.alert(
-        "Registration Error",
-        error.message || REGISTER_MESSAGES.REGISTRATION_FAILED,
-        [{ text: "OK" }]
+        t("register.registration_error"),
+        error.message || t("register.registration_failed"),
+        [{ text: t("register.ok") }]
       );
       form.setValidationErrorsWithAPI({
-        general: error.message || REGISTER_MESSAGES.REGISTRATION_FAILED,
+        general: error.message || t("register.registration_failed"),
       });
     }
   };
+
   const handleAcceptTerms = async () => {
     try {
       const result = await dispatch(register(registrationData)).unwrap();
@@ -98,13 +102,7 @@ export default function RegisterScreen() {
         form.goToStep(1);
       }
     } catch (error) {
-      setTermsVisible(false);
-
-      if (error.errors?.email || error.errors?.phone_number) {
-        form.setValidationErrorsWithAPI(error.errors);
-        setRegistrationData(null);
-        form.goToStep(1);
-      }
+      handleValidationError(error);
     }
   };
 
@@ -114,16 +112,19 @@ export default function RegisterScreen() {
       setRegistrationData(null);
     };
   }, []);
+
   const handleDeclineTerms = () => {
     setTermsVisible(false);
     setRegistrationData(null);
   };
 
   const handleNextStep = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     form.nextStep();
   };
 
   const handlePreviousStep = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     form.previousStep();
   };
 
@@ -131,8 +132,15 @@ export default function RegisterScreen() {
     if (!form.validateStep(2)) {
       return;
     }
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setRegistrationData(form.formData);
     setTermsVisible(true);
+  };
+
+  const toggleLanguage = async () => {
+    // Add haptic feedback
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    changeLanguage(locale === "en" ? "ar" : "en");
   };
 
   return (
@@ -147,13 +155,13 @@ export default function RegisterScreen() {
         />
 
         <ScrollView
-          style={registerStyles.scrollView}
+          style={[registerStyles.scrollView, isRTL && styles.scrollViewRtl]}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={registerStyles.scrollContent}
         >
-          <WelcomeMessage />
+          <WelcomeMessage isRTL={isRTL} t={t} />
 
-          <StepIndicator currentStep={form.step} />
+          <StepIndicator currentStep={form.step} isRTL={isRTL} />
 
           <RegisterForm
             form={form}
@@ -161,14 +169,27 @@ export default function RegisterScreen() {
             onNextStep={handleNextStep}
             onPreviousStep={handlePreviousStep}
             onSubmit={handleRegister}
+            t={t}
+            isRTL={isRTL}
           />
 
           <TouchableOpacity
-            style={registerStyles.loginLink}
-            onPress={() => router.push("/(auth)/login")}
+            style={[
+              registerStyles.loginLink,
+              isRTL && { alignSelf: "flex-start" },
+            ]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push("/(auth)/login");
+            }}
           >
-            <Text style={registerStyles.loginLinkText}>
-              {REGISTER_MESSAGES.ALREADY_MEMBER}
+            <Text
+              style={[
+                registerStyles.loginLinkText,
+                isRTL && { textAlign: "right" },
+              ]}
+            >
+              {t("register.already_member")}
             </Text>
           </TouchableOpacity>
         </ScrollView>
@@ -177,8 +198,40 @@ export default function RegisterScreen() {
           visible={termsVisible}
           onAccept={handleAcceptTerms}
           onDecline={handleDeclineTerms}
+          t={t}
+          isRTL={isRTL}
         />
       </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
   );
 }
+
+const styles = StyleSheet.create({
+  languageToggle: {
+    position: "absolute",
+    top: 40,
+    right: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    zIndex: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  languageToggleRtl: {
+    right: "auto",
+    left: 20,
+  },
+  languageText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#666",
+  },
+  scrollViewRtl: {
+    textAlign: "right",
+  },
+});

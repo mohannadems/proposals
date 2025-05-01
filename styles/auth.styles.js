@@ -56,7 +56,8 @@ export const loginStyles = StyleSheet.create({
   loginButton: {
     flexDirection: "row",
     height: 56,
-    borderRadius: 28,
+    padding: 15,
+    borderRadius: 18,
     backgroundColor: "#9e086c",
     justifyContent: "center",
     alignItems: "center",

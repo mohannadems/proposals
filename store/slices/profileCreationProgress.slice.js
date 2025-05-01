@@ -28,7 +28,7 @@ const initialFormState = {
     social_media_presence_id: null,
     religion_id: null,
     hair_color_id: null,
-    eye_colors_id: null,
+    eye_color_id: null,
     skin_color_id: null,
     marital_status_id: null,
     number_of_children: null,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Platform,
   ActivityIndicator,
   Alert,
+  I18nManager,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { router } from "expo-router";
@@ -19,6 +20,8 @@ import {
 } from "../../store/slices/auth.slice";
 import OTPTextInput from "react-native-otp-textinput";
 import { useRoute } from "@react-navigation/native";
+import * as Haptics from "expo-haptics";
+import { LanguageContext } from "../../contexts/LanguageContext";
 
 export default function VerifyOTPScreen() {
   const dispatch = useDispatch();
@@ -26,6 +29,9 @@ export default function VerifyOTPScreen() {
   const route = useRoute();
   const [otp, setOTP] = useState("");
   const [validationError, setValidationError] = useState("");
+
+  // Get language context
+  const { locale, isRTL, t } = useContext(LanguageContext);
 
   useEffect(() => {
     const routeEmail = route.params?.email;
@@ -42,16 +48,15 @@ export default function VerifyOTPScreen() {
 
   const handleVerify = async () => {
     setValidationError("");
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     if (!otp || otp.length !== 6) {
-      setValidationError("Please enter a valid 6-digit code");
+      setValidationError(t("verification.valid_code"));
       return;
     }
 
     if (!tempEmail) {
-      setValidationError(
-        "Email address is missing. Please try registering again."
-      );
+      setValidationError(t("verification.email_missing"));
       return;
     }
 
@@ -61,31 +66,43 @@ export default function VerifyOTPScreen() {
       ).unwrap();
 
       if (result.success) {
+        await Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success
+        );
         router.replace("/(tabs)/home");
       } else {
-        setValidationError(result.message || "Verification failed");
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        setValidationError(result.message || t("verification.failed"));
       }
     } catch (error) {
-      setValidationError(error.message || "Verification failed");
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      setValidationError(error.message || t("verification.failed"));
     }
   };
 
   const handleResendOTP = async () => {
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
     if (!tempEmail) {
-      setValidationError(
-        "Email address is missing. Please try registering again."
-      );
+      setValidationError(t("verification.email_missing"));
       return;
     }
 
     try {
       const result = await dispatch(resendOTP(tempEmail)).unwrap();
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
       Alert.alert(
-        "OTP Resent",
-        result.message || "A new code has been sent to your email"
+        t("verification.otp_resent"),
+        result.message || t("verification.new_code_sent")
       );
     } catch (error) {
-      Alert.alert("Resend Failed", error.message || "Could not resend OTP");
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+
+      Alert.alert(
+        t("verification.resend_failed"),
+        error.message || t("verification.could_not_resend")
+      );
     }
   };
 
@@ -96,9 +113,9 @@ export default function VerifyOTPScreen() {
     >
       <View style={styles.header}>
         <MaterialIcons name="verified" size={60} color="#9e086c" />
-        <Text style={styles.title}>Verify Your Email</Text>
-        <Text style={styles.subtitle}>
-          Enter the 6-digit code sent to {tempEmail}
+        <Text style={styles.title}>{t("verification.verify_email")}</Text>
+        <Text style={[styles.subtitle, isRTL && { textAlign: "right" }]}>
+          {t("verification.enter_code")} {tempEmail}
         </Text>
       </View>
 
@@ -116,9 +133,21 @@ export default function VerifyOTPScreen() {
         />
 
         {(validationError || error) && (
-          <View style={styles.errorContainer}>
-            <MaterialIcons name="error" size={16} color="#FF3B30" />
-            <Text style={styles.errorText}>{validationError || error}</Text>
+          <View
+            style={[
+              styles.errorContainer,
+              isRTL && { flexDirection: "row-reverse" },
+            ]}
+          >
+            <MaterialIcons
+              name="error"
+              size={16}
+              color="#FF3B30"
+              style={isRTL ? { marginLeft: 8 } : { marginRight: 8 }}
+            />
+            <Text style={[styles.errorText, isRTL && { textAlign: "right" }]}>
+              {validationError || error}
+            </Text>
           </View>
         )}
       </View>
@@ -131,7 +160,9 @@ export default function VerifyOTPScreen() {
         {loading ? (
           <ActivityIndicator color="#fff" />
         ) : (
-          <Text style={styles.buttonText}>Verify Email</Text>
+          <Text style={styles.buttonText}>
+            {t("verification.verify_button")}
+          </Text>
         )}
       </TouchableOpacity>
 
@@ -140,8 +171,10 @@ export default function VerifyOTPScreen() {
         onPress={handleResendOTP}
         disabled={loading}
       >
-        <Text style={styles.resendText}>Didn't receive the code?</Text>
-        <Text style={styles.resendLink}>Resend Code</Text>
+        <Text style={[styles.resendText, isRTL && { textAlign: "right" }]}>
+          {t("verification.didnt_receive")}
+        </Text>
+        <Text style={styles.resendLink}>{t("verification.resend_code")}</Text>
       </TouchableOpacity>
     </KeyboardAvoidingView>
   );
@@ -201,6 +234,7 @@ const styles = StyleSheet.create({
     color: "#FF3B30",
     marginLeft: 8,
     fontSize: 14,
+    flex: 1,
   },
   verifyButton: {
     height: 56,

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import {
   View,
   Text,
@@ -7,23 +7,28 @@ import {
   Platform,
   TouchableWithoutFeedback,
   Keyboard,
+  StyleSheet,
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { router } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
+import * as Haptics from "expo-haptics";
 import { login } from "../../store/slices/auth.slice";
 import { LoginForm } from "../../components/auth/LoginForm";
 import { useBiometric } from "../../hooks/useBiometric";
 import { useLoginForm } from "../../hooks/useLoginForm";
 import { loginStyles } from "../../styles/auth.styles";
-import { AUTH_MESSAGES } from "../../constants/auth";
-import { StyleSheet } from "react-native";
 import { fetchProfile } from "../../store/slices/profile.slice";
+import { LanguageContext } from "../../contexts/LanguageContext";
+
+export const BIOMETRIC_KEY = "BIOMETRIC_CREDENTIALS";
+
 export default function LoginScreen() {
   const dispatch = useDispatch();
   const { loading } = useSelector((state) => state.auth);
   const form = useLoginForm();
+  const { locale, isRTL, changeLanguage, t } = useContext(LanguageContext);
 
   const handleLoginSuccess = async (credentials) => {
     try {
@@ -37,7 +42,7 @@ export default function LoginScreen() {
     } catch (error) {
       form.setValidationErrors((prev) => ({
         ...prev,
-        general: error.message || AUTH_MESSAGES.INVALID_CREDENTIALS,
+        general: error.message || t("auth.invalid_credentials"),
       }));
       throw error;
     }
@@ -55,9 +60,29 @@ export default function LoginScreen() {
     } catch (error) {
       form.setValidationErrors((prev) => ({
         ...prev,
-        general: AUTH_MESSAGES.INVALID_CREDENTIALS,
+        general: t("auth.invalid_credentials"),
       }));
     }
+  };
+
+  const toggleLanguage = async () => {
+    // Add haptic feedback
+    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    changeLanguage(locale === "en" ? "ar" : "en");
+  };
+
+  // Create dynamic styles based on RTL
+  const dynamicStyles = {
+    container: {
+      flexDirection: isRTL ? "row-reverse" : "row",
+    },
+    textAlign: {
+      textAlign: isRTL ? "right" : "left",
+    },
+    content: {
+      ...loginStyles.content,
+      alignItems: isRTL ? "flex-end" : "flex-start",
+    },
   };
 
   return (
@@ -82,11 +107,11 @@ export default function LoginScreen() {
 
         <View style={loginStyles.content}>
           <View style={loginStyles.logoContainer}>
-            <Text style={loginStyles.welcomeText}>
-              {AUTH_MESSAGES.WELCOME_TITLE}
+            <Text style={[loginStyles.welcomeText, dynamicStyles.textAlign]}>
+              {t("auth.welcome_title")}
             </Text>
-            <Text style={loginStyles.subtitle}>
-              {AUTH_MESSAGES.WELCOME_SUBTITLE}
+            <Text style={[loginStyles.subtitle, dynamicStyles.textAlign]}>
+              {t("auth.welcome_subtitle")}
             </Text>
           </View>
 
@@ -96,16 +121,26 @@ export default function LoginScreen() {
             isBiometricEnabled={biometric.isBiometricEnabled}
             onLogin={handleLogin}
             onBiometricAuth={biometric.handleBiometricAuth}
+            t={t}
+            isRTL={isRTL}
           />
 
           <TouchableOpacity
-            style={loginStyles.registerLink}
-            onPress={() => router.push("/(auth)/register")}
+            style={[
+              loginStyles.registerLink,
+              isRTL && { alignSelf: "flex-end" },
+            ]}
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              router.push("/(auth)/register");
+            }}
           >
-            <Text style={loginStyles.registerLinkText}>
-              {AUTH_MESSAGES.NEW_USER}
+            <Text
+              style={[loginStyles.registerLinkText, dynamicStyles.textAlign]}
+            >
+              {t("auth.new_user")}
               <Text style={loginStyles.registerLinkBold}>
-                {AUTH_MESSAGES.SIGN_UP}
+                {t("auth.sign_up")}
               </Text>
             </Text>
           </TouchableOpacity>
@@ -114,3 +149,30 @@ export default function LoginScreen() {
     </TouchableWithoutFeedback>
   );
 }
+
+const styles = StyleSheet.create({
+  languageToggle: {
+    position: "absolute",
+    top: 40,
+    right: 20,
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    zIndex: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  languageToggleRtl: {
+    right: "auto",
+    left: 20,
+  },
+  languageText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#666",
+  },
+});

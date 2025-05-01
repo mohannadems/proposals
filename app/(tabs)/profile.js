@@ -238,6 +238,7 @@ const ProfileScreen = () => {
       "profile.skin_color",
       "profile.hair_color",
       "profile.hijab_status",
+      "profile.eye_color",
     ],
     lifestyle: [
       "profile.smoking_status",
@@ -252,7 +253,6 @@ const ProfileScreen = () => {
 
   useEffect(() => {
     if (isFirstMount.current && !fetchedRef.current) {
-      console.log("ProfileScreen: Initial profile fetch");
       fetchedRef.current = true;
       dispatch(fetchProfile());
       isFirstMount.current = false;
@@ -609,7 +609,7 @@ const ProfileScreen = () => {
             />
             <ProfileItem
               icon="wc"
-              label="Gender"
+              label="Gender_profile"
               value={t(`profile.gender.${profile.gender}`)}
               isRequired={true}
             />

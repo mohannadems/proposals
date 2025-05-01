@@ -121,7 +121,8 @@ export const useProfileForm = (
 
         height: Number(data.height) || null,
         weight: Number(data.weight) || null,
-        eye_colors_id: Number(data.eye_colors_id) || null,
+        eye_color_id: Number(data.eye_color_id) || null,
+
         hair_color_id: Number(data.hair_color_id) || null,
         skin_color_id: Number(data.skin_color_id) || null,
 

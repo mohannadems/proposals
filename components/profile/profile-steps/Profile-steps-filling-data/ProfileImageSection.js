@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   Image,
   StyleSheet,
   Platform,
+  ActivityIndicator,
   Alert,
 } from "react-native";
 import { useFormContext } from "react-hook-form";
@@ -17,10 +18,11 @@ import { updateProfilePhoto } from "../../../../store/slices/profile.slice";
 import Reanimated, {
   FadeIn,
   FadeInDown,
-  FadeInUp,
+  ZoomIn,
   useAnimatedStyle,
   useSharedValue,
   withSpring,
+  withTiming,
 } from "react-native-reanimated";
 import { LanguageContext } from "../../../../contexts/LanguageContext";
 
@@ -28,100 +30,106 @@ const AnimatedView = Reanimated.createAnimatedComponent(View);
 const AnimatedTouchableOpacity =
   Reanimated.createAnimatedComponent(TouchableOpacity);
 
-const SPRING_CONFIG = {
-  damping: 15,
-  mass: 1,
-  stiffness: 200,
-};
-
-const CardHeader = ({ title, subtitle, isRTL }) => (
-  <AnimatedView
-    entering={FadeInDown.duration(600).springify()}
-    style={styles.headerContainer}
-  >
-    <Text style={[styles.headerTitle, { textAlign: isRTL ? "right" : "left" }]}>
-      {title}
-    </Text>
-    <Text
-      style={[styles.headerSubtitle, { textAlign: isRTL ? "right" : "left" }]}
-    >
-      {subtitle}
-    </Text>
-  </AnimatedView>
-);
-
 const ProfileImageSection = ({ isRTL = false, t }) => {
   const { isRTL: contextRTL, t: contextT } = useContext(LanguageContext) || {};
-  // Use props if provided, otherwise use context
   const _isRTL = isRTL !== undefined ? isRTL : contextRTL;
   const _t = t || contextT;
 
   const dispatch = useDispatch();
   const { setValue, watch } = useFormContext();
   const profileImage = watch("profile_image");
-  const [imageError, setImageError] = useState("");
-  const scale = useSharedValue(1);
+
+  // Add isFirstRender ref to track initial mount
+  const isFirstRender = useRef(true);
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [hasInitialized, setHasInitialized] = useState(false);
+  const [imageLoadError, setImageLoadError] = useState(false);
+  const [userInteracted, setUserInteracted] = useState(false); // Track if user has interacted
 
   const profileState = useSelector((state) => state.profile) || {};
-  const loading = profileState.loading || false;
-  const error = profileState.error || null;
 
-  const currentAvatar = profileState.data?.profile?.avatar_url || null;
+  // Get avatar URL and ensure it's a non-empty string
+  const avatarUrl = profileState.data?.profile?.avatar_url;
+  const currentAvatar =
+    avatarUrl && typeof avatarUrl === "string" && avatarUrl.trim() !== ""
+      ? avatarUrl
+      : null;
+
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(0);
+
+  // Initialize component state based on current data
+  useEffect(() => {
+    // On first render, don't show any errors
+    if (isFirstRender.current) {
+      setError("");
+      setImageLoadError(false);
+      isFirstRender.current = false;
+    }
+
+    // Reset error state on initialization
+    if (!hasInitialized) {
+      setError("");
+      setImageLoadError(false);
+    }
+
+    // Check if we actually have a valid avatar URL
+    const avatarUrl = profileState.data?.profile?.avatar_url;
+
+    // Only set profile image if there's a valid avatar with a non-empty string URL
+    if (
+      !hasInitialized &&
+      avatarUrl &&
+      typeof avatarUrl === "string" &&
+      avatarUrl.trim() !== ""
+    ) {
+      setValue("profile_image", { uri: avatarUrl });
+      setHasInitialized(true);
+    }
+
+    opacity.value = withTiming(1, { duration: 500 });
+  }, [profileState.data?.profile?.avatar_url, hasInitialized]);
 
   const animatedImageStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: withSpring(scale.value, SPRING_CONFIG) }],
+    transform: [{ scale: scale.value }],
   }));
 
-  // Create dynamic styles based on RTL
-  const dynamicStyles = {
-    container: {
-      flex: 1,
-      padding: 20,
-      backgroundColor: "#f8f9fa",
-    },
-    buttonContainer: {
-      flexDirection: _isRTL ? "row-reverse" : "row",
-      justifyContent: "space-between",
-      width: "100%",
-      marginTop: 16,
-      gap: 12,
-    },
-    actionButtonText: {
-      color: COLORS.white,
-      marginLeft: _isRTL ? 0 : 12,
-      marginRight: _isRTL ? 12 : 0,
-      fontSize: 16,
-      fontWeight: "600",
-    },
-    errorContainer: {
-      flexDirection: _isRTL ? "row-reverse" : "row",
-      alignItems: "center",
-      backgroundColor: "rgba(255, 59, 48, 0.1)",
-      borderRadius: 12,
-      padding: 12,
-      marginTop: 16,
-      width: "100%",
-    },
-    errorText: {
-      color: COLORS.error,
-      marginLeft: _isRTL ? 0 : 8,
-      marginRight: _isRTL ? 8 : 0,
-      fontSize: 14,
-      flex: 1,
-      textAlign: _isRTL ? "right" : "left",
-    },
-  };
+  const animatedContainerStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+  }));
 
-  const requestPermission = async () => {
+  // Only consider the image valid if:
+  // 1. It exists (profileImage?.uri or currentAvatar)
+  // 2. There's no loading error with the image
+  // 3. If we're not in a loading state - to prevent UI flashing
+  const hasImage =
+    !loading &&
+    !imageLoadError &&
+    ((profileImage?.uri && profileImage.uri.trim() !== "") ||
+      (currentAvatar && currentAvatar.trim() !== ""));
+
+  // Request camera and media library permissions
+  const requestPermissions = async (forCamera = false) => {
     if (Platform.OS !== "web") {
-      const { status } =
-        await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== "granted") {
+      let permissionResult;
+
+      if (forCamera) {
+        permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+      } else {
+        permissionResult =
+          await ImagePicker.requestMediaLibraryPermissionsAsync();
+      }
+
+      if (permissionResult.status !== "granted") {
         Alert.alert(
           _t ? _t("profile.images.permission_title") : "Permission Required",
           _t
             ? _t("profile.images.permission_message")
-            : "Sorry, we need camera roll permissions to make this work!"
+            : `Sorry, we need ${
+                forCamera ? "camera" : "media library"
+              } permissions to proceed!`
         );
         return false;
       }
@@ -130,8 +138,21 @@ const ProfileImageSection = ({ isRTL = false, t }) => {
     return true;
   };
 
+  // Handle the image upload process
   const handleImageUpload = async (selectedImage) => {
     try {
+      setLoading(true);
+      setError("");
+      setImageLoadError(false);
+
+      // Validate image
+      if (!selectedImage || !selectedImage.uri) {
+        throw new Error(
+          _t ? _t("profile.images.invalid_image") : "Invalid image selection"
+        );
+      }
+
+      // Create form data for upload
       const formData = new FormData();
       formData.append("profile_photo", {
         uri: selectedImage.uri,
@@ -139,6 +160,7 @@ const ProfileImageSection = ({ isRTL = false, t }) => {
         name: "profile_photo.jpg",
       });
 
+      // Upload the image
       const response = await dispatch(
         updateProfilePhoto({ formData })
       ).unwrap();
@@ -146,63 +168,63 @@ const ProfileImageSection = ({ isRTL = false, t }) => {
       if (response.error) {
         throw new Error(response.error);
       }
-      setImageError("");
 
-      scale.value = withSpring(1.1, SPRING_CONFIG, () => {
-        scale.value = withSpring(1, SPRING_CONFIG);
+      // Animate the image container
+      scale.value = withSpring(1.1, { damping: 15, stiffness: 200 }, () => {
+        scale.value = withSpring(1, { damping: 15, stiffness: 200 });
       });
+
+      return true;
     } catch (error) {
       console.error("Upload error:", error);
-      setImageError(
+      setError(
         error.message ||
           error.errors?.profile_photo?.[0] ||
           (_t
             ? _t("profile.images.upload_error")
             : "Failed to upload image. Please try again.")
       );
+      return false;
+    } finally {
+      setLoading(false);
     }
   };
 
-  const pickImage = async (type) => {
+  // Pick image from gallery or camera
+  const pickImage = async (source) => {
     try {
-      const hasPermission = await requestPermission();
+      // Mark that user has interacted with the component
+      setUserInteracted(true);
+
+      // Clear any previous errors
+      setError("");
+      setImageLoadError(false);
+
+      // Request appropriate permissions
+      const hasPermission = await requestPermissions(source === "camera");
       if (!hasPermission) return;
 
-      let result;
-      if (type === "camera") {
-        const { status } = await ImagePicker.requestCameraPermissionsAsync();
-        if (status !== "granted") {
-          Alert.alert(
-            _t
-              ? _t("profile.images.camera_permission_title")
-              : "Permission needed",
-            _t
-              ? _t("profile.images.camera_permission_message")
-              : "Camera permission is required"
-          );
-          return;
-        }
-        result = await ImagePicker.launchCameraAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          allowsEditing: true,
-          aspect: [1, 1],
-          quality: 0.8,
-        });
-      } else {
-        result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          allowsEditing: true,
-          aspect: [1, 1],
-          quality: 0.8,
-        });
-      }
+      // Launch camera or gallery
+      const options = {
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      };
 
-      if (!result.canceled) {
+      const result =
+        source === "camera"
+          ? await ImagePicker.launchCameraAsync(options)
+          : await ImagePicker.launchImageLibraryAsync(options);
+
+      // Handle the result
+      if (!result.canceled && result.assets && result.assets.length > 0) {
         const selectedImage = result.assets[0];
-        const imageSize = selectedImage.fileSize || 0;
 
+        // Check file size (5MB limit)
+        const imageSize = selectedImage.fileSize || 0;
         if (imageSize > 5 * 1024 * 1024) {
-          setImageError(
+          setError(
             _t
               ? _t("profile.images.size_error")
               : "Image size should be less than 5MB"
@@ -210,16 +232,18 @@ const ProfileImageSection = ({ isRTL = false, t }) => {
           return;
         }
 
+        // Update form value
         setValue("profile_image", {
           uri: selectedImage.uri,
-          type: selectedImage.type,
+          type: selectedImage.type || "image/jpeg",
         });
 
+        // Upload the image
         await handleImageUpload(selectedImage);
       }
     } catch (error) {
       console.error("Image picking error:", error);
-      setImageError(
+      setError(
         _t
           ? _t("profile.images.pick_error")
           : "Failed to pick image. Please try again."
@@ -227,14 +251,24 @@ const ProfileImageSection = ({ isRTL = false, t }) => {
     }
   };
 
+  // Remove profile image
   const removeImage = async () => {
     try {
-      setValue("profile_image", null);
-      setImageError("");
+      // Mark that user has interacted with the component
+      setUserInteracted(true);
 
+      // Only proceed if there's an image to remove
+      if (!hasImage) return;
+
+      setLoading(true);
+      setError("");
+      setImageLoadError(false);
+
+      // Create form data for removal
       const formData = new FormData();
       formData.append("remove_profile_photo", "true");
 
+      // Remove the image
       const response = await dispatch(
         updateProfilePhoto({ formData })
       ).unwrap();
@@ -243,49 +277,86 @@ const ProfileImageSection = ({ isRTL = false, t }) => {
         throw new Error(response.error);
       }
 
-      scale.value = withSpring(0.9, SPRING_CONFIG, () => {
-        scale.value = withSpring(1, SPRING_CONFIG);
+      // Clear the form value
+      setValue("profile_image", null);
+
+      // Animate the image container
+      scale.value = withSpring(0.9, { damping: 15, stiffness: 200 }, () => {
+        scale.value = withSpring(1, { damping: 15, stiffness: 200 });
       });
     } catch (error) {
       console.error("Remove image error:", error);
-      setImageError(
+      setError(
         error.message ||
           error.errors?.profile_photo?.[0] ||
           (_t
             ? _t("profile.images.remove_error")
             : "Failed to remove image. Please try again.")
       );
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <AnimatedView
-      entering={FadeInUp.duration(600).springify()}
-      style={dynamicStyles.container}
+      entering={FadeInDown.duration(600).springify()}
+      style={[styles.container, animatedContainerStyle]}
     >
-      <CardHeader
-        title={_t ? _t("profile.images.title") : "Profile Picture 📸"}
-        subtitle={
-          _t
+      <View style={styles.headerContainer}>
+        <Text
+          style={[styles.headerTitle, { textAlign: _isRTL ? "right" : "left" }]}
+        >
+          {_t ? _t("profile.images.title") : "Profile Picture"}
+        </Text>
+        <Text
+          style={[
+            styles.headerSubtitle,
+            { textAlign: _isRTL ? "right" : "left" },
+          ]}
+        >
+          {_t
             ? _t("profile.images.subtitle")
-            : "Make a great first impression with your best photo"
-        }
-        isRTL={_isRTL}
-      />
+            : "Make a great first impression with your best photo"}
+        </Text>
+      </View>
 
       <AnimatedView
         style={[styles.imagePickerContainer, animatedImageStyle]}
-        entering={FadeIn.delay(300).duration(600)}
+        entering={ZoomIn.duration(400)}
       >
         <TouchableOpacity
           onPress={() => pickImage("gallery")}
           style={styles.imagePreviewWrapper}
+          disabled={loading}
         >
-          {profileImage || currentAvatar ? (
+          {hasImage ? (
             <View style={styles.imagePreviewContainer}>
               <Image
                 source={{ uri: profileImage?.uri || currentAvatar }}
                 style={styles.profileImage}
+                onLoadStart={() => {
+                  // Reset error state when starting to load an image
+                  setImageLoadError(false);
+                }}
+                onError={() => {
+                  console.log(
+                    "Image failed to load:",
+                    profileImage?.uri || currentAvatar
+                  );
+                  setImageLoadError(true);
+
+                  // Only show error if user has interacted with the component
+                  // or we're not on first render
+                  if (userInteracted && (profileImage?.uri || currentAvatar)) {
+                    setError(
+                      _t
+                        ? _t("profile.images.load_error")
+                        : "Failed to load image"
+                    );
+                  }
+                  setValue("profile_image", null);
+                }}
               />
               <View style={styles.imageOverlay}>
                 <Feather name="camera" size={24} color={COLORS.white} />
@@ -296,94 +367,105 @@ const ProfileImageSection = ({ isRTL = false, t }) => {
             </View>
           ) : (
             <View style={styles.placeholderContainer}>
-              <Feather name="camera" size={50} color={COLORS.primary} />
+              <Feather name="user" size={50} color={COLORS.primary} />
               <Text
                 style={[
                   styles.placeholderText,
                   { textAlign: _isRTL ? "right" : "center" },
                 ]}
               >
-                {_t
-                  ? _t("profile.images.tap_to_add")
-                  : "Tap to add your profile picture ✨"}
+                {_t ? _t("profile.images.tap_to_add") : "Add Profile Picture"}
               </Text>
+            </View>
+          )}
+
+          {loading && (
+            <View style={styles.loadingOverlay}>
+              <ActivityIndicator size="large" color={COLORS.primary} />
             </View>
           )}
         </TouchableOpacity>
 
-        {(imageError || error) && (
-          <AnimatedView
-            entering={FadeIn.duration(300)}
-            style={dynamicStyles.errorContainer}
-          >
-            <Feather name="alert-circle" size={20} color={COLORS.error} />
-            <Text style={dynamicStyles.errorText}>{imageError || error}</Text>
-          </AnimatedView>
-        )}
+        {error && userInteracted ? (
+          <View style={styles.errorContainer}>
+            <Feather name="alert-circle" size={18} color={COLORS.error} />
+            <Text
+              style={[
+                styles.errorText,
+                { textAlign: _isRTL ? "right" : "left" },
+              ]}
+            >
+              {error}
+            </Text>
+          </View>
+        ) : null}
 
-        <View style={dynamicStyles.buttonContainer}>
-          <AnimatedTouchableOpacity
-            entering={FadeInUp.delay(400).duration(600)}
+        <View
+          style={[
+            styles.buttonsContainer,
+            { flexDirection: _isRTL ? "row-reverse" : "row" },
+          ]}
+        >
+          <TouchableOpacity
             style={[
-              styles.actionButton,
+              styles.button,
               styles.cameraButton,
               loading && styles.disabledButton,
-              { flexDirection: _isRTL ? "row-reverse" : "row" },
             ]}
             onPress={() => pickImage("camera")}
             disabled={loading}
           >
-            <Feather name="camera" size={20} color={COLORS.white} />
-            <Text style={dynamicStyles.actionButtonText}>
-              {_t ? _t("profile.images.take_photo") : "Take Photo"}
+            <Feather name="camera" size={18} color={COLORS.white} />
+            <Text style={styles.buttonText}>
+              {_t ? _t("profile.images.take_photo") : "Camera"}
             </Text>
-          </AnimatedTouchableOpacity>
+          </TouchableOpacity>
 
-          <AnimatedTouchableOpacity
-            entering={FadeInUp.delay(500).duration(600)}
+          <TouchableOpacity
             style={[
-              styles.actionButton,
+              styles.button,
               styles.galleryButton,
               loading && styles.disabledButton,
-              { flexDirection: _isRTL ? "row-reverse" : "row" },
             ]}
             onPress={() => pickImage("gallery")}
             disabled={loading}
           >
-            <Feather name="image" size={20} color={COLORS.white} />
-            <Text style={dynamicStyles.actionButtonText}>
-              {_t ? _t("profile.images.choose_gallery") : "Choose from Gallery"}
+            <Feather name="image" size={18} color={COLORS.white} />
+            <Text style={styles.buttonText}>
+              {_t ? _t("profile.images.choose_gallery") : "Gallery"}
             </Text>
-          </AnimatedTouchableOpacity>
+          </TouchableOpacity>
         </View>
 
-        {profileImage || currentAvatar ? (
-          <AnimatedTouchableOpacity
-            entering={FadeInUp.delay(600).duration(600)}
+        {hasImage && (
+          <TouchableOpacity
             style={[
-              styles.actionButton,
+              styles.button,
               styles.removeButton,
               loading && styles.disabledButton,
-              { flexDirection: _isRTL ? "row-reverse" : "row" },
             ]}
             onPress={removeImage}
             disabled={loading}
           >
-            <Feather name="trash-2" size={20} color={COLORS.white} />
-            <Text style={dynamicStyles.actionButtonText}>
+            <Feather name="trash-2" size={18} color={COLORS.white} />
+            <Text style={styles.buttonText}>
               {_t ? _t("profile.images.remove_photo") : "Remove Photo"}
             </Text>
-          </AnimatedTouchableOpacity>
-        ) : null}
+          </TouchableOpacity>
+        )}
       </AnimatedView>
     </AnimatedView>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    padding: 20,
+    backgroundColor: "#f8f9fa",
+  },
   headerContainer: {
-    marginBottom: 24,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    marginBottom: 20,
+    backgroundColor: "white",
     borderRadius: 16,
     padding: 20,
     ...Platform.select({
@@ -399,19 +481,19 @@ const styles = StyleSheet.create({
     }),
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: "800",
+    fontSize: 24,
+    fontWeight: "700",
     color: COLORS.text,
     marginBottom: 8,
   },
   headerSubtitle: {
     fontSize: 16,
     color: COLORS.grayDark,
-    lineHeight: 24,
+    lineHeight: 22,
   },
   imagePickerContainer: {
     alignItems: "center",
-    backgroundColor: COLORS.white,
+    backgroundColor: "white",
     borderRadius: 20,
     padding: 24,
     ...Platform.select({
@@ -427,16 +509,16 @@ const styles = StyleSheet.create({
     }),
   },
   imagePreviewWrapper: {
-    width: 200,
-    height: 200,
+    width: 180,
+    height: 180,
     marginBottom: 24,
+    position: "relative",
   },
   imagePreviewContainer: {
     width: "100%",
     height: "100%",
-    borderRadius: 100,
+    borderRadius: 90,
     overflow: "hidden",
-    position: "relative",
     borderWidth: 3,
     borderColor: COLORS.primary,
     ...Platform.select({
@@ -462,8 +544,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    borderRadius: 100,
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
     justifyContent: "center",
     alignItems: "center",
     opacity: 0,
@@ -477,8 +558,8 @@ const styles = StyleSheet.create({
   placeholderContainer: {
     width: "100%",
     height: "100%",
-    borderRadius: 100,
-    backgroundColor: "rgba(65, 105, 225, 0.1)",
+    borderRadius: 90,
+    backgroundColor: "rgba(65, 105, 225, 0.05)",
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
@@ -486,18 +567,49 @@ const styles = StyleSheet.create({
     borderStyle: "dashed",
   },
   placeholderText: {
-    marginTop: 16,
+    marginTop: 12,
     fontSize: 16,
     color: COLORS.primary,
-    fontWeight: "600",
-    paddingHorizontal: 20,
+    fontWeight: "500",
   },
-  actionButton: {
+  loadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(255, 255, 255, 0.7)",
+    borderRadius: 90,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 59, 48, 0.1)",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+    width: "100%",
+  },
+  errorText: {
+    color: COLORS.error,
+    marginLeft: 8,
+    fontSize: 14,
+    flex: 1,
+  },
+  buttonsContainer: {
+    width: "100%",
+    justifyContent: "space-between",
+    marginBottom: 16,
+    gap: 12,
+  },
+  button: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     borderRadius: 12,
     flex: 1,
     ...Platform.select({
@@ -512,6 +624,12 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  buttonText: {
+    color: COLORS.white,
+    fontWeight: "600",
+    fontSize: 14,
+    marginLeft: 8,
+  },
   cameraButton: {
     backgroundColor: COLORS.primary,
   },
@@ -520,20 +638,10 @@ const styles = StyleSheet.create({
   },
   removeButton: {
     backgroundColor: COLORS.error,
-    marginTop: 16,
     width: "100%",
   },
   disabledButton: {
     opacity: 0.6,
-  },
-  activityIndicator: {
-    position: "absolute",
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 100,
   },
 });
 

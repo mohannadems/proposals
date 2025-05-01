@@ -64,7 +64,13 @@ const LikedMeScreen = () => {
     try {
       setError(null);
       const likesData = await matchesService.getLikes();
-      setLikes(likesData);
+
+      // Filter out any invalid likes data
+      const validLikes = Array.isArray(likesData)
+        ? likesData.filter((item) => item && item.liked_user)
+        : [];
+
+      setLikes(validLikes);
     } catch (error) {
       console.error("Error fetching likes:", error);
       setError(error.message || "Error fetching likes");
@@ -96,6 +102,8 @@ const LikedMeScreen = () => {
   });
 
   const handleCardPress = (user) => {
+    if (!user || !user.id) return;
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.push({
       pathname: "/(profile)/matchProfile",
@@ -107,6 +115,8 @@ const LikedMeScreen = () => {
   };
 
   const handleLikeBack = (user) => {
+    if (!user || !user.id) return;
+
     setSelectedUser(user);
     setShowLikeModal(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -167,6 +177,12 @@ const LikedMeScreen = () => {
   };
 
   const renderProfileCard = ({ item, index }) => {
+    // Add defensive check for item and liked_user
+    if (!item || !item.liked_user) {
+      console.log("Invalid like item:", item);
+      return null;
+    }
+
     const user = item.liked_user;
 
     const gradientDirection =
@@ -178,9 +194,11 @@ const LikedMeScreen = () => {
 
     let imageUrl = "https://via.placeholder.com/500x500";
 
-    if (user.photos && user.photos.length > 0) {
+    // Add defensive checks for photos
+    if (user.photos && Array.isArray(user.photos) && user.photos.length > 0) {
       const mainPhoto =
-        user.photos.find((photo) => photo.is_main === 1) || user.photos[0];
+        user.photos.find((photo) => photo && photo.is_main === 1) ||
+        user.photos[0];
       if (mainPhoto && mainPhoto.url) {
         if (mainPhoto.url.startsWith("http")) {
           imageUrl = mainPhoto.url;
@@ -255,7 +273,7 @@ const LikedMeScreen = () => {
                   numberOfLines={1}
                   ellipsizeMode="tail"
                 >
-                  {user.first_name} {user.last_name}
+                  {user.first_name} {user.last_name || ""}
                 </Text>
                 {(user.age || user.location) && (
                   <Text style={styles.userDetails} numberOfLines={1}>
@@ -375,7 +393,9 @@ const LikedMeScreen = () => {
       <Animated.FlatList
         data={likes}
         renderItem={renderProfileCard}
-        keyExtractor={(item) => item.id.toString()}
+        keyExtractor={(item) =>
+          item && item.id ? item.id.toString() : Math.random().toString()
+        }
         contentContainerStyle={[
           styles.listContainer,
           { paddingTop: HEADER_HEIGHT + 20 },

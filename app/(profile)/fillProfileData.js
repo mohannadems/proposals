@@ -32,8 +32,9 @@ const ProfileFormScreen = () => {
   const userId = useSelector((state) => state.profile.data?.id);
   const scrollViewRef = useRef(null);
   const navigation = useNavigation();
+  const userData = useSelector((state) => state.profile.data);
   const dispatch = useDispatch();
-
+  const userGender = userData?.gender;
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [currentErrors, setCurrentErrors] = useState([]);
 
@@ -71,9 +72,11 @@ const ProfileFormScreen = () => {
       case 1:
         return <PersonalInfoSection isRTL={isRTL} t={t} />;
       case 2:
-        return <LifestyleSection isRTL={isRTL} t={t} />;
+        return <LifestyleSection isRTL={isRTL} t={t} userGender={userGender} />;
       case 3:
-        return <EducationWorkSection isRTL={isRTL} t={t} />;
+        return (
+          <EducationWorkSection isRTL={isRTL} t={t} userGender={userGender} />
+        );
       case 4:
         return <ProfileImageSection isRTL={isRTL} t={t} />;
       default:

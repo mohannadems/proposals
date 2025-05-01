@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useContext } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "expo-router";
 import { MaterialIcons, Feather } from "@expo/vector-icons";
@@ -29,7 +29,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { calculateProfileProgress } from "../../utils/profileProgress";
 import ProfileCompletionAlert from "./ProfileCompletionAlert";
 import { fetchProfileCompletionData } from "../../store/slices/profileCompletionSlice";
-
+import { LanguageContext } from "../../contexts/LanguageContext";
 const { width } = Dimensions.get("window");
 const scale = width / 375;
 const moderateScale = (size) => size + (scale - 1) * 0.5;
@@ -338,6 +338,7 @@ const StepCard = ({ step, info, isActive }) => {
 
 const withProfileCompletion = (WrappedComponent) => {
   return (props) => {
+    const { t } = useContext(LanguageContext);
     const dispatch = useDispatch();
     const { data } = useSelector((state) => state.profile);
 
@@ -475,7 +476,9 @@ const withProfileCompletion = (WrappedComponent) => {
       return (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>Loading profile...</Text>
+          <Text style={styles.loadingText}>
+            {t("profile_completion.loading")}
+          </Text>
         </View>
       );
     }
@@ -532,10 +535,11 @@ const withProfileCompletion = (WrappedComponent) => {
                 color={COLORS.primary}
                 style={styles.messageIcon}
               />
-              <Text style={styles.messageTitle}>Profile in Progress</Text>
+              <Text style={styles.messageTitle}>
+                {t("profile_completion.message_title")}
+              </Text>
               <Text style={styles.messageText}>
-                Complete your profile to unlock personalized matches and begin
-                your journey to meaningful connections.
+                {t("profile_completion.message_text")}
               </Text>
             </View>
 
@@ -543,14 +547,17 @@ const withProfileCompletion = (WrappedComponent) => {
               <View style={styles.savedProgressCard}>
                 <Feather name="bookmark" size={24} color={COLORS.primary} />
                 <Text style={styles.savedProgressTitle}>
-                  Resume Your Progress
+                  {t("profile_completion.resume_progress_title")}
                 </Text>
                 <Text style={styles.savedProgressText}>
-                  Continue from step {savedProgress.step} of 4
+                  {t("profile_completion.resume_progress_text", {
+                    step: savedProgress.step,
+                  })}
                 </Text>
                 <Text style={styles.savedProgressDate}>
-                  Last updated:{" "}
-                  {new Date(savedProgress.lastUpdated).toLocaleString()}
+                  {t("profile_completion.last_updated", {
+                    date: new Date(savedProgress.lastUpdated).toLocaleString(),
+                  })}
                 </Text>
               </View>
             )}
@@ -562,6 +569,7 @@ const withProfileCompletion = (WrappedComponent) => {
                   step={step}
                   info={info}
                   isActive={savedProgress?.step === Number(step)}
+                  t={t}
                 />
               ))}
             </View>
@@ -581,7 +589,9 @@ const withProfileCompletion = (WrappedComponent) => {
                   }}
                 />
                 <Text style={styles.refreshButtonText}>
-                  {refreshing ? "Refreshing..." : "Refresh"}
+                  {refreshing
+                    ? t("profile_completion.refreshing")
+                    : t("profile_completion.refresh")}
                 </Text>
               </TouchableOpacity>
 
@@ -596,7 +606,9 @@ const withProfileCompletion = (WrappedComponent) => {
                   end={{ x: 1, y: 0 }}
                 >
                   <Text style={styles.buttonText}>
-                    {savedProgress ? "Continue Profile" : "Complete Profile"}
+                    {savedProgress
+                      ? t("profile_completion.continue_profile")
+                      : t("profile_completion.complete_profile")}
                   </Text>
                   <Feather name="arrow-right" size={20} color="#fff" />
                 </ExpoLinearGradient>

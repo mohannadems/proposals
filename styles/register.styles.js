@@ -81,6 +81,7 @@ export const registerStyles = StyleSheet.create({
     marginBottom: 20,
   },
   nextButton: {
+    padding: 15,
     flexDirection: "row",
     height: 56,
     borderRadius: 28,
