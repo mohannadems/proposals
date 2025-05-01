@@ -1,4 +1,109 @@
 {
+  "filters": {
+    "alerts": {
+      "maxFiltersTitle": "تم الوصول للحد الأقصى من المعايير",
+      "maxFiltersMessage": "لقد اخترت الحد الأقصى وهو 10 معايير للشريك المثالي. لإضافة هذا المع"
+    },
+    "errors": {
+      "selectSmokingTools": "الرجاء اختيار أداة تدخين واحدة على الأقل",
+      "smokingTools": "الرجاء اختيار أدوات التدخين"
+    },
+    "ageRange": {
+      "label": "الفئة العمرية",
+      "minAge": "الحد الأدنى",
+      "maxAge": "الحد الأقصى",
+      "to": "إلى",
+      "presets": {
+        "young": "شاب (18-25)",
+        "mid": "متوسط (26-35)",
+        "mature": "ناضج (36-45)",
+        "senior": "كبير (46-70)",
+        "allAges": "جميع الأعمار"
+      }
+    },
+    "progress": {
+      "match": "التوافق",
+      "perfectMatch": "توافق مثالي!",
+      "youHaveSelected": "لقد اخترت",
+      "filters": "معايير",
+      "maxFiltersMessage": "تم اختيار الحد الأقصى من المعايير! ستحصل على أكثر المطابقات دقة."
+    },
+    "options": {
+      "employed": "موظف",
+      "unemployed": "غير موظف",
+      "socialMedia": {
+        "active": "نشط على وسائل التواصل الاجتماعي",
+        "moderate": "استخدام متوسط لوسائل التواصل",
+        "limited": "استخدام محدود لوسائل التواصل",
+        "none": "لا يستخدم وسائل التواصل الاجتماعي"
+      },
+      "smoking": {
+        "smoker": "مدخن",
+        "nonSmoker": "غير مدخن"
+      }
+    },
+    "loading": "جاري تحميل التفضيلات...",
+    "title": "البحث عن شريك",
+    "subtitle": "اختر حتى {maxFilters} معايير للشريك المثالي",
+    "sections": {
+      "basic": "المعلومات الأساسية",
+      "education": "التعليم والمهنة",
+      "personal": "السمات الشخصية",
+      "lifestyle": "نمط الحياة والعادات"
+    },
+    "actions": {
+      "addEmploymentPreference": "إضافة تفضيل للحالة الوظيفية",
+      "addSmokingPreference": "إضافة تفضيل للتدخين",
+      "selectSmokingTools": "اختر أدوات التدخين",
+      "search": "البحث عن شريك",
+      "reset": "إعادة تعيين المعايير",
+      "resetAll": "إعادة تعيين جميع المعايير"
+    },
+    "fields": {
+      "nationality": "الجنسية",
+      "origin": "الأصل",
+      "country": "الدولة",
+      "city": "المدينة",
+      "ageRange": "الفئة العمرية",
+      "minAge": "الحد الأدنى للعمر",
+      "maxAge": "الحد الأقصى للعمر",
+      "educationalLevel": "المستوى التعليمي",
+      "specialization": "التخصص",
+      "employmentStatus": "الحالة الوظيفية",
+      "jobTitle": "المسمى الوظيفي",
+      "financialStatus": "الوضع المالي",
+      "marriageBudget": "ميزانية الزواج",
+      "height": "الطول",
+      "weight": "الوزن",
+      "maritalStatus": "الحالة الاجتماعية",
+      "socialMediaPresence": "التواجد على وسائل التواصل الاجتماعي",
+      "smokingStatus": "حالة التدخين",
+      "drinkingStatus": "حالة شرب الكحول",
+      "sportsActivity": "النشاط الرياضي",
+      "sleepHabit": "عادات النوم",
+      "pets": "الحيوانات الأليفة",
+      "religiosityLevel": "مستوى التدين"
+    },
+    "placeholders": {
+      "nationality": "اختر الجنسية (اختياري)",
+      "origin": "اختر الأصل (اختياري)",
+      "country": "اختر الدولة (اختياري)",
+      "city": "اختر المدينة (اختياري)",
+      "educationalLevel": "اختر المستوى التعليمي (اختياري)",
+      "specialization": "اختر التخصص (اختياري)",
+      "jobTitle": "اختر المسمى الوظيفي (اختياري)",
+      "financialStatus": "اختر الوضع المالي (اختياري)",
+      "marriageBudget": "اختر ميزانية الزواج (اختياري)",
+      "height": "اختر الطول (اختياري)",
+      "weight": "اختر الوزن (اختياري)",
+      "maritalStatus": "اختر الحالة الاجتماعية (اختياري)",
+      "socialMediaPresence": "اختر التواجد على وسائل التواصل (اختياري)",
+      "drinkingStatus": "اختر حالة شرب الكحول (اختياري)",
+      "sportsActivity": "اختر النشاط الرياضي (اختياري)",
+      "sleepHabit": "اختر عادات النوم (اختياري)",
+      "religiosityLevel": "اختر مستوى التدين (اختياري)"
+    }
+  },
   "checkout": {
     "checkout": "الدفع",
     "credit_card": "بطاقة الائتمان/الخصم",

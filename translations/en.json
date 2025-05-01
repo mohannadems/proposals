@@ -1,4 +1,108 @@
 {
+  "filters": {
+    "alerts": {
+      "maxFiltersTitle": "Maximum Filters Reached",
+      "maxFiltersMessage": "You've selected the maximum of 10 filters for the perfect match. To add this filter, please remove another one first."
+    },
+    "errors": {
+      "selectSmokingTools": "Please select at least one smoking tool",
+      "smokingTools": "Please select smoking tools"
+    },
+    "ageRange": {
+      "label": "Age Range",
+      "minAge": "Min Age",
+      "maxAge": "Max Age",
+      "to": "to",
+      "presets": {
+        "young": "Young (18-25)",
+        "mid": "Mid (26-35)",
+        "mature": "Mature (36-45)",
+        "senior": "Senior (46-70)",
+        "allAges": "All Ages"
+      }
+    },
+    "actions": {
+      "addEmploymentPreference": "Add employment preference",
+      "addSmokingPreference": "Add smoking preference",
+      "selectSmokingTools": "Select smoking tools",
+      "search": "Search",
+      "reset": "Reset Filters"
+    },
+    "options": {
+      "employed": "Employed",
+      "unemployed": "Unemployed",
+      "socialMedia": {
+        "active": "Active on social media",
+        "moderate": "Moderate social media use",
+        "limited": "Limited social media use",
+        "none": "No social media presence"
+      },
+      "smoking": {
+        "smoker": "Smoker",
+        "nonSmoker": "Non-Smoker"
+      }
+    },
+    "progress": {
+      "match": "Match",
+      "perfectMatch": "Perfect Match!",
+      "youHaveSelected": "You have selected",
+      "filters": "filters",
+      "maxFiltersMessage": "Maximum filters selected! You'll get the most accurate matches."
+    },
+    "loading": "Loading preferences...",
+    "title": "Find Matches",
+    "subtitle": "Select up to {maxFilters} filters for your perfect match",
+    "sections": {
+      "basic": "Basic Information",
+      "education": "Education & Career",
+      "personal": "Personal Attributes",
+      "lifestyle": "Lifestyle & Habits"
+    },
+    "placeholders": {
+      "nationality": "Select nationality (optional)",
+      "origin": "Select origin (optional)",
+      "country": "Select country (optional)",
+      "city": "Select city (optional)",
+      "educationalLevel": "Select educational level (optional)",
+      "specialization": "Select specialization (optional)",
+      "jobTitle": "Select job title (optional)",
+      "financialStatus": "Select financial status (optional)",
+      "marriageBudget": "Select marriage budget (optional)",
+      "height": "Select height (optional)",
+      "weight": "Select weight (optional)",
+      "maritalStatus": "Select marital status (optional)",
+      "socialMediaPresence": "Select social media presence (optional)",
+      "drinkingStatus": "Select drinking status (optional)",
+      "sportsActivity": "Select sports activity (optional)",
+      "sleepHabit": "Select sleep habit (optional)",
+      "religiosityLevel": "Select religiosity level (optional)"
+    },
+    "fields": {
+      "nationality": "Nationality",
+      "origin": "Origin",
+      "country": "Country",
+      "city": "City",
+      "ageRange": "Age Range",
+      "minAge": "Min Age",
+      "maxAge": "Max Age",
+      "educationalLevel": "Educational Level",
+      "specialization": "Specialization",
+      "employmentStatus": "Employment Status",
+      "jobTitle": "Job Title",
+      "financialStatus": "Financial Status",
+      "marriageBudget": "Marriage Budget",
+      "height": "Height",
+      "weight": "Weight",
+      "maritalStatus": "Marital Status",
+      "socialMediaPresence": "Social Media Presence",
+      "smokingStatus": "Smoking Status",
+      "drinkingStatus": "Drinking Status",
+      "sportsActivity": "Sports Activity",
+      "sleepHabit": "Sleep Habit",
+      "pets": "Pets",
+      "religiosityLevel": "Religiosity Level"
+    }
+  },
   "checkout": {
     "checkout": "Checkout",
     "credit_card": "Credit/Debit Card",
@@ -170,7 +274,6 @@
     "logout": "Logout",
     "changeLanguage": "Change Language",
     "cancel": "Cancel",
-    "save": "Save",
     "edit": "Edit",
     "delete": "Delete",
     "retry": "Retry",
@@ -189,7 +292,9 @@
     "no": "No",
     "ok": "OK",
     "required": "Required",
-    "clear": "Clear"
+    "clear": "Clear",
+    "save": "Save",
+    "loading": "Loading..."
   },
 
   "status": {

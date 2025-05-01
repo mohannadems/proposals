@@ -1,5 +1,11 @@
 // AdvancedSearchScreen.js
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useContext,
+} from "react";
 import {
   View,
   ScrollView,
@@ -24,6 +30,7 @@ import AgeRangeSelector from "../../components/search/AgeRangeSelector";
 import SmokerSelector from "../../components/search/SmokerSelector";
 import SearchActionButtons from "../../components/search/SearchActionButtons";
 import MultiSelectChips from "../../components/search/MultiSelectChips";
+import createRTLAwareStyles from "../../styles/createRTLAwareStyles";
 import withProfileCompletion from "../../components/profile/withProfileCompletion";
 import {
   updatePreference,
@@ -47,9 +54,11 @@ import {
 } from "../../store/slices/profileAttributesSlice";
 import { SceneStyleInterpolators } from "@react-navigation/bottom-tabs";
 import { setHasSubmittedFilters } from "../../store/slices/userMatchesSlice";
+import { LanguageContext } from "../../contexts/LanguageContext";
 const MAX_FILTERS = 10;
 
 const AdvancedSearchScreen = () => {
+  const { t, isRTL } = useContext(LanguageContext);
   const dispatch = useDispatch();
   const router = useRouter();
   const scrollY = useRef(new Animated.Value(0)).current;
@@ -269,7 +278,7 @@ const AdvancedSearchScreen = () => {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>Loading preferences...</Text>
+        <Text style={styles.loadingText}>{t("filters.loading")}</Text>
       </View>
     );
   }
@@ -286,19 +295,25 @@ const AdvancedSearchScreen = () => {
             color="#FFFFFF"
             style={styles.headerIcon}
           />
-          <Text style={styles.headerTitle}>Find Matches</Text>
+          <Text style={styles.headerTitle}>{t("filters.title")}</Text>
         </View>
         <Text style={styles.headerSubtitle}>
-          Select up to 10 filters for your perfect match
+          {t("filters.subtitle", { maxFilters: MAX_FILTERS })}
         </Text>
       </View>
 
-      {/* Progress Tracker */}
       <FilterProgressTracker
         selectedFiltersCount={selectedFiltersCount}
         maxFilters={MAX_FILTERS}
         scrollY={scrollY}
-        isRTL={false}
+        isRTL={isRTL}
+        labels={{
+          match: t("filters.progress.match"),
+          perfectMatch: t("filters.progress.perfectMatch"),
+          youHaveSelected: t("filters.progress.youHaveSelected"),
+          filters: t("filters.progress.filters"),
+          maxFiltersMessage: t("filters.progress.maxFiltersMessage"),
+        }}
       />
 
       <KeyboardAvoidingView
@@ -317,9 +332,9 @@ const AdvancedSearchScreen = () => {
           showsVerticalScrollIndicator={false}
         >
           {/* Basic Information Section */}
-          <FilterSection title="Basic Information">
+          <FilterSection title={t("filters.sections.basic")}>
             <ModernDropdown
-              label="Nationality"
+              label={t("filters.fields.nationality")}
               value={preferences.preferred_nationality_id}
               items={(geographic?.nationalities || []).map((item) => ({
                 label: item.name,
@@ -328,12 +343,12 @@ const AdvancedSearchScreen = () => {
               onValueChange={(value) =>
                 handlePreferenceChange("preferred_nationality_id", value)
               }
-              placeholder="Select nationality (optional)"
+              placeholder={t("filters.placeholders.nationality")}
               disabled={isFilterDisabled("preferred_nationality_id")}
             />
 
             <ModernDropdown
-              label="Origin"
+              label={t("filters.fields.origin")}
               value={preferences.preferred_origin_id}
               items={(personalAttributes?.origins || []).map((item) => ({
                 label: item.name,
@@ -342,12 +357,12 @@ const AdvancedSearchScreen = () => {
               onValueChange={(value) =>
                 handlePreferenceChange("preferred_origin_id", value)
               }
-              placeholder="Select origin (optional)"
+              placeholder={t("filters.placeholders.origin")}
               disabled={isFilterDisabled("preferred_origin_id")}
             />
 
             <ModernDropdown
-              label="Country"
+              label={t("filters.fields.country")}
               value={preferences.preferred_country_id}
               items={(geographic?.countries || []).map((item) => ({
                 label: item.name,
@@ -356,7 +371,7 @@ const AdvancedSearchScreen = () => {
               onValueChange={(value) =>
                 handlePreferenceChange("preferred_country_id", value)
               }
-              placeholder="Select country (optional)"
+              placeholder={t("filters.placeholders.country")}
               disabled={isFilterDisabled("preferred_country_id")}
             />
 
@@ -364,7 +379,7 @@ const AdvancedSearchScreen = () => {
               cities &&
               cities.length > 0 && (
                 <ModernDropdown
-                  label="City"
+                  label={t("filters.fields.city")}
                   value={preferences.preferred_city_id}
                   items={cities.map((item) => ({
                     label: item.name,
@@ -373,24 +388,36 @@ const AdvancedSearchScreen = () => {
                   onValueChange={(value) =>
                     handlePreferenceChange("preferred_city_id", value)
                   }
-                  placeholder="Select city (optional)"
+                  placeholder={t("filters.placeholders.city")}
                   disabled={isFilterDisabled("preferred_city_id")}
                 />
               )}
-
             <AgeRangeSelector
               minAge={preferences.preferred_age_min || 18}
               maxAge={preferences.preferred_age_max || 70}
               onChange={handleAgeRangeChange}
               isFilterDisabled={isFilterDisabled("preferred_age_min")}
               isMaxFiltersSelected={isMaxFiltersSelected}
+              isRTL={isRTL}
+              labelText={t("filters.fields.ageRange")}
+              minAgeLabel={t("filters.ageRange.minAge")}
+              maxAgeLabel={t("filters.ageRange.maxAge")}
+              clearLabel={t("common.clear")}
+              toLabel={t("filters.ageRange.to")}
+              presetLabels={{
+                young: t("filters.ageRange.presets.young"),
+                mid: t("filters.ageRange.presets.mid"),
+                mature: t("filters.ageRange.presets.mature"),
+                senior: t("filters.ageRange.presets.senior"),
+                allAges: t("filters.ageRange.presets.allAges"),
+              }}
             />
           </FilterSection>
 
           {/* Education & Career Section */}
-          <FilterSection title="Education & Career">
+          <FilterSection title={t("filters.sections.education")}>
             <ModernDropdown
-              label="Educational Level"
+              label={t("filters.fields.educationalLevel")}
               value={preferences.preferred_educational_level_id}
               items={(professionalEducational?.educationalLevels || []).map(
                 (item) => ({
@@ -401,12 +428,12 @@ const AdvancedSearchScreen = () => {
               onValueChange={(value) =>
                 handlePreferenceChange("preferred_educational_level_id", value)
               }
-              placeholder="Select educational level (optional)"
+              placeholder={t("filters.placeholders.educationalLevel")}
               disabled={isFilterDisabled("preferred_educational_level_id")}
             />
 
             <ModernDropdown
-              label="Specialization"
+              label={t("filters.fields.specialization")}
               value={preferences.preferred_specialization_id}
               items={(professionalEducational?.specializations || []).map(
                 (item) => ({
@@ -417,13 +444,15 @@ const AdvancedSearchScreen = () => {
               onValueChange={(value) =>
                 handlePreferenceChange("preferred_specialization_id", value)
               }
-              placeholder="Select specialization (optional)"
+              placeholder={t("filters.placeholders.specialization")}
               disabled={isFilterDisabled("preferred_specialization_id")}
             />
 
             <View style={styles.toggleSection}>
               <View style={styles.toggleHeader}>
-                <Text style={styles.toggleLabel}>Employment Status</Text>
+                <Text style={styles.toggleLabel}>
+                  {t("filters.fields.employmentStatus")}
+                </Text>
                 {preferences.preferred_employment_status !== null && (
                   <TouchableOpacity
                     onPress={() => {
@@ -437,7 +466,9 @@ const AdvancedSearchScreen = () => {
                     }}
                     style={styles.clearButton}
                   >
-                    <Text style={styles.clearButtonText}>Clear</Text>
+                    <Text style={styles.clearButtonText}>
+                      {t("common.clear")}
+                    </Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -464,7 +495,7 @@ const AdvancedSearchScreen = () => {
                           styles.toggleTextActive,
                       ]}
                     >
-                      Employed
+                      {t("filters.options.employed")}
                     </Text>
                   </TouchableOpacity>
 
@@ -491,7 +522,7 @@ const AdvancedSearchScreen = () => {
                           styles.toggleTextActive,
                       ]}
                     >
-                      Unemployed
+                      {t("filters.options.unemployed")}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -504,7 +535,7 @@ const AdvancedSearchScreen = () => {
                   disabled={isFilterDisabled("preferred_employment_status")}
                 >
                   <Text style={styles.addButtonText}>
-                    Add employment preference
+                    {t("filters.actions.addEmploymentPreference")}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -512,7 +543,7 @@ const AdvancedSearchScreen = () => {
 
             {preferences.preferred_employment_status === true && (
               <ModernDropdown
-                label="Job Title"
+                label={t("filters.fields.jobTitle")}
                 value={preferences.preferred_job_title_id}
                 items={(professionalEducational?.jobTitles || []).map(
                   (item) => ({
@@ -523,13 +554,13 @@ const AdvancedSearchScreen = () => {
                 onValueChange={(value) =>
                   handlePreferenceChange("preferred_job_title_id", value)
                 }
-                placeholder="Select job title (optional)"
+                placeholder={t("filters.placeholders.jobTitle")}
                 disabled={isFilterDisabled("preferred_job_title_id")}
               />
             )}
 
             <ModernDropdown
-              label="Financial Status"
+              label={t("filters.fields.financialStatus")}
               value={preferences.preferred_financial_status_id}
               items={(geographic?.financialStatuses || []).map((item) => ({
                 label: item.name,
@@ -538,12 +569,12 @@ const AdvancedSearchScreen = () => {
               onValueChange={(value) =>
                 handlePreferenceChange("preferred_financial_status_id", value)
               }
-              placeholder="Select financial status (optional)"
+              placeholder={t("filters.placeholders.financialStatus")}
               disabled={isFilterDisabled("preferred_financial_status_id")}
             />
 
             <ModernDropdown
-              label="Marriage Budget"
+              label={t("filters.fields.marriageBudget")}
               value={preferences.preferred_marriage_budget_id}
               items={(marriageBudget || []).map((item) => ({
                 label: item.name || item.budget || `Budget ${item.id}`,
@@ -552,15 +583,15 @@ const AdvancedSearchScreen = () => {
               onValueChange={(value) =>
                 handlePreferenceChange("preferred_marriage_budget_id", value)
               }
-              placeholder="Select marriage budget (optional)"
+              placeholder={t("filters.placeholders.marriageBudget")}
               disabled={isFilterDisabled("preferred_marriage_budget_id")}
             />
           </FilterSection>
 
           {/* Personal Attributes Section */}
-          <FilterSection title="Personal Attributes">
+          <FilterSection title={t("filters.sections.personal")}>
             <ModernDropdown
-              label="Height"
+              label={t("filters.fields.height")}
               value={preferences.preferred_height_id}
               items={(personalAttributes?.heights || []).map((item) => ({
                 label: item.name,
@@ -569,12 +600,12 @@ const AdvancedSearchScreen = () => {
               onValueChange={(value) =>
                 handlePreferenceChange("preferred_height_id", value)
               }
-              placeholder="Select height (optional)"
+              placeholder={t("filters.placeholders.height")}
               disabled={isFilterDisabled("preferred_height_id")}
             />
 
             <ModernDropdown
-              label="Weight"
+              label={t("filters.fields.weight")}
               value={preferences.preferred_weight_id}
               items={(personalAttributes?.weights || []).map((item) => ({
                 label: item.name,
@@ -583,12 +614,12 @@ const AdvancedSearchScreen = () => {
               onValueChange={(value) =>
                 handlePreferenceChange("preferred_weight_id", value)
               }
-              placeholder="Select weight (optional)"
+              placeholder={t("filters.placeholders.weight")}
               disabled={isFilterDisabled("preferred_weight_id")}
             />
 
             <ModernDropdown
-              label="Marital Status"
+              label={t("filters.fields.maritalStatus")}
               value={preferences.preferred_marital_status_id}
               items={(personalAttributes?.maritalStatuses || []).map(
                 (item) => ({
@@ -599,18 +630,18 @@ const AdvancedSearchScreen = () => {
               onValueChange={(value) =>
                 handlePreferenceChange("preferred_marital_status_id", value)
               }
-              placeholder="Select marital status (optional)"
+              placeholder={t("filters.placeholders.maritalStatus")}
               disabled={isFilterDisabled("preferred_marital_status_id")}
             />
 
             <ModernDropdown
-              label="Social Media Presence"
+              label={t("filters.fields.socialMediaPresence")}
               value={preferences.preferred_social_media_presence_id}
               items={[
-                { label: "Active on social media", value: 1 },
-                { label: "Moderate social media use", value: 2 },
-                { label: "Limited social media use", value: 3 },
-                { label: "No social media presence", value: 4 },
+                { label: t("filters.options.socialMedia.active"), value: 1 },
+                { label: t("filters.options.socialMedia.moderate"), value: 2 },
+                { label: t("filters.options.socialMedia.limited"), value: 3 },
+                { label: t("filters.options.socialMedia.none"), value: 4 },
               ]}
               onValueChange={(value) =>
                 handlePreferenceChange(
@@ -618,13 +649,13 @@ const AdvancedSearchScreen = () => {
                   value
                 )
               }
-              placeholder="Select social media presence (optional)"
+              placeholder={t("filters.placeholders.socialMediaPresence")}
               disabled={isFilterDisabled("preferred_social_media_presence_id")}
             />
           </FilterSection>
 
           {/* Lifestyle Section */}
-          <FilterSection title="Lifestyle & Habits">
+          <FilterSection title={t("filters.sections.lifestyle")}>
             <SmokerSelector
               isSmoker={preferences.preferred_smoking_status}
               onSmokerChange={(value) =>
@@ -636,10 +667,19 @@ const AdvancedSearchScreen = () => {
               isFilterDisabled={isFilterDisabled("preferred_smoking_status")}
               isMaxFiltersSelected={isMaxFiltersSelected}
               validationError={validationErrors.smokingTools}
+              labels={{
+                title: t("filters.fields.smokingStatus"),
+                smoker: t("filters.options.smoking.smoker"),
+                nonSmoker: t("filters.options.smoking.nonSmoker"),
+                selectTools: t("filters.actions.selectSmokingTools"),
+                toolsError: t("filters.errors.selectSmokingTools"),
+                clear: t("common.clear"),
+                add: t("filters.actions.addSmokingPreference"),
+              }}
             />
 
             <ModernDropdown
-              label="Drinking Status"
+              label={t("filters.fields.drinkingStatus")}
               value={preferences.preferred_drinking_status_id}
               items={(lifestyleInterests?.drinkingStatuses || []).map(
                 (item) => ({
@@ -650,12 +690,12 @@ const AdvancedSearchScreen = () => {
               onValueChange={(value) =>
                 handlePreferenceChange("preferred_drinking_status_id", value)
               }
-              placeholder="Select drinking status (optional)"
+              placeholder={t("filters.placeholders.drinkingStatus")}
               disabled={isFilterDisabled("preferred_drinking_status_id")}
             />
 
             <ModernDropdown
-              label="Sports Activity"
+              label={t("filters.fields.sportsActivity")}
               value={preferences.preferred_sports_activity_id}
               items={(lifestyleInterests?.sportsActivities || []).map(
                 (item) => ({
@@ -666,12 +706,12 @@ const AdvancedSearchScreen = () => {
               onValueChange={(value) =>
                 handlePreferenceChange("preferred_sports_activity_id", value)
               }
-              placeholder="Select sports activity (optional)"
+              placeholder={t("filters.placeholders.sportsActivity")}
               disabled={isFilterDisabled("preferred_sports_activity_id")}
             />
 
             <ModernDropdown
-              label="Sleep Habit"
+              label={t("filters.fields.sleepHabit")}
               value={preferences.preferred_sleep_habit_id}
               items={(personalAttributes?.sleepHabits || []).map((item) => ({
                 label: item.name,
@@ -680,13 +720,13 @@ const AdvancedSearchScreen = () => {
               onValueChange={(value) =>
                 handlePreferenceChange("preferred_sleep_habit_id", value)
               }
-              placeholder="Select sleep habit (optional)"
+              placeholder={t("filters.placeholders.sleepHabit")}
               disabled={isFilterDisabled("preferred_sleep_habit_id")}
             />
 
             <View style={styles.petsSection}>
               <View style={styles.petsHeader}>
-                <Text style={styles.petsLabel}>Pets</Text>
+                <Text style={styles.petsLabel}>{t("filters.fields.pets")}</Text>
                 {preferences.preferred_pets_id?.length > 0 && (
                   <TouchableOpacity
                     onPress={() =>
@@ -694,7 +734,9 @@ const AdvancedSearchScreen = () => {
                     }
                     style={styles.clearButton}
                   >
-                    <Text style={styles.clearButtonText}>Clear</Text>
+                    <Text style={styles.clearButtonText}>
+                      {t("common.clear")}
+                    </Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -716,9 +758,9 @@ const AdvancedSearchScreen = () => {
                     items.length > 0
                   ) {
                     Alert.alert(
-                      "Maximum Filters Reached",
-                      "You've selected the maximum of 10 filters for the perfect match. To add this filter, please remove another one first.",
-                      [{ text: "OK" }]
+                      t("filters.alerts.maxFiltersTitle"),
+                      t("filters.alerts.maxFiltersMessage"),
+                      [{ text: t("common.ok") }]
                     );
                     return;
                   }
@@ -734,7 +776,7 @@ const AdvancedSearchScreen = () => {
             </View>
 
             <ModernDropdown
-              label="Religiosity Level"
+              label={t("filters.fields.religiosityLevel")}
               value={preferences.preferred_religiosity_level_id}
               items={(religiosityLevels || []).map((item) => ({
                 label: item.name,
@@ -743,7 +785,7 @@ const AdvancedSearchScreen = () => {
               onValueChange={(value) =>
                 handlePreferenceChange("preferred_religiosity_level_id", value)
               }
-              placeholder="Select religiosity level (optional)"
+              placeholder={t("filters.placeholders.religiosityLevel")}
               disabled={isFilterDisabled("preferred_religiosity_level_id")}
             />
           </FilterSection>
@@ -755,8 +797,12 @@ const AdvancedSearchScreen = () => {
             selectedFiltersCount={selectedFiltersCount}
             handleSearch={handleSearch}
             handleReset={handleReset}
+            isRTL={isRTL}
+            searchText={t("filters.actions.search")}
+            resetText={t("filters.actions.resetAll")}
+            infoText={t("filters.info.selectFilters")}
+            errorText={t("filters.errors.smokingTools")}
           />
-
           {/* Bottom Spacing */}
           <View style={styles.bottomSpacing} />
         </Animated.ScrollView>

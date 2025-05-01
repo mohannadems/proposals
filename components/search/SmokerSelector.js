@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import MultiSelectChips from "./MultiSelectChips";
 import COLORS from "../../constants/colors";
+
 const SmokerSelector = ({
   isSmoker,
   onSmokerChange,
@@ -11,13 +12,22 @@ const SmokerSelector = ({
   isFilterDisabled,
   isMaxFiltersSelected,
   validationError,
+  labels = {
+    title: "Smoking Status",
+    smoker: "Smoker",
+    nonSmoker: "Non-Smoker",
+    selectTools: "Smoking Tools",
+    toolsError: "Please select at least one smoking tool",
+    clear: "Clear",
+    add: "Add smoking preference",
+  },
 }) => {
   return (
     <View
       style={[styles.container, isFilterDisabled && styles.containerDisabled]}
     >
       <View style={styles.headerContainer}>
-        <Text style={styles.label}>Smoking Status</Text>
+        <Text style={styles.label}>{labels.title}</Text>
         {isSmoker !== null && !isFilterDisabled && (
           <TouchableOpacity
             style={styles.clearButton}
@@ -26,7 +36,7 @@ const SmokerSelector = ({
               onToolsChange([]);
             }}
           >
-            <Text style={styles.clearButtonText}>Clear</Text>
+            <Text style={styles.clearButtonText}>{labels.clear}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -47,7 +57,7 @@ const SmokerSelector = ({
                   isSmoker === true && styles.toggleTextActive,
                 ]}
               >
-                Smoker
+                {labels.smoker}
               </Text>
             </TouchableOpacity>
 
@@ -67,7 +77,7 @@ const SmokerSelector = ({
                   isSmoker === false && styles.toggleTextActive,
                 ]}
               >
-                Non-Smoker
+                {labels.nonSmoker}
               </Text>
             </TouchableOpacity>
           </View>
@@ -82,7 +92,7 @@ const SmokerSelector = ({
               <Text
                 style={[styles.toolsLabel, validationError && styles.errorText]}
               >
-                Smoking Tools <Text style={styles.requiredMark}>*</Text>
+                {labels.selectTools} <Text style={styles.requiredMark}>*</Text>
               </Text>
 
               <MultiSelectChips
@@ -101,9 +111,7 @@ const SmokerSelector = ({
               />
 
               {validationError && (
-                <Text style={styles.errorMessage}>
-                  Please select at least one smoking tool
-                </Text>
+                <Text style={styles.errorMessage}>{labels.toolsError}</Text>
               )}
             </View>
           )}
@@ -117,7 +125,7 @@ const SmokerSelector = ({
           }}
           disabled={isFilterDisabled}
         >
-          <Text style={styles.addButtonText}>Add smoking preference</Text>
+          <Text style={styles.addButtonText}>{labels.add}</Text>
         </TouchableOpacity>
       )}
     </View>

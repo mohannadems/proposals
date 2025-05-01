@@ -2,11 +2,21 @@ import React, { useRef, useEffect } from "react";
 import { View, Text, StyleSheet, Animated } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import COLORS from "../../constants/colors";
+
 const FilterProgressTracker = ({
   selectedFiltersCount,
   maxFilters,
   scrollY,
   isRTL,
+  // Add internationalization props
+  labels = {
+    match: "Match",
+    perfectMatch: "Perfect Match!",
+    youHaveSelected: "You have selected",
+    filters: "filters",
+    maxFiltersMessage:
+      "Maximum filters selected! You'll get the most accurate matches.",
+  },
 }) => {
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const translateAnim = useRef(new Animated.Value(0)).current;
@@ -37,6 +47,19 @@ const FilterProgressTracker = ({
     };
   }, [scrollY, fadeAnim, translateAnim]);
 
+  // Create RTL-aware styles
+  const rtlStyles = {
+    infoContainer: {
+      flexDirection: isRTL ? "row-reverse" : "row",
+    },
+    infoIconContainer: {
+      [isRTL ? "marginLeft" : "marginRight"]: 12,
+    },
+    statusContainer: {
+      textAlign: isRTL ? "right" : "left",
+    },
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.trackContainer}>
@@ -45,15 +68,17 @@ const FilterProgressTracker = ({
             <Text style={matchPercentage === 100 ? styles.perfectMatch : null}>
               {matchPercentage}%
             </Text>
-            {matchPercentage === 100 ? " Perfect Match!" : " Match"}
+            {matchPercentage === 100
+              ? ` ${labels.perfectMatch}`
+              : ` ${labels.match}`}
           </Text>
 
           <Text style={styles.filterCountText}>
-            <Text>You have selected </Text>
+            <Text>{labels.youHaveSelected} </Text>
             <Text style={styles.highlightText}>
               {selectedFiltersCount} / {maxFilters}
             </Text>
-            <Text> filters</Text>
+            <Text> {labels.filters}</Text>
           </Text>
         </View>
 
@@ -68,13 +93,13 @@ const FilterProgressTracker = ({
         </View>
 
         {isMaxFiltersSelected && (
-          <View style={styles.infoContainer}>
-            <View style={styles.infoIconContainer}>
+          <View style={[styles.infoContainer, rtlStyles.infoContainer]}>
+            <View
+              style={[styles.infoIconContainer, rtlStyles.infoIconContainer]}
+            >
               <Ionicons name="checkmark-circle" size={22} color="#4CAF50" />
             </View>
-            <Text style={styles.infoText}>
-              Maximum filters selected! You'll get the most accurate matches.
-            </Text>
+            <Text style={styles.infoText}>{labels.maxFiltersMessage}</Text>
           </View>
         )}
       </View>

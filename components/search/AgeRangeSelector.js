@@ -8,12 +8,14 @@ import {
 } from "react-native";
 import MultiSlider from "@ptomasroos/react-native-multi-slider";
 import COLORS from "../../constants/colors";
-const AGE_PRESETS = [
-  { label: "Young (18-25)", min: 18, max: 25 },
-  { label: "Mid (26-35)", min: 26, max: 35 },
-  { label: "Mature (36-45)", min: 36, max: 45 },
-  { label: "Senior (46-70)", min: 46, max: 70 },
-  { label: "All Ages", min: 18, max: 70 },
+
+// Age presets will be defined as a function to support translation
+const getAgePresets = (labels) => [
+  { label: labels.young || "Young (18-25)", min: 18, max: 25 },
+  { label: labels.mid || "Mid (26-35)", min: 26, max: 35 },
+  { label: labels.mature || "Mature (36-45)", min: 36, max: 45 },
+  { label: labels.senior || "Senior (46-70)", min: 46, max: 70 },
+  { label: labels.allAges || "All Ages", min: 18, max: 70 },
 ];
 
 const AgeRangeSelector = ({
@@ -23,7 +25,23 @@ const AgeRangeSelector = ({
   isFilterDisabled,
   isMaxFiltersSelected,
   isRTL,
+  // New internationalized labels
+  labelText = "Age Range",
+  minAgeLabel = "Min Age",
+  maxAgeLabel = "Max Age",
+  clearLabel = "Clear",
+  toLabel = "to",
+  presetLabels = {
+    young: "Young (18-25)",
+    mid: "Mid (26-35)",
+    mature: "Mature (36-45)",
+    senior: "Senior (46-70)",
+    allAges: "All Ages",
+  },
 }) => {
+  // Get localized age presets
+  const AGE_PRESETS = getAgePresets(presetLabels);
+
   const getActivePresetIndex = () => {
     return AGE_PRESETS.findIndex(
       (preset) => preset.min === minAge && preset.max === maxAge
@@ -55,18 +73,38 @@ const AgeRangeSelector = ({
   const activePresetIndex = getActivePresetIndex();
   const isAgeFilterActive = minAge !== 18 || maxAge !== 70;
 
+  // Create RTL-aware styles
+  const rtlStyles = {
+    headerContainer: {
+      flexDirection: isRTL ? "row-reverse" : "row",
+    },
+    label: {
+      textAlign: isRTL ? "right" : "left",
+    },
+    ticksContainer: {
+      flexDirection: isRTL ? "row-reverse" : "row",
+    },
+    presetsContainer: {
+      // For RTL scrolling direction
+    },
+    presetButton: {
+      marginRight: isRTL ? 0 : 8,
+      marginLeft: isRTL ? 8 : 0,
+    },
+  };
+
   return (
     <View
       style={[styles.container, isFilterDisabled && styles.containerDisabled]}
     >
-      <View style={styles.headerContainer}>
-        <Text style={styles.label}>Age Range</Text>
+      <View style={[styles.headerContainer, rtlStyles.headerContainer]}>
+        <Text style={[styles.label, rtlStyles.label]}>{labelText}</Text>
         {isAgeFilterActive && !isFilterDisabled && (
           <TouchableOpacity
             onPress={() => onChange(18, 70)}
             style={styles.clearButton}
           >
-            <Text style={styles.clearButtonText}>Clear</Text>
+            <Text style={styles.clearButtonText}>{clearLabel}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -74,16 +112,16 @@ const AgeRangeSelector = ({
       <View style={styles.displayContainer}>
         <View style={styles.ageDisplay}>
           <Text style={styles.ageValue}>{minAge}</Text>
-          <Text style={styles.ageLabel}>Min Age</Text>
+          <Text style={styles.ageLabel}>{minAgeLabel}</Text>
         </View>
 
         <View style={styles.ageSeparator}>
-          <Text style={styles.ageSeparatorText}>to</Text>
+          <Text style={styles.ageSeparatorText}>{toLabel}</Text>
         </View>
 
         <View style={styles.ageDisplay}>
           <Text style={styles.ageValue}>{maxAge}</Text>
-          <Text style={styles.ageLabel}>Max Age</Text>
+          <Text style={styles.ageLabel}>{maxAgeLabel}</Text>
         </View>
       </View>
 
@@ -92,12 +130,15 @@ const AgeRangeSelector = ({
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.presetScroll}
+          // RTL scrolling support
+          style={{ flexDirection: isRTL ? "row-reverse" : "row" }}
         >
           {AGE_PRESETS.map((preset, index) => (
             <TouchableOpacity
               key={index}
               style={[
                 styles.presetButton,
+                rtlStyles.presetButton,
                 index === activePresetIndex && styles.activePresetButton,
                 isFilterDisabled && styles.disabledPresetButton,
               ]}
@@ -128,21 +169,72 @@ const AgeRangeSelector = ({
           onValuesChange={(values) => handleSliderChange(values)}
           selectedStyle={styles.sliderTrackSelected}
           unselectedStyle={styles.sliderTrackUnselected}
-          markerStyle={styles.sliderMarker}
+          markerStyle={[
+            styles.sliderMarker,
+            // Apply transform to the markers to ensure they appear correctly in RTL
+            isRTL ? { transform: [{ scaleX: -1 }] } : {},
+          ]}
           trackStyle={styles.sliderTrack}
-          containerStyle={styles.sliderInnerContainer}
+          containerStyle={[
+            styles.sliderInnerContainer,
+            // Apply different transform for RTL layout to fix slider direction
+            isRTL ? { transform: [{ scaleX: -1 }] } : {},
+          ]}
           sliderLength={280}
           enabledOne={!isFilterDisabled}
           enabledTwo={!isFilterDisabled}
+          // RTL fixes for marker labels if needed
+          isRTL={isRTL}
         />
       </View>
 
-      <View style={styles.ticksContainer}>
-        <Text style={styles.tickLabel}>18</Text>
-        <Text style={styles.tickLabel}>30</Text>
-        <Text style={styles.tickLabel}>45</Text>
-        <Text style={styles.tickLabel}>60</Text>
-        <Text style={styles.tickLabel}>70</Text>
+      <View
+        style={[
+          styles.ticksContainer,
+          // Apply the same transform to the ticks container to match slider orientation
+          isRTL ? { flexDirection: "row", transform: [{ scaleX: -1 }] } : {},
+        ]}
+      >
+        <Text
+          style={[
+            styles.tickLabel,
+            isRTL ? { transform: [{ scaleX: -1 }] } : {},
+          ]}
+        >
+          18
+        </Text>
+        <Text
+          style={[
+            styles.tickLabel,
+            isRTL ? { transform: [{ scaleX: -1 }] } : {},
+          ]}
+        >
+          30
+        </Text>
+        <Text
+          style={[
+            styles.tickLabel,
+            isRTL ? { transform: [{ scaleX: -1 }] } : {},
+          ]}
+        >
+          45
+        </Text>
+        <Text
+          style={[
+            styles.tickLabel,
+            isRTL ? { transform: [{ scaleX: -1 }] } : {},
+          ]}
+        >
+          60
+        </Text>
+        <Text
+          style={[
+            styles.tickLabel,
+            isRTL ? { transform: [{ scaleX: -1 }] } : {},
+          ]}
+        >
+          70
+        </Text>
       </View>
     </View>
   );
