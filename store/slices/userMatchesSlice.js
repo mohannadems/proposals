@@ -176,7 +176,7 @@ const formatLikesData = (likes) => {
 
   return likes
     .map((like) => {
-      const user = like.liked_user;
+      const user = like.user;
       if (!user) return null;
 
       const photoUrl = user.photos?.[0]?.url ?? null;
@@ -187,7 +187,9 @@ const formatLikesData = (likes) => {
         : null;
 
       return {
-        id: user.id,
+        // Create a unique ID by combining user ID and like ID
+        id: `${user.id}_${like.id}`,
+        originalUserId: user.id,
         first_name: user.first_name,
         last_name: user.last_name,
         email: user.email,
@@ -209,7 +211,6 @@ const formatLikesData = (likes) => {
     })
     .filter(Boolean);
 };
-
 const userMatchesSlice = createSlice({
   name: "userMatches",
   initialState,

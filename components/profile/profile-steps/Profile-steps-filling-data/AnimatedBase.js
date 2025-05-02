@@ -167,13 +167,13 @@ const styles = StyleSheet.create({
   },
   toggleContainer: {
     flexDirection: "row",
-    gap: 15,
+    gap: 5,
   },
   toggleOption: {
     flex: 1,
     backgroundColor: COLORS.grayLight,
     borderRadius: 12,
-    padding: 16,
+    padding: 10,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,

@@ -458,23 +458,23 @@ const LifestyleSection = ({ isRTL = false, t, userGender }) => {
             required
             isRTL={_isRTL}
           />
-          {userGender !== "male" && (
-            <AnimatedDropdown
-              control={control}
-              name="hair_color_id"
-              label={_t ? _t("profile.lifestyle.hair_color") : "Hair Color"}
-              items={hairColors}
-              leftIcon={
-                <MaterialIcon
-                  name="color-lens"
-                  size={20}
-                  color={COLORS.primary}
-                />
-              }
-              required
-              isRTL={_isRTL}
-            />
-          )}
+          {/* {userGender !== "male" && ( */}
+          <AnimatedDropdown
+            control={control}
+            name="hair_color_id"
+            label={_t ? _t("profile.lifestyle.hair_color") : "Hair Color"}
+            items={hairColors}
+            leftIcon={
+              <MaterialIcon
+                name="color-lens"
+                size={20}
+                color={COLORS.primary}
+              />
+            }
+            required
+            isRTL={_isRTL}
+          />
+          {/* )} */}
           <AnimatedDropdown
             control={control}
             name="sleep_habit_id"

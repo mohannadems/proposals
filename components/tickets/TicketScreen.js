@@ -130,9 +130,13 @@ const TicketScreen = () => {
       return;
     }
 
-    dispatch(createTicket({ subject, description })).then(() => {
-      setShowForm(false);
-    });
+    // First close the form
+    setShowForm(false);
+
+    // Then dispatch the action after a small delay
+    setTimeout(() => {
+      dispatch(createTicket({ subject, description }));
+    }, 100);
   };
 
   const handleSelectTicket = (id) => {

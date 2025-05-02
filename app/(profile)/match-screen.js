@@ -13,16 +13,8 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import styles from "../../styles/match-screen";
-import {
-  X,
-  Heart,
-  MapPin,
-  Briefcase,
-  Coffee,
-  Book,
-  Check,
-  Phone,
-} from "lucide-react-native";
+import { Feather, MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
+
 import Confetti from "react-native-confetti";
 import { BlurView } from "expo-blur";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -75,11 +67,16 @@ const ProfileDetailCard = memo(({ icon, title, value }) => (
 const SafeHeader = memo(({ handleClose }) => (
   <View style={styles.header}>
     <View style={styles.headerTitleContainer}>
-      <Heart color={COLORS.white} size={22} style={styles.headerIcon} />
+      <Feather
+        name="heart"
+        color={COLORS.white}
+        size={22}
+        style={styles.headerIcon}
+      />
       <Text style={styles.headerText}>Perfect Match!</Text>
     </View>
     <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-      <X color={COLORS.white} size={24} />
+      <Feather name="x" color={COLORS.white} size={24} />
     </TouchableOpacity>
   </View>
 ));
@@ -108,7 +105,7 @@ const ProfileImages = memo(
             {myAge ? `, ${myAge}` : ""}
           </Text>
           <View style={styles.profileLocation}>
-            <MapPin color={COLORS.white} size={14} />
+            <Feather name="map-pin" color={COLORS.white} size={14} />
             <Text style={styles.locationText}>{myLocation}</Text>
           </View>
         </BlurView>
@@ -117,7 +114,7 @@ const ProfileImages = memo(
       <View style={styles.profileConnector}>
         <View style={styles.connectorLine} />
         <View style={styles.connectorCircle}>
-          <Check color={COLORS.white} size={16} />
+          <Feather name="check" color={COLORS.white} size={16} />
         </View>
         <View style={styles.connectorLine} />
       </View>
@@ -150,7 +147,12 @@ const ActionButtons = memo(
         style={styles.viewProfileButton}
         onPress={handleShowFullNumber}
       >
-        <Phone color={COLORS.white} size={18} style={{ marginRight: 10 }} />
+        <Feather
+          name="phone"
+          color={COLORS.white}
+          size={18}
+          style={{ marginRight: 10 }}
+        />
         <Text style={styles.viewProfileText}>
           {showFullNumber ? "Full Number" : "Reveal Number"}
         </Text>
@@ -474,7 +476,13 @@ const MatchScreen = () => {
 
               <View style={styles.detailsContent}>
                 <ProfileDetailCard
-                  icon={<Briefcase color={COLORS.primary} size={18} />}
+                  icon={
+                    <Feather
+                      name="briefcase"
+                      color={COLORS.primary}
+                      size={18}
+                    />
+                  }
                   title="Careers"
                   value={`${myProfile?.profile?.job_title || "Your career"} & ${
                     matchProfile?.profile?.job_title || "Their career"
@@ -482,7 +490,9 @@ const MatchScreen = () => {
                 />
 
                 <ProfileDetailCard
-                  icon={<Book color={COLORS.primary} size={18} />}
+                  icon={
+                    <Feather name="book" color={COLORS.primary} size={18} />
+                  }
                   title="Education"
                   value={`${
                     myProfile?.profile?.educational_level || "Your education"
@@ -493,7 +503,9 @@ const MatchScreen = () => {
                 />
 
                 <ProfileDetailCard
-                  icon={<Coffee color={COLORS.primary} size={18} />}
+                  icon={
+                    <Feather name="coffee" color={COLORS.primary} size={18} />
+                  }
                   title="Contact Number"
                   value={
                     showFullNumber
