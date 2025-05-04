@@ -46,6 +46,8 @@ import {
   setActiveTab,
   setHasSubmittedFilters,
   selectHasSubmittedFilters,
+  fetchUserMatchesList,
+  selectMatches,
 } from "../../store/slices/userMatchesSlice";
 import { LanguageContext } from "../../contexts/LanguageContext";
 const NoFiltersPlaceholder = memo(({ styles, onSearchPress }) => {
@@ -495,7 +497,9 @@ const MatchesScreen = () => {
     error,
     activeFilters,
     activeTab,
+    matches,
   } = useSelector((state) => state.userMatches);
+  console.log(matches);
   const hasSubmittedFilters = useSelector(selectHasSubmittedFilters);
   useEffect(() => {
     let isMounted = true;
@@ -602,10 +606,12 @@ const MatchesScreen = () => {
         dispatch(fetchUserMatches());
       } else if (filter === "Liked") {
         dispatch(setLikedFilter(true));
-
         if (likedUsers.length === 0 || !loading.likes) {
           dispatch(fetchUserLikes());
         }
+      } else if (filter === "Matches") {
+        dispatch(clearFilters());
+        dispatch(fetchUserMatchesList()); // Use fetchUserMatchesList here
       } else {
         dispatch(clearFilters());
         dispatch(setActiveFilters({ isFilter: true }));
@@ -639,7 +645,7 @@ const MatchesScreen = () => {
       router.push({
         pathname: "/(profile)/matchProfile",
         params: {
-          userId: user.id,
+          userId: user.originalUserId,
           fromTab: activeFilter,
         },
       });
@@ -720,7 +726,7 @@ const MatchesScreen = () => {
           >
             <FilterChip
               label={t("matches.filters.all")}
-              icon="map-pin"
+              icon="navigation"
               active={activeFilter === "All"}
               onPress={() => handleFilterChange("All")}
               styles={styles}
@@ -730,6 +736,13 @@ const MatchesScreen = () => {
               icon="heart"
               active={activeFilter === "Liked"}
               onPress={() => handleFilterChange("Liked")}
+              styles={styles}
+            />
+            <FilterChip
+              label={t("matches.filters.matches")}
+              icon="check"
+              active={activeFilter === "Matches"}
+              onPress={() => handleFilterChange("Matches")}
               styles={styles}
             />
           </ScrollView>
@@ -763,6 +776,27 @@ const MatchesScreen = () => {
                 ))}
               </ScrollView>
             )
+          ) : activeFilter === "Matches" ? (
+            loading.matches ? (
+              <LoadingIndicator styles={styles} />
+            ) : matches.length === 0 ? (
+              <EmptyStateCard type="matches" styles={styles} />
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.spotlightScroll}
+              >
+                {matches.map((match) => (
+                  <MatchCard
+                    key={match.id}
+                    user={match}
+                    onPress={handleMatchPress}
+                    styles={styles}
+                  />
+                ))}
+              </ScrollView>
+            )
           ) : loading.preferences ? (
             <LoadingIndicator styles={styles} />
           ) : preferenceMatches.length === 0 ? (
@@ -789,7 +823,9 @@ const MatchesScreen = () => {
           <SectionHeader
             title={suggestedSectionTitle}
             percentage={suggestionPercentage}
-            showPercentage={activeFilter !== "Liked"}
+            showPercentage={
+              activeFilter !== "Liked" && activeFilter !== "Matches"
+            }
             onSeeAllPress={() => {}}
             styles={styles}
           />
@@ -805,6 +841,23 @@ const MatchesScreen = () => {
                   <QuickMatch
                     key={user.id}
                     user={user}
+                    onPress={handleMatchPress}
+                    styles={styles}
+                  />
+                ))}
+              </View>
+            )
+          ) : activeFilter === "Matches" ? (
+            loading.matches ? (
+              <LoadingIndicator styles={styles} />
+            ) : matches.length === 0 ? (
+              <EmptyStateCard type="matches" styles={styles} />
+            ) : (
+              <View style={styles.quickMatchGrid}>
+                {matches.map((match) => (
+                  <QuickMatch
+                    key={match.id}
+                    user={match}
                     onPress={handleMatchPress}
                     styles={styles}
                   />

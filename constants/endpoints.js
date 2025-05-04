@@ -27,4 +27,6 @@ export const ENDPOINTS = {
   SUBSCRIPTION_CARDS: "/subscription-cards",
   GET_LIKED_BY_ME: "/liked-by",
   TICKETS: "/tickets",
+  MATCHES: "/matches",
+  REVEAL_CONTACT: "/reveal-contact",
 };

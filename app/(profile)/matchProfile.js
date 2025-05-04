@@ -31,6 +31,12 @@ import { matchesService } from "../../services/matchesService";
 import { setActiveTab } from "../../store/slices/userMatchesSlice";
 import { LanguageContext } from "../../contexts/LanguageContext";
 import ReportUserModal from "../../components/report/ReportUserModal";
+import {
+  revealContact,
+  selectRevealedContact,
+  selectIsRevealingContact,
+} from "../../store/slices/subscriptionSlice";
+
 const HEADER_HEIGHT = Platform.OS === "ios" ? 520 : 280;
 
 const LoadingSpinner = ({ visible }) => {
@@ -73,11 +79,112 @@ const LoadingSpinner = ({ visible }) => {
   );
 };
 
+const HiddenContactInfo = ({ onUnlockPress, style, isLoading }) => {
+  const { t } = useContext(LanguageContext);
+
+  return (
+    <View style={[style, styles.hiddenContainer]}>
+      <View style={styles.blurredContent}>
+        <View style={styles.phoneContainer}>
+          <Feather name="phone" size={20} color={COLORS.primary} />
+          <Text style={styles.phoneLabel}>{t("match_profile.phone")}</Text>
+          <Text style={styles.hiddenText}>0*********</Text>
+        </View>
+
+        <View style={styles.emailContainer}>
+          <Feather name="mail" size={20} color={COLORS.primary} />
+          <Text style={styles.emailLabel}>{t("match_profile.email")}</Text>
+          <Text style={styles.hiddenText}>***@***.***</Text>
+        </View>
+      </View>
+
+      <TouchableOpacity
+        onPress={onUnlockPress}
+        style={styles.unlockButton}
+        disabled={isLoading}
+      >
+        <LinearGradient
+          colors={COLORS.primaryGradient}
+          style={styles.unlockGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+        >
+          {isLoading ? (
+            <ActivityIndicator size="small" color={COLORS.white} />
+          ) : (
+            <>
+              <Feather name="unlock" size={18} color={COLORS.white} />
+              <Text style={styles.unlockText}>
+                {t("match_profile.reveal_contact")}
+              </Text>
+            </>
+          )}
+        </LinearGradient>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+const styles = {
+  hiddenContainer: {
+    marginTop: 16,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+  blurredContent: {
+    padding: 16,
+    backgroundColor: "#F5F7FA",
+  },
+  phoneContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  emailContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  phoneLabel: {
+    marginLeft: 8,
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.text,
+    minWidth: 60,
+  },
+  emailLabel: {
+    marginLeft: 8,
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.text,
+    minWidth: 60,
+  },
+  hiddenText: {
+    fontSize: 14,
+    color: "#A0AEC0",
+    marginLeft: 12,
+  },
+  unlockButton: {
+    borderRadius: 8,
+    overflow: "hidden",
+  },
+  unlockGradient: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 12,
+  },
+  unlockText: {
+    color: COLORS.white,
+    fontSize: 14,
+    fontWeight: "600",
+    marginLeft: 8,
+  },
+};
+
 const MatchProfileScreen = () => {
   const [reportModalVisible, setReportModalVisible] = useState(false);
-
   const { t, isRTL } = useContext(LanguageContext);
-  const styles = createMatchProfileStyles(isRTL);
+  const createStyles = createMatchProfileStyles;
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const scrollY = useRef(new Animated.Value(0)).current;
   const router = useRouter();
@@ -87,6 +194,13 @@ const MatchProfileScreen = () => {
 
   const [checkingMatch, setCheckingMatch] = useState(false);
   const [debugMode] = useState(true);
+  const [isMatch, setIsMatch] = useState(fromTab === "Matches");
+
+  // Redux state for subscription
+  const revealedContact = useSelector((state) =>
+    selectRevealedContact(state, userId)
+  );
+  const isRevealingContact = useSelector(selectIsRevealingContact);
 
   const { likedUsers } = useSelector((state) => state.userMatches);
 
@@ -126,6 +240,14 @@ const MatchProfileScreen = () => {
     setShowLikeModal,
     setShowDislikeModal,
   } = useProfileActions(userProfile, isLiked, isDisliked);
+
+  const handleRevealContact = async () => {
+    try {
+      await dispatch(revealContact(userId)).unwrap();
+    } catch (error) {
+      console.error("Error revealing contact:", error);
+    }
+  };
 
   const handleDebugMatch = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -217,23 +339,29 @@ const MatchProfileScreen = () => {
 
   if (loading.profile && !userProfile) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={createStyles(isRTL).loadingContainer}>
         <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>{t("match_profile.loading")}</Text>
+        <Text style={createStyles(isRTL).loadingText}>
+          {t("match_profile.loading")}
+        </Text>
       </View>
     );
   }
 
   if (error.profile && !userProfile) {
     return (
-      <View style={styles.errorContainer}>
+      <View style={createStyles(isRTL).errorContainer}>
         <Feather name="alert-circle" size={50} color={COLORS.error} />
-        <Text style={styles.errorText}>{t("match_profile.error")}</Text>
+        <Text style={createStyles(isRTL).errorText}>
+          {t("match_profile.error")}
+        </Text>
         <TouchableOpacity
-          style={styles.retryButton}
+          style={createStyles(isRTL).retryButton}
           onPress={() => dispatch(fetchUserProfile(userId))}
         >
-          <Text style={styles.retryButtonText}>{t("match_profile.retry")}</Text>
+          <Text style={createStyles(isRTL).retryButtonText}>
+            {t("match_profile.retry")}
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -251,7 +379,7 @@ const MatchProfileScreen = () => {
     <View style={{ flex: 1 }}>
       <StatusBar barStyle="light-content" />
 
-      <ScrollView style={styles.container}>
+      <ScrollView style={createStyles(isRTL).container}>
         <LoadingSpinner visible={checkingMatch} />
 
         <DislikeConfirmationBanner
@@ -269,7 +397,9 @@ const MatchProfileScreen = () => {
           userName={firstName}
         />
 
-        <Animated.View style={[styles.header, { height: headerHeight }]}>
+        <Animated.View
+          style={[createStyles(isRTL).header, { height: headerHeight }]}
+        >
           <Animated.View style={{ opacity: imageOpacity }}>
             <ImageCarousel
               photos={photos}
@@ -279,10 +409,13 @@ const MatchProfileScreen = () => {
 
           <LinearGradient
             colors={["rgba(0,0,0,0.3)", "transparent"]}
-            style={styles.headerGradient}
+            style={createStyles(isRTL).headerGradient}
           >
-            <View style={styles.headerContent}>
-              <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+            <View style={createStyles(isRTL).headerContent}>
+              <TouchableOpacity
+                style={createStyles(isRTL).backButton}
+                onPress={handleBack}
+              >
                 <Feather
                   name={isRTL ? "arrow-right" : "arrow-left"}
                   size={24}
@@ -290,14 +423,14 @@ const MatchProfileScreen = () => {
                 />
               </TouchableOpacity>
 
-              <View style={styles.imageIndicators}>
+              <View style={createStyles(isRTL).imageIndicators}>
                 {photos.map((_, index) => (
                   <View
                     key={index}
                     style={[
-                      styles.imageIndicator,
+                      createStyles(isRTL).imageIndicator,
                       currentImageIndex === index &&
-                        styles.imageIndicatorActive,
+                        createStyles(isRTL).imageIndicatorActive,
                     ]}
                   />
                 ))}
@@ -312,7 +445,7 @@ const MatchProfileScreen = () => {
         </Animated.View>
 
         <View
-          style={styles.scrollView}
+          style={createStyles(isRTL).scrollView}
           showsVerticalScrollIndicator={false}
           onScroll={Animated.event(
             [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -320,59 +453,59 @@ const MatchProfileScreen = () => {
           )}
           scrollEventThrottle={16}
         >
-          <View style={styles.content}>
+          <View style={createStyles(isRTL).content}>
             {hasBeenLiked && <LikeSuccessBanner userName={firstName} />}
 
             <View
               style={[
-                styles.profileHeader,
-                hasBeenLiked && styles.likedProfileHeader,
+                createStyles(isRTL).profileHeader,
+                hasBeenLiked && createStyles(isRTL).likedProfileHeader,
               ]}
             >
               <View
                 style={[
-                  styles.nameContainer,
-                  hasBeenLiked && styles.likedNameContainer,
+                  createStyles(isRTL).nameContainer,
+                  hasBeenLiked && createStyles(isRTL).likedNameContainer,
                 ]}
               >
-                <Text style={styles.name}>
+                <Text style={createStyles(isRTL).name}>
                   {fullName}
                   {age ? `, ${age}` : ""}
                 </Text>
 
                 {userProfile.verified && (
-                  <View style={styles.verifiedBadge}>
+                  <View style={createStyles(isRTL).verifiedBadge}>
                     <Feather name="check" size={12} color={COLORS.white} />
                   </View>
                 )}
 
                 {userProfile.premium && (
-                  <View style={styles.premiumBadge}>
+                  <View style={createStyles(isRTL).premiumBadge}>
                     <Feather name="star" size={12} color={COLORS.primary} />
                   </View>
                 )}
 
                 {hasBeenLiked && (
-                  <View style={styles.likedBadge}>
+                  <View style={createStyles(isRTL).likedBadge}>
                     <Feather name="heart" size={12} color={COLORS.white} />
-                    <Text style={styles.likedBadgeText}>
+                    <Text style={createStyles(isRTL).likedBadgeText}>
                       {t("match_profile.liked")}
                     </Text>
                   </View>
                 )}
               </View>
 
-              <Text style={styles.location}>{city}</Text>
+              <Text style={createStyles(isRTL).location}>{city}</Text>
 
               {userProfile.match_percentage && (
-                <View style={styles.matchPercentage}>
+                <View style={createStyles(isRTL).matchPercentage}>
                   <LinearGradient
                     colors={COLORS.primaryGradient}
-                    style={styles.matchBadge}
+                    style={createStyles(isRTL).matchBadge}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                   >
-                    <Text style={styles.matchText}>
+                    <Text style={createStyles(isRTL).matchText}>
                       {userProfile.match_percentage}%{" "}
                       {t("match_profile.match_percentage")}
                     </Text>
@@ -381,45 +514,56 @@ const MatchProfileScreen = () => {
               )}
             </View>
 
-            <View style={styles.actions}>
-              {!hasBeenLiked ? (
-                <ActionButton
-                  icon="heart"
-                  label={t("match_profile.like")}
-                  onPress={handleLocalLike}
-                  primary
-                  loading={loading.like}
-                />
+            <View style={createStyles(isRTL).actions}>
+              {!hasBeenLiked && !isMatch ? (
+                <>
+                  <ActionButton
+                    icon="heart"
+                    label={t("match_profile.like")}
+                    onPress={handleLocalLike}
+                    primary
+                    loading={loading.like}
+                  />
+                  <ActionButton
+                    icon="x"
+                    label={t("match_profile.dislike")}
+                    onPress={handleDislike}
+                    loading={loading.dislike}
+                  />
+                </>
+              ) : isMatch ? (
+                <View style={createStyles(isRTL).matchedActions}>
+                  <View style={createStyles(isRTL).matchedHeader}>
+                    <Feather name="heart" size={24} color={COLORS.primary} />
+                    <Text style={createStyles(isRTL).matchedText}>
+                      {t("match_profile.matched")}
+                    </Text>
+                  </View>
+                  <Text style={createStyles(isRTL).matchedSubtext}>
+                    {t("match_profile.match_description")}
+                  </Text>
+                </View>
               ) : (
-                <View style={styles.alreadyLikedButton}>
+                <View style={createStyles(isRTL).alreadyLikedButton}>
                   <Feather name="check" size={24} color="#9E9E9E" />
-                  <Text style={styles.alreadyLikedText}>
+                  <Text style={createStyles(isRTL).alreadyLikedText}>
                     {t("match_profile.liked")}
                   </Text>
                 </View>
               )}
-
-              {!hasBeenLiked && (
-                <ActionButton
-                  icon="x"
-                  label={t("match_profile.dislike")}
-                  onPress={handleDislike}
-                  loading={loading.dislike}
-                />
-              )}
             </View>
 
             <InfoCard title={t("match_profile.about")} icon="user">
-              <Text style={styles.bio}>{bio}</Text>
-              <View style={styles.basicInfo}>
+              <Text style={createStyles(isRTL).bio}>{bio}</Text>
+              <View style={createStyles(isRTL).basicInfo}>
                 {profile.job_title && (
-                  <View style={styles.infoRow}>
+                  <View style={createStyles(isRTL).infoRow}>
                     <Feather
                       name="briefcase"
                       size={16}
                       color={COLORS.primary}
                     />
-                    <Text style={styles.infoText}>
+                    <Text style={createStyles(isRTL).infoText}>
                       {profile.job_title}
                       {profile.position_level
                         ? ` (${profile.position_level})`
@@ -429,9 +573,9 @@ const MatchProfileScreen = () => {
                 )}
 
                 {profile.educational_level && (
-                  <View style={styles.infoRow}>
+                  <View style={createStyles(isRTL).infoRow}>
                     <Feather name="book" size={16} color={COLORS.primary} />
-                    <Text style={styles.infoText}>
+                    <Text style={createStyles(isRTL).infoText}>
                       {profile.educational_level}
                       {profile.specialization
                         ? `, ${profile.specialization}`
@@ -444,10 +588,10 @@ const MatchProfileScreen = () => {
 
             {interests && interests.length > 0 && (
               <InfoCard title={t("match_profile.interests")} icon="heart">
-                <View style={styles.interests}>
+                <View style={createStyles(isRTL).interests}>
                   {interests.map((interest, index) => (
-                    <View key={index} style={styles.interestTag}>
-                      <Text style={styles.interestText}>
+                    <View key={index} style={createStyles(isRTL).interestTag}>
+                      <Text style={createStyles(isRTL).interestText}>
                         {typeof interest === "string"
                           ? interest
                           : interest.name || "Interest"}
@@ -459,7 +603,7 @@ const MatchProfileScreen = () => {
             )}
 
             <InfoCard title={t("match_profile.basic_info")} icon="info">
-              <View style={styles.statsGrid}>
+              <View style={createStyles(isRTL).statsGrid}>
                 {Object.entries(stats).map(([key, value]) => {
                   if (!value) return null;
 
@@ -498,9 +642,48 @@ const MatchProfileScreen = () => {
               </View>
             </InfoCard>
 
-            <View style={styles.reportContainer}>
+            {isMatch && (
+              <InfoCard title={t("match_profile.contact_info")} icon="phone">
+                {!revealedContact ? (
+                  <HiddenContactInfo
+                    onUnlockPress={handleRevealContact}
+                    style={createStyles(isRTL).contactInfo}
+                    isLoading={isRevealingContact}
+                  />
+                ) : (
+                  <View style={createStyles(isRTL).revealedContent}>
+                    <View style={createStyles(isRTL).contactRow}>
+                      <Feather name="phone" size={20} color={COLORS.primary} />
+                      <Text style={createStyles(isRTL).contactLabel}>
+                        {t("match_profile.phone")}
+                      </Text>
+                      <Text style={createStyles(isRTL).contactValue}>
+                        {revealedContact.guardian_contact}
+                      </Text>
+                    </View>
+
+                    {profile.email && (
+                      <View style={createStyles(isRTL).contactRow}>
+                        <Feather name="mail" size={20} color={COLORS.primary} />
+                        <Text style={createStyles(isRTL).contactLabel}>
+                          {t("match_profile.email")}
+                        </Text>
+                        <Text style={createStyles(isRTL).contactValue}>
+                          {profile.email}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                )}
+              </InfoCard>
+            )}
+
+            <View style={createStyles(isRTL).reportContainer}>
               <TouchableOpacity
-                style={[styles.reportButton, isRTL && styles.reportButtonRTL]}
+                style={[
+                  createStyles(isRTL).reportButton,
+                  isRTL && createStyles(isRTL).reportButtonRTL,
+                ]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   setReportModalVisible(true);
@@ -508,7 +691,10 @@ const MatchProfileScreen = () => {
               >
                 <Feather name="flag" size={16} color={COLORS.text} />
                 <Text
-                  style={[styles.reportText, isRTL && styles.reportTextRTL]}
+                  style={[
+                    createStyles(isRTL).reportText,
+                    isRTL && createStyles(isRTL).reportTextRTL,
+                  ]}
                 >
                   {isRTL ? `إبلاغ عن ${firstName}` : `Report ${firstName}`}
                 </Text>

@@ -664,6 +664,86 @@ const createMatchProfileStyles = (isRTL = I18nManager.isRTL) =>
       marginLeft: 0,
       marginRight: 6,
     },
+    // Add these styles to your createMatchProfileStyles function
+    // These are enhanced styles for your match banner
+
+    matchedActions: {
+      width: "100%", // Make it full width
+      marginVertical: 20,
+      padding: 24,
+      borderRadius: 20,
+      backgroundColor: COLORS.white,
+      borderLeftWidth: isRTL ? 0 : 4,
+      borderRightWidth: isRTL ? 4 : 0,
+      borderLeftColor: COLORS.primary,
+      borderRightColor: COLORS.primary,
+      shadowColor: COLORS.text,
+      shadowOffset: {
+        width: 0,
+        height: 6,
+      },
+      shadowOpacity: 0.1,
+      shadowRadius: 15,
+      elevation: 8,
+      overflow: "hidden", // For the confetti pattern
+    },
+    matchedHeaderContainer: {
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 12,
+    },
+    matchedHeader: {
+      flexDirection: isRTL ? "row-reverse" : "row",
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 30,
+      backgroundColor: COLORS.primary + "10", // Light tint of primary
+    },
+    matchedText: {
+      fontSize: 22,
+      fontWeight: "700",
+      color: COLORS.primary,
+      marginLeft: isRTL ? 0 : 10,
+      marginRight: isRTL ? 10 : 0,
+      letterSpacing: 0.2,
+    },
+    matchedSubtext: {
+      fontSize: 16,
+      lineHeight: 24,
+      color: COLORS.text,
+      textAlign: "center",
+      opacity: 0.8,
+      marginTop: 10,
+      marginHorizontal: 16,
+    },
+    confettiDot: {
+      position: "absolute",
+      width: 6,
+      height: 6,
+      borderRadius: 3,
+      backgroundColor: COLORS.primary + "30",
+    },
+    matchBanner: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      zIndex: 999,
+    },
+    matchBannerGradient: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      padding: 12,
+    },
+    matchBannerText: {
+      color: COLORS.white,
+      fontSize: 16,
+      fontWeight: "600",
+      marginLeft: 8,
+    },
   });
 
 export default createMatchProfileStyles;

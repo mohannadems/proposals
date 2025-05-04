@@ -65,9 +65,8 @@ const LikedMeScreen = () => {
       setError(null);
       const likesData = await matchesService.getLikes();
 
-      // Filter out any invalid likes data
       const validLikes = Array.isArray(likesData)
-        ? likesData.filter((item) => item && item.liked_user)
+        ? likesData.filter((item) => item && item.user)
         : [];
 
       setLikes(validLikes);
@@ -177,13 +176,12 @@ const LikedMeScreen = () => {
   };
 
   const renderProfileCard = ({ item, index }) => {
-    // Add defensive check for item and liked_user
-    if (!item || !item.liked_user) {
+    if (!item || !item.user) {
       console.log("Invalid like item:", item);
       return null;
     }
 
-    const user = item.liked_user;
+    const user = item.user;
 
     const gradientDirection =
       index % 3 === 0
@@ -351,19 +349,44 @@ const LikedMeScreen = () => {
         </Animated.View>
 
         <View
-          style={[styles.centerContent, { paddingTop: HEADER_HEIGHT + 20 }]}
+          style={[styles.emptyContainer, { paddingTop: HEADER_HEIGHT + 20 }]}
         >
-          <View style={styles.emptyStateContainer}>
-            <Text style={styles.noLikesText}>
+          <View style={styles.emptyStateCard}>
+            <View style={styles.emptyStateImageContainer}>
+              <Image
+                source={require("../../assets/images/like.png")}
+                style={styles.emptyStateImage}
+                resizeMode="contain"
+              />
+            </View>
+
+            <Text style={styles.emptyStateTitle}>
               {currentLanguage === "ar"
                 ? "لم يعجب بك أحد بعد"
-                : "No one has liked you yet"}
+                : "No One Liked You Yet"}
             </Text>
-            <Text style={styles.noLikesSubtext}>
+
+            <Text style={styles.emptyStateDescription}>
               {currentLanguage === "ar"
-                ? "استمر في التمرير للعثور على تطابقاتك!"
-                : "Keep swiping to find your matches!"}
+                ? "لا تقلق! استمر في استكشاف الملفات الشخصية واظهر شخصيتك الرائعة"
+                : "Don't worry! Keep exploring profiles and showing your amazing personality"}
             </Text>
+
+            <TouchableOpacity
+              style={styles.emptyStateButton}
+              onPress={() => router.push("(tabs)/Partner")}
+            >
+              <LinearGradient
+                colors={[COLORS.primary, COLORS.primary]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.emptyStateButtonGradient}
+              >
+                <Text style={styles.emptyStateButtonText}>
+                  {currentLanguage === "ar" ? "استكشف الآن" : "Start Exploring"}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
         </View>
       </SafeAreaView>
@@ -714,6 +737,70 @@ const styles = StyleSheet.create({
   confirmButtonText: {
     color: "#FFFFFF",
     fontWeight: "600",
+    fontSize: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+  },
+  emptyStateCard: {
+    backgroundColor: COLORS.white,
+    borderRadius: 24,
+    padding: 28,
+    alignItems: "center",
+    width: "100%",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    elevation: 8,
+  },
+  emptyStateImageContainer: {
+    width: 180,
+    height: 180,
+    marginBottom: 20,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  emptyStateImage: {
+    width: "100%",
+    height: "100%",
+  },
+  emptyStateTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#2D3748",
+    marginBottom: 12,
+    textAlign: "center",
+  },
+  emptyStateDescription: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: "#718096",
+    textAlign: "center",
+    marginBottom: 24,
+    paddingHorizontal: 10,
+  },
+  emptyStateButton: {
+    width: "100%",
+    borderRadius: 16,
+    overflow: "hidden",
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  emptyStateButtonGradient: {
+    paddingVertical: 16,
+    alignItems: "center",
+    borderRadius: 16,
+  },
+  emptyStateButtonText: {
+    color: COLORS.white,
+    fontWeight: "700",
     fontSize: 16,
   },
 });

@@ -3,7 +3,7 @@ import { createSlice, createAsyncThunk, createAction } from "@reduxjs/toolkit";
 import { showMessage } from "react-native-flash-message";
 import api from "../../services/api";
 import { ENDPOINTS } from "../../constants/endpoints";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
 const handleApiError = (error, defaultMessage) => {
   const errorMessage = error.response?.data?.message || defaultMessage;
   showMessage({
@@ -141,9 +141,25 @@ export const fetchMatchDetails = createAsyncThunk(
     }
   }
 );
-
+export const fetchUserMatchesList = createAsyncThunk(
+  "userMatches/fetchUserMatchesList",
+  async (_, { rejectWithValue }) => {
+    try {
+      const lang = (await AsyncStorage.getItem("userLanguage")) || "en";
+      const response = await api.get(ENDPOINTS.MATCHES, {
+        headers: {
+          "Accept-Language": lang,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(handleApiError(error, "Failed to fetch matches"));
+    }
+  }
+);
 const initialState = {
   activeTab: "All",
+  matches: [],
   matchDetails: null,
   preferenceMatches: [],
   suggestedMatches: [],
@@ -154,12 +170,14 @@ const initialState = {
     suggested: false,
     likes: false,
     matchDetails: false,
+    matches: false,
   },
   error: {
     preferences: null,
     suggested: null,
     likes: null,
     matchDetails: null,
+    matches: null,
   },
   activeFilters: {
     isFilter: false,
@@ -211,6 +229,38 @@ const formatLikesData = (likes) => {
     })
     .filter(Boolean);
 };
+const formatMatches = (matches) => {
+  if (!Array.isArray(matches)) return [];
+
+  return matches.map((match) => {
+    // Format the photo URL
+    const photoUrl = match.matched_user_photo;
+    const fullPhotoUrl = photoUrl
+      ? photoUrl.startsWith("http")
+        ? photoUrl
+        : `https://proposals.world${photoUrl}`
+      : null;
+
+    return {
+      id: match.id,
+      originalUserId: match.matched_user_id,
+      first_name: match.matched_user_name,
+      age: match.matched_user_age,
+      city: match.matched_user_city,
+      phone: match.matched_user_phone,
+      email: match.matched_user_email,
+      photo_url: fullPhotoUrl,
+      photos: fullPhotoUrl ? [{ id: 1, url: fullPhotoUrl, is_main: 1 }] : [],
+      contactExchanged: match.contact_exchanged,
+      createdAt: match.created_at,
+      updatedAt: match.updated_at,
+      match_percentage: 100,
+      verified: false,
+      premium: false,
+      last_active: "Matched",
+    };
+  });
+};
 const userMatchesSlice = createSlice({
   name: "userMatches",
   initialState,
@@ -239,6 +289,7 @@ const userMatchesSlice = createSlice({
       state.hasSubmittedFilters = action.payload;
     },
   },
+
   extraReducers: (builder) => {
     builder
       .addCase(setActiveTab, (state, action) => {
@@ -330,6 +381,23 @@ const userMatchesSlice = createSlice({
       .addCase(fetchMatchDetails.rejected, (state, action) => {
         state.loading.matchDetails = false;
         state.error.matchDetails = action.payload;
+      })
+      .addCase(fetchUserMatchesList.pending, (state) => {
+        state.loading.matches = true;
+        state.error.matches = null;
+      })
+      .addCase(fetchUserMatchesList.fulfilled, (state, action) => {
+        state.loading.matches = false;
+        if (action.payload?.matches) {
+          const formattedMatches = formatMatches(action.payload.matches);
+          state.matches = formattedMatches;
+        } else {
+          state.matches = [];
+        }
+      })
+      .addCase(fetchUserMatchesList.rejected, (state, action) => {
+        state.loading.matches = false;
+        state.error.matches = action.payload;
       });
   },
 });
@@ -340,7 +408,7 @@ export const {
   setLikedFilter,
   setActiveTabReducer,
   clearMatchDetails,
-  setHasSubmittedFilters, // Export the new action
+  setHasSubmittedFilters,
 } = userMatchesSlice.actions;
 
 // Selectors
@@ -356,5 +424,6 @@ export const selectLoadingStates = (state) => state.userMatches.loading;
 export const selectErrorStates = (state) => state.userMatches.error;
 export const selectHasSubmittedFilters = (state) =>
   state.userMatches.hasSubmittedFilters;
+export const selectMatches = (state) => state.userMatches.matches;
 
 export default userMatchesSlice.reducer;

@@ -195,6 +195,7 @@
     "secure_payment": "Secure Payment"
   },
   "common": {
+    "email": "Email",
     "go_back": "Go Back"
   },
   "subscription": {
@@ -239,9 +240,7 @@
     "other_reason_placeholder_second": "Also in Arabic (optional):",
     "error": "Something went wrong. Please try again."
   },
-  "match_profile": {
-    "report": "Report"
-  },
+
   "register": {
     "gender": "Gender",
     "male": "Male",
@@ -353,6 +352,8 @@
     "create_account": "Create New Account"
   },
   "common": {
+    "email": "Email",
+    "phone": "Phone Number",
     "welcome": "Welcome",
     "home": "Home",
     "settings": "Settings",
@@ -898,6 +899,12 @@
     "match": "Match"
   },
   "match_profile": {
+    "phone": "Phone Number",
+    "reveal_contact": "Reaveal Contact",
+    "email": "Email",
+    "contact_info": "Contact Info",
+    "match_description": "Match Description",
+    "matched": "matches",
     "loading": "Loading profile...",
     "error": "Failed to load profile",
     "retry": "Retry",
@@ -953,6 +960,7 @@
       "close_filters": "Close filters"
     },
     "filters": {
+      "matches": "Matches",
       "title": "Filters",
       "all": "All",
       "liked": "Liked",
