@@ -645,7 +645,7 @@ const MatchesScreen = () => {
       router.push({
         pathname: "/(profile)/matchProfile",
         params: {
-          userId: user.originalUserId,
+          userId: user.originalUserId || user.id,
           fromTab: activeFilter,
         },
       });
