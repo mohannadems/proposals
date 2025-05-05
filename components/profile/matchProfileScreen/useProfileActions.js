@@ -47,8 +47,11 @@ export const useProfileActions = (userProfile, isLiked, isDisliked) => {
 
         if (isMatch) {
           router.push({
-            pathname: `/match-screen`,
-            params: { matchedUserId: userProfile.id },
+            pathname: "/(profile)/matchProfile",
+            params: {
+              userId: userProfile.id,
+              fromTab: "matches",
+            },
           });
         } else {
           showMessage({

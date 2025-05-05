@@ -14,6 +14,7 @@ import {
   Alert,
   RefreshControl,
   Modal,
+  ScrollView,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import COLORS from "../../constants/colors";
@@ -142,8 +143,11 @@ const LikedMeScreen = () => {
       if (isMatch) {
         // Navigate to match screen if it's a match
         router.push({
-          pathname: `/match-screen`,
-          params: { matchedUserId: selectedUser.id },
+          pathname: "/(profile)/matchProfile",
+          params: {
+            userId: user.id,
+            fromTab: "matches",
+          },
         });
       } else {
         // Show success message
@@ -177,7 +181,6 @@ const LikedMeScreen = () => {
 
   const renderProfileCard = ({ item, index }) => {
     if (!item || !item.user) {
-      console.log("Invalid like item:", item);
       return null;
     }
 
@@ -191,8 +194,6 @@ const LikedMeScreen = () => {
         : ["#0F2027", "#2C5364"];
 
     let imageUrl = "https://via.placeholder.com/500x500";
-
-    // Add defensive checks for photos
     if (user.photos && Array.isArray(user.photos) && user.photos.length > 0) {
       const mainPhoto =
         user.photos.find((photo) => photo && photo.is_main === 1) ||
@@ -273,17 +274,24 @@ const LikedMeScreen = () => {
                 >
                   {user.first_name} {user.last_name || ""}
                 </Text>
-                {(user.age || user.location) && (
+                {(user.age ||
+                  user.location ||
+                  user.city_of_residence ||
+                  user.country_of_residence) && (
                   <Text style={styles.userDetails} numberOfLines={1}>
                     {user.age ? `${user.age}, ` : ""}
-                    {user.location || ""}
+                    {user.city_of_residence || user.location || ""}
+                    {user.city_of_residence && user.country_of_residence
+                      ? ", "
+                      : ""}
+                    {user.country_of_residence || ""}
                   </Text>
                 )}
               </View>
 
               <TouchableOpacity
                 style={styles.likeBackButton}
-                onPress={() => handleLikeBack(user)}
+                onPress={() => handleCardPress(user)}
               >
                 <LinearGradient
                   colors={gradientDirection}
@@ -292,7 +300,9 @@ const LikedMeScreen = () => {
                   style={styles.likeBackGradient}
                 >
                   <Text style={styles.likeBackText}>
-                    {currentLanguage === "ar" ? "إعجاب متبادل" : "Like Back"}
+                    {currentLanguage === "ar"
+                      ? "اذهب الى التفاصيل"
+                      : "See Full Profile"}
                   </Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -313,14 +323,94 @@ const LikedMeScreen = () => {
 
   if (error) {
     return (
-      <View style={[styles.container, styles.centerContent]}>
-        <Text style={styles.errorText}>{error}</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={fetchLikesData}>
-          <Text style={styles.retryButtonText}>
-            {currentLanguage === "ar" ? "إعادة المحاولة" : "Retry"}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <StatusBar
+          backgroundColor={COLORS.background}
+          barStyle="dark-content"
+        />
+
+        <Animated.View
+          style={[
+            styles.header,
+            {
+              opacity: headerOpacity,
+              transform: [{ translateY: headerTranslate }],
+            },
+          ]}
+        >
+          <View style={styles.headerContent}>
+            <Text style={styles.headerTitle}>
+              {currentLanguage === "ar" ? "معجبون بك" : "Likes You"}
+            </Text>
+          </View>
+        </Animated.View>
+
+        <Animated.ScrollView
+          contentContainerStyle={[
+            styles.centerContent,
+            {
+              paddingTop: HEADER_HEIGHT + 20,
+              paddingBottom: 100,
+              minHeight: height * 1.1,
+            },
+          ]}
+          showsVerticalScrollIndicator={true}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: true }
+          )}
+          scrollEventThrottle={16}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={COLORS.primary}
+              colors={[COLORS.primary]}
+              size={Platform.OS === "ios" ? "large" : 60}
+              progressViewOffset={80}
+            />
+          }
+        >
+          {/* Show a spinner if refreshing is true */}
+          {refreshing ? (
+            <View
+              style={{
+                height: 100,
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 20,
+              }}
+            >
+              <ActivityIndicator size="large" color={COLORS.primary} />
+              <Text style={{ marginTop: 10, color: "#718096", fontSize: 14 }}>
+                {currentLanguage === "ar" ? "جاري التحديث..." : "Refreshing..."}
+              </Text>
+            </View>
+          ) : null}
+
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={fetchLikesData}>
+            <Text style={styles.retryButtonText}>
+              {currentLanguage === "ar" ? "إعادة المحاولة" : "Retry"}
+            </Text>
+          </TouchableOpacity>
+
+          <View
+            style={{
+              height: 80,
+              alignItems: "center",
+              justifyContent: "center",
+              marginTop: 30,
+            }}
+          >
+            <Text style={{ color: "#718096", fontSize: 14 }}>
+              {currentLanguage === "ar"
+                ? "اسحب للأسفل للتحديث"
+                : "Pull down to refresh"}
+            </Text>
+          </View>
+        </Animated.ScrollView>
+      </SafeAreaView>
     );
   }
 
@@ -348,9 +438,48 @@ const LikedMeScreen = () => {
           </View>
         </Animated.View>
 
-        <View
-          style={[styles.emptyContainer, { paddingTop: HEADER_HEIGHT + 20 }]}
+        <Animated.ScrollView
+          contentContainerStyle={[
+            styles.emptyContainer,
+            {
+              paddingTop: HEADER_HEIGHT + 20,
+
+              minHeight: height * 0.9,
+            },
+          ]}
+          showsVerticalScrollIndicator={true}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+            { useNativeDriver: true }
+          )}
+          scrollEventThrottle={16}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              tintColor={COLORS.primary}
+              colors={[COLORS.primary]}
+              size={Platform.OS === "ios" ? "large" : 60}
+              progressViewOffset={80}
+            />
+          }
         >
+          {refreshing ? (
+            <View
+              style={{
+                height: 100,
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: 20,
+              }}
+            >
+              <ActivityIndicator size="large" color={COLORS.primary} />
+              <Text style={{ marginTop: 10, color: "#718096", fontSize: 14 }}>
+                {currentLanguage === "ar" ? "جاري التحديث..." : "Refreshing..."}
+              </Text>
+            </View>
+          ) : null}
+
           <View style={styles.emptyStateCard}>
             <View style={styles.emptyStateImageContainer}>
               <Image
@@ -388,11 +517,24 @@ const LikedMeScreen = () => {
               </LinearGradient>
             </TouchableOpacity>
           </View>
-        </View>
+          <View
+            style={{
+              height: 80,
+              alignItems: "center",
+              justifyContent: "center",
+              marginTop: 30,
+            }}
+          >
+            <Text style={{ color: "#718096", fontSize: 14 }}>
+              {currentLanguage === "ar"
+                ? "اسحب للأسفل للتحديث"
+                : "Pull down to refresh"}
+            </Text>
+          </View>
+        </Animated.ScrollView>
       </SafeAreaView>
     );
   }
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar backgroundColor={COLORS.background} barStyle="dark-content" />
@@ -435,11 +577,13 @@ const LikedMeScreen = () => {
             onRefresh={onRefresh}
             tintColor={COLORS.primary}
             colors={[COLORS.primary]}
+            size={Platform.OS === "ios" ? "large" : 60}
+            progressViewOffset={70}
+            progressBackgroundColor="#ffffff"
           />
         }
       />
 
-      {/* Like Confirmation Modal */}
       <Modal
         visible={showLikeModal}
         transparent={true}
@@ -537,10 +681,13 @@ const styles = StyleSheet.create({
     height: CARD_HEIGHT,
     alignSelf: "center",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
     shadowRadius: 16,
     elevation: 10,
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+    borderRadius: 20,
   },
   cardTouchable: {
     flex: 1,

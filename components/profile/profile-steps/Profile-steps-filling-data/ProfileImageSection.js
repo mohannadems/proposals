@@ -336,18 +336,11 @@ const ProfileImageSection = ({ isRTL = false, t }) => {
                 source={{ uri: profileImage?.uri || currentAvatar }}
                 style={styles.profileImage}
                 onLoadStart={() => {
-                  // Reset error state when starting to load an image
                   setImageLoadError(false);
                 }}
                 onError={() => {
-                  console.log(
-                    "Image failed to load:",
-                    profileImage?.uri || currentAvatar
-                  );
                   setImageLoadError(true);
 
-                  // Only show error if user has interacted with the component
-                  // or we're not on first render
                   if (userInteracted && (profileImage?.uri || currentAvatar)) {
                     setError(
                       _t

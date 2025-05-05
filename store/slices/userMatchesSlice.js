@@ -265,6 +265,51 @@ const userMatchesSlice = createSlice({
   name: "userMatches",
   initialState,
   reducers: {
+    addMatch: (state, action) => {
+      const matchData = action.payload;
+      if (!matchData) return;
+
+      const matchExists = state.matches.some(
+        (match) =>
+          match.originalUserId === matchData.matched_user_id ||
+          match.id === matchData.id
+      );
+
+      if (!matchExists) {
+        const photoUrl =
+          matchData.matched_user_photo ||
+          matchData.user?.photos?.[0]?.url ||
+          null;
+        const fullPhotoUrl = photoUrl
+          ? photoUrl.startsWith("http")
+            ? photoUrl
+            : `https://proposals.world${photoUrl}`
+          : null;
+
+        const formattedMatch = {
+          id: matchData.id || `match_${Date.now()}`,
+          originalUserId: matchData.matched_user_id,
+          first_name: matchData.matched_user_name || matchData.user?.first_name,
+          age: matchData.matched_user_age || matchData.user?.age,
+          city: matchData.matched_user_city || matchData.user?.city,
+          phone: matchData.matched_user_phone,
+          email: matchData.matched_user_email,
+          photo_url: fullPhotoUrl,
+          photos: fullPhotoUrl
+            ? [{ id: 1, url: fullPhotoUrl, is_main: 1 }]
+            : [],
+          contactExchanged: matchData.contact_exchanged || false,
+          createdAt: matchData.created_at || new Date().toISOString(),
+          updatedAt: matchData.updated_at || new Date().toISOString(),
+          match_percentage: 100,
+          verified: false,
+          premium: false,
+          last_active: "Just Matched",
+        };
+
+        state.matches.unshift(formattedMatch);
+      }
+    },
     setActiveFilters: (state, action) => {
       state.activeFilters = {
         ...state.activeFilters,
@@ -284,7 +329,6 @@ const userMatchesSlice = createSlice({
     clearMatchDetails: (state) => {
       state.matchDetails = null;
     },
-    // Add a new reducer to set the filter submission state
     setHasSubmittedFilters: (state, action) => {
       state.hasSubmittedFilters = action.payload;
     },
@@ -409,6 +453,7 @@ export const {
   setActiveTabReducer,
   clearMatchDetails,
   setHasSubmittedFilters,
+  addMatch,
 } = userMatchesSlice.actions;
 
 // Selectors

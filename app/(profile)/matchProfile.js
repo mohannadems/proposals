@@ -1,3 +1,4 @@
+// index.js (MatchProfileScreen)
 import React, { useState, useRef, useEffect, useContext } from "react";
 import {
   View,
@@ -8,7 +9,6 @@ import {
   StatusBar,
   ActivityIndicator,
   Platform,
-  Modal,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Feather } from "@expo/vector-icons";
@@ -18,168 +18,29 @@ import { COLORS } from "../../constants/colors";
 import createMatchProfileStyles from "../../styles/matchProfileStyle";
 import { useProfileActions } from "../../components/profile/matchProfileScreen/useProfileActions";
 import { useProfileData } from "../../components/profile/matchProfileScreen/useProfileData";
-import ActionButton from "../../components/profile/matchProfileScreen/ActionButton";
-import DislikeConfirmationBanner from "../../components/profile/matchProfileScreen/DislikeConfirmationBanner";
 import ImageCarousel from "../../components/profile/matchProfileScreen/ImageCarousel";
 import InfoCard from "../../components/profile/matchProfileScreen/InfoCard";
 import LikeConfirmationModal from "../../components/profile/matchProfileScreen/LikeConfirmationModal";
-import LikeSuccessBanner from "../../components/profile/matchProfileScreen/LikeSuccessBanner";
+import DislikeConfirmationBanner from "../../components/profile/matchProfileScreen/DislikeConfirmationBanner";
 import ScrollableHeaderContent from "../../components/profile/matchProfileScreen/ScrollableHeaderContent";
 import StatItem from "../../components/profile/matchProfileScreen/StatItem";
+import ContactInfo from "../../components/profile/matchProfileScreen/ContactInfo";
+import ProfileActions from "../../components/profile/matchProfileScreen/ProfileActions";
+import MatchBanner from "../../components/profile/matchProfileScreen/MatchBanner";
+import LoadingSpinner from "../../components/profile/matchProfileScreen/LoadingSpinner";
+import ReportSection from "../../components/profile/matchProfileScreen/ReportSection";
 import { useSelector, useDispatch } from "react-redux";
 import { matchesService } from "../../services/matchesService";
-import { setActiveTab } from "../../store/slices/userMatchesSlice";
+import { setActiveTab, addMatch } from "../../store/slices/userMatchesSlice";
 import { LanguageContext } from "../../contexts/LanguageContext";
-import ReportUserModal from "../../components/report/ReportUserModal";
 import {
   revealContact,
   selectRevealedContact,
   selectIsRevealingContact,
 } from "../../store/slices/subscriptionSlice";
+import LikeSuccessBanner from "../../components/profile/matchProfileScreen/LikeSuccessBanner";
 
 const HEADER_HEIGHT = Platform.OS === "ios" ? 520 : 280;
-
-const LoadingSpinner = ({ visible }) => {
-  const { t } = useContext(LanguageContext);
-
-  if (!visible) return null;
-
-  return (
-    <Modal transparent visible={visible} animationType="fade">
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          backgroundColor: "rgba(0, 0, 0, 0.5)",
-        }}
-      >
-        <View
-          style={{
-            padding: 30,
-            borderRadius: 10,
-            backgroundColor: "rgba(255, 255, 255, 0.9)",
-            alignItems: "center",
-          }}
-        >
-          <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text
-            style={{
-              marginTop: 15,
-              fontSize: 16,
-              fontWeight: "500",
-              color: COLORS.text,
-            }}
-          >
-            {t("match_profile.checking_match")}
-          </Text>
-        </View>
-      </View>
-    </Modal>
-  );
-};
-
-const HiddenContactInfo = ({ onUnlockPress, style, isLoading }) => {
-  const { t } = useContext(LanguageContext);
-
-  return (
-    <View style={[style, styles.hiddenContainer]}>
-      <View style={styles.blurredContent}>
-        <View style={styles.phoneContainer}>
-          <Feather name="phone" size={20} color={COLORS.primary} />
-          <Text style={styles.phoneLabel}>{t("match_profile.phone")}</Text>
-          <Text style={styles.hiddenText}>0*********</Text>
-        </View>
-
-        <View style={styles.emailContainer}>
-          <Feather name="mail" size={20} color={COLORS.primary} />
-          <Text style={styles.emailLabel}>{t("match_profile.email")}</Text>
-          <Text style={styles.hiddenText}>***@***.***</Text>
-        </View>
-      </View>
-
-      <TouchableOpacity
-        onPress={onUnlockPress}
-        style={styles.unlockButton}
-        disabled={isLoading}
-      >
-        <LinearGradient
-          colors={COLORS.primaryGradient}
-          style={styles.unlockGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-        >
-          {isLoading ? (
-            <ActivityIndicator size="small" color={COLORS.white} />
-          ) : (
-            <>
-              <Feather name="unlock" size={18} color={COLORS.white} />
-              <Text style={styles.unlockText}>
-                {t("match_profile.reveal_contact")}
-              </Text>
-            </>
-          )}
-        </LinearGradient>
-      </TouchableOpacity>
-    </View>
-  );
-};
-
-const styles = {
-  hiddenContainer: {
-    marginTop: 16,
-    borderRadius: 12,
-    overflow: "hidden",
-  },
-  blurredContent: {
-    padding: 16,
-    backgroundColor: "#F5F7FA",
-  },
-  phoneContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  emailContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  phoneLabel: {
-    marginLeft: 8,
-    fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.text,
-    minWidth: 60,
-  },
-  emailLabel: {
-    marginLeft: 8,
-    fontSize: 14,
-    fontWeight: "600",
-    color: COLORS.text,
-    minWidth: 60,
-  },
-  hiddenText: {
-    fontSize: 14,
-    color: "#A0AEC0",
-    marginLeft: 12,
-  },
-  unlockButton: {
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  unlockGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 12,
-  },
-  unlockText: {
-    color: COLORS.white,
-    fontSize: 14,
-    fontWeight: "600",
-    marginLeft: 8,
-  },
-};
 
 const MatchProfileScreen = () => {
   const [reportModalVisible, setReportModalVisible] = useState(false);
@@ -193,20 +54,19 @@ const MatchProfileScreen = () => {
   const dispatch = useDispatch();
 
   const [checkingMatch, setCheckingMatch] = useState(false);
-  const [debugMode] = useState(true);
   const [isMatch, setIsMatch] = useState(fromTab === "Matches");
 
-  // Redux state for subscription
+  // Redux state
   const revealedContact = useSelector((state) =>
     selectRevealedContact(state, userId)
   );
   const isRevealingContact = useSelector(selectIsRevealingContact);
-
   const { likedUsers } = useSelector((state) => state.userMatches);
 
   const isUserLikedInRedux =
     likedUsers && likedUsers.some((user) => user.id === userId);
 
+  // Profile data
   const {
     userProfile,
     profile,
@@ -222,12 +82,14 @@ const MatchProfileScreen = () => {
     isLiked || fromTab === "Liked" || isUserLikedInRedux
   );
 
+  // Sync liked state with Redux
   useEffect(() => {
     if (isLiked || isUserLikedInRedux) {
       setHasBeenLiked(true);
     }
   }, [isLiked, isUserLikedInRedux]);
 
+  // Profile actions
   const {
     likeLoading,
     dislikeLoading,
@@ -241,30 +103,22 @@ const MatchProfileScreen = () => {
     setShowDislikeModal,
   } = useProfileActions(userProfile, isLiked, isDisliked);
 
+  // Handle revealing contact info
   const handleRevealContact = async () => {
     try {
       await dispatch(revealContact(userId)).unwrap();
     } catch (error) {
       console.error("Error revealing contact:", error);
+      // Show error toast or alert here
     }
   };
 
-  const handleDebugMatch = () => {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-    router.push({
-      pathname: "/(profile)/match-screen",
-      params: {
-        matchedUserId: userId,
-        isNewMatch: true,
-      },
-    });
-  };
-
+  // Handle liking a user
   const handleLocalLike = () => {
     handleLike();
   };
 
+  // Handle confirming a like with match checking
   const handleLocalLikeConfirm = async () => {
     setShowLikeModal(false);
     setCheckingMatch(true);
@@ -283,48 +137,39 @@ const MatchProfileScreen = () => {
       ) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-        router.push({
-          pathname: "/(profile)/match-screen",
+        // Add the match to Redux and update UI
+        dispatch(addMatch(matchResult.matchData));
+        setIsMatch(true);
+
+        // Navigate to matches tab and show the match there
+        dispatch(setActiveTab("Matches"));
+        router.replace({
+          pathname: "(tabs)/matches",
           params: {
-            matchedUserId: userId,
-            isNewMatch: true,
+            showMatchesTab: "true",
+            openMatchUserId: userId,
           },
         });
+
         return;
       }
 
       dispatch(setActiveTab("Liked"));
     } catch (error) {
       console.error("Error checking for match:", error);
+      // Show error toast or alert here
     } finally {
       setCheckingMatch(false);
     }
   };
 
-  useEffect(() => {
-    const checkForMatch = async () => {
-      if (debugMode && userId) {
-        try {
-          if (!hasBeenLiked) {
-            const result = await matchesService.checkForMatch(userId);
-
-            if (result && result.isMatch) {
-            }
-          }
-        } catch (err) {
-          console.error("DEBUG error checking match:", err);
-        }
-      }
-    };
-
-    checkForMatch();
-  }, [debugMode, userId, hasBeenLiked]);
-
+  // Handle back navigation
   const handleBack = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.back();
   };
 
+  // Animation values
   const headerHeight = scrollY.interpolate({
     inputRange: [0, HEADER_HEIGHT - 100],
     outputRange: [HEADER_HEIGHT, 100],
@@ -337,6 +182,7 @@ const MatchProfileScreen = () => {
     extrapolate: "clamp",
   });
 
+  // Loading state
   if (loading.profile && !userProfile) {
     return (
       <View style={createStyles(isRTL).loadingContainer}>
@@ -348,6 +194,7 @@ const MatchProfileScreen = () => {
     );
   }
 
+  // Error state
   if (error.profile && !userProfile) {
     return (
       <View style={createStyles(isRTL).errorContainer}>
@@ -375,12 +222,26 @@ const MatchProfileScreen = () => {
     return t(`match_profile.stats.${key}`);
   };
 
+  const translationKeys = {
+    phone: t("match_profile.phone"),
+    email: t("match_profile.email"),
+    revealContact: t("match_profile.reveal_contact"),
+    matched: t("match_profile.matched"),
+    matchDescription: t("match_profile.match_description"),
+    liked: t("match_profile.liked"),
+    like: t("match_profile.like"),
+    dislike: t("match_profile.dislike"),
+  };
+
   return (
     <View style={{ flex: 1 }}>
       <StatusBar barStyle="light-content" />
 
       <ScrollView style={createStyles(isRTL).container}>
-        <LoadingSpinner visible={checkingMatch} />
+        <LoadingSpinner
+          visible={checkingMatch}
+          message={t("match_profile.checking_match")}
+        />
 
         <DislikeConfirmationBanner
           visible={showDislikeModal}
@@ -454,7 +315,13 @@ const MatchProfileScreen = () => {
           scrollEventThrottle={16}
         >
           <View style={createStyles(isRTL).content}>
-            {hasBeenLiked && <LikeSuccessBanner userName={firstName} />}
+            {/* Show Match Banner for matches */}
+            {isMatch && <MatchBanner userName={firstName} isVisible={true} />}
+
+            {/* Show success banner for liked profiles */}
+            {hasBeenLiked && !isMatch && (
+              <LikeSuccessBanner userName={firstName} />
+            )}
 
             <View
               style={[
@@ -485,7 +352,7 @@ const MatchProfileScreen = () => {
                   </View>
                 )}
 
-                {hasBeenLiked && (
+                {hasBeenLiked && !isMatch && (
                   <View style={createStyles(isRTL).likedBadge}>
                     <Feather name="heart" size={12} color={COLORS.white} />
                     <Text style={createStyles(isRTL).likedBadgeText}>
@@ -514,44 +381,16 @@ const MatchProfileScreen = () => {
               )}
             </View>
 
-            <View style={createStyles(isRTL).actions}>
-              {!hasBeenLiked && !isMatch ? (
-                <>
-                  <ActionButton
-                    icon="heart"
-                    label={t("match_profile.like")}
-                    onPress={handleLocalLike}
-                    primary
-                    loading={loading.like}
-                  />
-                  <ActionButton
-                    icon="x"
-                    label={t("match_profile.dislike")}
-                    onPress={handleDislike}
-                    loading={loading.dislike}
-                  />
-                </>
-              ) : isMatch ? (
-                <View style={createStyles(isRTL).matchedActions}>
-                  <View style={createStyles(isRTL).matchedHeader}>
-                    <Feather name="heart" size={24} color={COLORS.primary} />
-                    <Text style={createStyles(isRTL).matchedText}>
-                      {t("match_profile.matched")}
-                    </Text>
-                  </View>
-                  <Text style={createStyles(isRTL).matchedSubtext}>
-                    {t("match_profile.match_description")}
-                  </Text>
-                </View>
-              ) : (
-                <View style={createStyles(isRTL).alreadyLikedButton}>
-                  <Feather name="check" size={24} color="#9E9E9E" />
-                  <Text style={createStyles(isRTL).alreadyLikedText}>
-                    {t("match_profile.liked")}
-                  </Text>
-                </View>
-              )}
-            </View>
+            <ProfileActions
+              isMatch={isMatch}
+              hasBeenLiked={hasBeenLiked}
+              onLike={handleLocalLike}
+              onDislike={handleDislike}
+              isLikeLoading={likeLoading}
+              isDislikeLoading={dislikeLoading}
+              translations={translationKeys}
+              styles={createStyles(isRTL)}
+            />
 
             <InfoCard title={t("match_profile.about")} icon="user">
               <Text style={createStyles(isRTL).bio}>{bio}</Text>
@@ -644,68 +483,31 @@ const MatchProfileScreen = () => {
 
             {isMatch && (
               <InfoCard title={t("match_profile.contact_info")} icon="phone">
-                {!revealedContact ? (
-                  <HiddenContactInfo
-                    onUnlockPress={handleRevealContact}
-                    style={createStyles(isRTL).contactInfo}
-                    isLoading={isRevealingContact}
-                  />
-                ) : (
-                  <View style={createStyles(isRTL).revealedContent}>
-                    <View style={createStyles(isRTL).contactRow}>
-                      <Feather name="phone" size={20} color={COLORS.primary} />
-                      <Text style={createStyles(isRTL).contactLabel}>
-                        {t("match_profile.phone")}
-                      </Text>
-                      <Text style={createStyles(isRTL).contactValue}>
-                        {revealedContact.guardian_contact}
-                      </Text>
-                    </View>
-
-                    {profile.email && (
-                      <View style={createStyles(isRTL).contactRow}>
-                        <Feather name="mail" size={20} color={COLORS.primary} />
-                        <Text style={createStyles(isRTL).contactLabel}>
-                          {t("match_profile.email")}
-                        </Text>
-                        <Text style={createStyles(isRTL).contactValue}>
-                          {profile.email}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                )}
+                <ContactInfo
+                  isRevealed={!!revealedContact}
+                  contactData={{
+                    phone: revealedContact?.guardian_contact || "",
+                    email: profile.email || "",
+                  }}
+                  onReveal={handleRevealContact}
+                  isLoading={isRevealingContact}
+                  style={createStyles(isRTL).contactInfo}
+                  translations={translationKeys}
+                />
               </InfoCard>
             )}
 
-            <View style={createStyles(isRTL).reportContainer}>
-              <TouchableOpacity
-                style={[
-                  createStyles(isRTL).reportButton,
-                  isRTL && createStyles(isRTL).reportButtonRTL,
-                ]}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  setReportModalVisible(true);
-                }}
-              >
-                <Feather name="flag" size={16} color={COLORS.text} />
-                <Text
-                  style={[
-                    createStyles(isRTL).reportText,
-                    isRTL && createStyles(isRTL).reportTextRTL,
-                  ]}
-                >
-                  {isRTL ? `إبلاغ عن ${firstName}` : `Report ${firstName}`}
-                </Text>
-              </TouchableOpacity>
-            </View>
-
-            <ReportUserModal
-              visible={reportModalVisible}
-              onClose={() => setReportModalVisible(false)}
-              userId={userId}
+            <ReportSection
               userName={firstName}
+              userId={userId}
+              isRTL={isRTL}
+              styles={createStyles(isRTL)}
+              onReportPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                setReportModalVisible(true);
+              }}
+              reportModalVisible={reportModalVisible}
+              onCloseReportModal={() => setReportModalVisible(false)}
             />
           </View>
         </View>

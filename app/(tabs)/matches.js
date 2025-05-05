@@ -499,7 +499,6 @@ const MatchesScreen = () => {
     activeTab,
     matches,
   } = useSelector((state) => state.userMatches);
-  console.log(matches);
   const hasSubmittedFilters = useSelector(selectHasSubmittedFilters);
   useEffect(() => {
     let isMounted = true;
@@ -587,6 +586,12 @@ const MatchesScreen = () => {
 
     prevActiveFilterRef.current = activeFilter;
   }, [activeFilter, dispatch, loading.likes]);
+  useEffect(() => {
+    if (params.showMatchesTab === "true") {
+      setActiveFilter("Matches");
+      dispatch(fetchUserMatchesList());
+    }
+  }, [params.showMatchesTab, dispatch]);
 
   useEffect(() => {
     Animated.spring(filtersHeight, {
@@ -618,6 +623,7 @@ const MatchesScreen = () => {
         dispatch(fetchFilteredMatches({ isFilter: true }));
       }
     },
+
     [activeFilter, dispatch, likedUsers.length, loading.likes]
   );
 
