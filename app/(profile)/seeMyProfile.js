@@ -16,7 +16,7 @@ import {
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
-import { Feather } from "@expo/vector-icons";
+import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { SharedElement } from "react-navigation-shared-element";
 import { COLORS } from "../../constants/colors";
@@ -148,17 +148,22 @@ const InfoCard = ({ title, icon, children }) => (
   </View>
 );
 
-const StatItem = ({ label, value, icon }) => (
-  <View style={styles.statItem}>
-    <View style={styles.statIconContainer}>
-      <Feather name={icon} size={16} color={COLORS.primary} />
+const StatItem = ({ label, value, icon, iconFamily = "Feather" }) => {
+  const IconComponent =
+    iconFamily === "Feather" ? Feather : MaterialCommunityIcons;
+
+  return (
+    <View style={styles.statItem}>
+      <View style={styles.statIconContainer}>
+        <IconComponent name={icon} size={16} color={COLORS.primary} />
+      </View>
+      <View style={styles.statContent}>
+        <Text style={styles.statLabel}>{label}</Text>
+        <Text style={styles.statValue}>{value || "Not provided"}</Text>
+      </View>
     </View>
-    <View style={styles.statContent}>
-      <Text style={styles.statLabel}>{label}</Text>
-      <Text style={styles.statValue}>{value || "Not provided"}</Text>
-    </View>
-  </View>
-);
+  );
+};
 
 const PreviewProfileScreen = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -414,7 +419,12 @@ const PreviewProfileScreen = () => {
           <InfoCard title="Basic Info" icon="info">
             <View style={styles.statsGrid}>
               {stats.height && (
-                <StatItem label="Height" value={stats.height} icon="ruler" />
+                <StatItem
+                  label="Height"
+                  value={stats.height}
+                  icon="ruler"
+                  iconFamily="MaterialCommunityIcons"
+                />
               )}
               {stats.weight && (
                 <StatItem label="Weight" value={stats.weight} icon="cloud" />
@@ -435,7 +445,12 @@ const PreviewProfileScreen = () => {
               )}
               <StatItem label="Smoking" value={stats.smoking} icon="x-circle" />
               {stats.drinking && (
-                <StatItem label="Drinking" value={stats.drinking} icon="wine" />
+                <StatItem
+                  label="Drinking"
+                  value={stats.drinking}
+                  icon="glass-wine"
+                  iconFamily="MaterialCommunityIcons"
+                />
               )}
               {stats.employment && (
                 <StatItem

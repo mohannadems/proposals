@@ -437,7 +437,7 @@ const LifestyleSection = ({ isRTL = false, t, userGender }) => {
                   color={COLORS.primary}
                 />
               }
-              required
+              required={userGender === "male"}
               isRTL={_isRTL}
             />
           )}

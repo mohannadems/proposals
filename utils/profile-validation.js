@@ -63,7 +63,9 @@ export const profileValidationSchema = Yup.object().shape({
   specialization_id: Yup.number()
     .nullable()
     .required("Please select your Specialication "),
-  employment_status: Yup.boolean().nullable(),
+  employment_status: Yup.boolean()
+    .nullable()
+    .required("Please select your employment status"),
   job_title_id: Yup.number()
     .nullable()
     .when("employment_status", {
@@ -84,34 +86,32 @@ export const profileValidationSchema = Yup.object().shape({
   financial_status_id: createNumberValidation("financial status"),
   housing_status_id: Yup.number()
     .nullable()
-    .when("gender ", {
-      is: "male",
-      then: (schema) => schema.required("Please select your housing status"),
-      otherwise: (schema) => schema.nullable(),
-    }),
+    .required("Please select your Marital Status"),
 
   car_ownership: Yup.boolean()
     .nullable()
     .required("Please select your car ownership status"),
   marriage_budget_id: Yup.number()
     .nullable()
-    .when("gender ", {
-      is: "male",
-      then: (schema) => schema.required("Please select your marrige budget"),
+    .when("gender", {
+      is: (value) => value !== "female",
+      then: (schema) => schema.required("Please select your marriage budget"),
       otherwise: (schema) => schema.nullable(),
     }),
 
   // Marital and Family
   marital_status_id: Yup.number()
     .nullable()
-    .when("gender", {
-      is: "male",
-      then: (schema) => schema.required("Marital status is required for males"),
-      otherwise: (schema) => schema.nullable(),
-    }),
+    .required("Please select your Marital Status"),
   number_of_children: Yup.number()
     .nullable()
-    .required("Please select your Number of Children"),
+    .transform((value) => (isNaN(value) ? null : value))
+    .required("Please select your Number of Children")
+    .test(
+      "is-valid-option",
+      "Please select a valid option for Number of Children",
+      (value) => value === null || [1, 2, 3, 4, 5].includes(value)
+    ),
 
   // Religious and Cultural
   religion_id: createNumberValidation("religion"),
@@ -263,7 +263,7 @@ export const initialProfileState = {
   car_ownership: null,
   marriage_budget_id: null,
   marital_status_id: null,
-  number_of_children: 0,
+  number_of_children: null,
   religion_id: null,
   religiosity_level_id: null,
   sleep_habit_id: null,
@@ -301,7 +301,7 @@ export const initialFormState = {
   sports_activity_id: null,
   religion_id: null,
   marital_status_id: null,
-  number_of_children: 0,
+  number_of_children: null,
   housing_status_id: null,
   hobbies: [],
   pets: [],

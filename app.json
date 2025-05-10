@@ -1,15 +1,15 @@
 {
   "expo": {
     "scheme": "proposals",
-    "name": "fresh-proposals",
+    "name": "proposals",
     "slug": "fresh-proposals",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/empty-tickets.jpg",
+    "icon": "./assets/images/logo2.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/images/logo2.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -18,7 +18,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/empty-tickets.jpg",
+        "foregroundImage": "./assets/images/logo2.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true

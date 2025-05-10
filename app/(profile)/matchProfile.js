@@ -447,12 +447,12 @@ const MatchProfileScreen = () => {
                   if (!value) return null;
 
                   const icons = {
-                    height: "ruler",
+                    height: "maximize-2", // or "navigation"
                     weight: "cloud",
                     marital_status: "user",
                     children: "users",
                     smoking: "x-circle",
-                    drinking: "wine",
+                    drinking: "coffee", // or "droplet"
                     employment: "briefcase",
                     education: "book",
                     religion: "heart",

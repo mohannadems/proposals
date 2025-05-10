@@ -215,49 +215,64 @@ const EducationWorkSection = ({ isRTL = false, t, userGender }) => {
       <Controller
         control={control}
         name="employment_status"
-        render={({ field: { value, onChange } }) => (
-          <ToggleButton
-            label={
-              _t
-                ? _t("profile.education.employment_status")
-                : "Employment Status"
-            }
-            value={value}
-            onChange={(newValue) => {
-              onChange(newValue);
-              if (newValue === false) {
-                setValue("job_title_id", null);
-                setValue("position_level_id", null);
+        rules={{ required: "Please select your employment status" }}
+        render={({ field: { value, onChange }, fieldState: { error } }) => (
+          <>
+            <ToggleButton
+              label={
+                _t
+                  ? _t("profile.education.employment_status")
+                  : "Employment Status"
               }
-            }}
-            options={[
-              {
-                value: true,
-                label: _t ? _t("profile.education.employed") : "Employed",
-                icon: (
-                  <FeatherIcon
-                    name="briefcase"
-                    size={24}
-                    color={value === true ? COLORS.white : COLORS.primary}
-                  />
-                ),
-              },
-              {
-                value: false,
-                label: _t
-                  ? _t("profile.education.not_employed")
-                  : "Not Employed",
-                icon: (
-                  <FeatherIcon
-                    name="x-circle"
-                    size={24}
-                    color={value === false ? COLORS.white : COLORS.primary}
-                  />
-                ),
-              },
-            ]}
-            isRTL={_isRTL}
-          />
+              value={value}
+              onChange={(newValue) => {
+                onChange(newValue);
+                if (newValue === false) {
+                  setValue("job_title_id", null);
+                  setValue("position_level_id", null);
+                }
+              }}
+              options={[
+                {
+                  value: true,
+                  label: _t ? _t("profile.education.employed") : "Employed",
+                  icon: (
+                    <FeatherIcon
+                      name="briefcase"
+                      size={24}
+                      color={value === true ? COLORS.white : COLORS.primary}
+                    />
+                  ),
+                },
+                {
+                  value: false,
+                  label: _t
+                    ? _t("profile.education.not_employed")
+                    : "Not Employed",
+                  icon: (
+                    <FeatherIcon
+                      name="x-circle"
+                      size={24}
+                      color={value === false ? COLORS.white : COLORS.primary}
+                    />
+                  ),
+                },
+              ]}
+              isRTL={_isRTL}
+              error={error?.message}
+            />
+            {error && (
+              <Text
+                style={{
+                  color: COLORS.error,
+                  marginTop: 5,
+                  textAlign: _isRTL ? "right" : "left",
+                }}
+              >
+                {error.message}
+              </Text>
+            )}
+          </>
         )}
       />
 
@@ -352,6 +367,15 @@ const EducationWorkSection = ({ isRTL = false, t, userGender }) => {
                 <FeatherIcon name="home" size={20} color={COLORS.primary} />
               }
               isRTL={_isRTL}
+              required={userGender === "male"} // Only required for males
+              rules={{
+                required:
+                  userGender === "male"
+                    ? _t
+                      ? _t("profile.education.housing_status_required")
+                      : "Housing status is required"
+                    : false,
+              }}
             />
           )}
         </AnimatedFormContainer>
@@ -404,39 +428,54 @@ const EducationWorkSection = ({ isRTL = false, t, userGender }) => {
       <Controller
         control={control}
         name="car_ownership"
-        render={({ field: { value, onChange } }) => (
-          <ToggleButton
-            label={
-              _t ? _t("profile.education.car_ownership") : "Car Ownership 🚗"
-            }
-            value={value}
-            onChange={onChange}
-            options={[
-              {
-                value: true,
-                label: _t ? _t("common.yes") : "Yes",
-                icon: (
-                  <FeatherIcon
-                    name="check-circle"
-                    size={24}
-                    color={value === true ? COLORS.white : COLORS.primary}
-                  />
-                ),
-              },
-              {
-                value: false,
-                label: _t ? _t("common.no") : "No",
-                icon: (
-                  <FeatherIcon
-                    name="x-circle"
-                    size={24}
-                    color={value === false ? COLORS.white : COLORS.primary}
-                  />
-                ),
-              },
-            ]}
-            isRTL={_isRTL}
-          />
+        rules={{ required: "Please select your car ownership status" }}
+        render={({ field: { value, onChange }, fieldState: { error } }) => (
+          <>
+            <ToggleButton
+              label={
+                _t ? _t("profile.education.car_ownership") : "Car Ownership 🚗"
+              }
+              value={value}
+              onChange={onChange}
+              options={[
+                {
+                  value: true,
+                  label: _t ? _t("common.yes") : "Yes",
+                  icon: (
+                    <FeatherIcon
+                      name="check-circle"
+                      size={24}
+                      color={value === true ? COLORS.white : COLORS.primary}
+                    />
+                  ),
+                },
+                {
+                  value: false,
+                  label: _t ? _t("common.no") : "No",
+                  icon: (
+                    <FeatherIcon
+                      name="x-circle"
+                      size={24}
+                      color={value === false ? COLORS.white : COLORS.primary}
+                    />
+                  ),
+                },
+              ]}
+              isRTL={_isRTL}
+              error={error?.message}
+            />
+            {error && (
+              <Text
+                style={{
+                  color: COLORS.error,
+                  marginTop: 5,
+                  textAlign: _isRTL ? "right" : "left",
+                }}
+              >
+                {error.message}
+              </Text>
+            )}
+          </>
         )}
       />
     </ScrollView>
