@@ -111,7 +111,7 @@ const ProfileDropdownMenu = ({ onLogout, onLanguageChange }) => {
       customIcon: true,
       label: t ? t("profile.subscription") : "Subscription",
       sublabel: t ? t("profile.upgrade_plan") : "Upgrade your plan",
-      onPress: () => router.push("/(subscription)/PaymentScreen"),
+      onPress: () => router.push("/(subscription)/paymentScreen"),
       color: "#FFD700",
     },
     {
