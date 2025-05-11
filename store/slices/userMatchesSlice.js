@@ -32,9 +32,9 @@ export const fetchUserMatches = createAsyncThunk(
   async (params = {}, { rejectWithValue, getState }) => {
     try {
       const state = getState();
-      // Check if filters have been submitted at least once
+      const searchPreferences = state.search.preferences;
+
       if (!state.userMatches.hasSubmittedFilters && !params.forceLoad) {
-        // Return empty data if filters haven't been submitted yet
         return {
           exact_matches: [],
           suggested_users: [],
@@ -42,22 +42,34 @@ export const fetchUserMatches = createAsyncThunk(
         };
       }
 
-      const requestParams = { ...params };
+      const requestParams = {
+        ...params,
+        ...searchPreferences,
+        timestamp: Date.now(),
+      };
+
       if (!requestParams.isFilter) {
         delete requestParams.isFilter;
       }
 
       const response = await api.get(
         ENDPOINTS.GET_USER_PREFERENCES_AND_SUGGESTIONS,
-        { params: requestParams }
+        {
+          params: requestParams,
+          headers: {
+            "Cache-Control": "no-cache",
+            Pragma: "no-cache",
+          },
+        }
       );
+
       return response.data;
     } catch (error) {
+      console.error("Error in fetchUserMatches:", error);
       return rejectWithValue(handleApiError(error, "Failed to fetch matches"));
     }
   }
 );
-
 export const fetchFilteredMatches = createAsyncThunk(
   "userMatches/fetchFilteredMatches",
   async (filterParams = {}, { rejectWithValue }) => {
@@ -442,6 +454,15 @@ const userMatchesSlice = createSlice({
       .addCase(fetchUserMatchesList.rejected, (state, action) => {
         state.loading.matches = false;
         state.error.matches = action.payload;
+      }) // In the extraReducers builder
+      .addCase(refreshMatchesAfterSearch, (state) => {
+        // Reset any necessary state here if needed
+        state.activeTab = "All";
+        state.activeFilters = {
+          ...state.activeFilters,
+          isFilter: false,
+          isLikedFilter: false,
+        };
       });
   },
 });
@@ -472,3 +493,7 @@ export const selectHasSubmittedFilters = (state) =>
 export const selectMatches = (state) => state.userMatches.matches;
 
 export default userMatchesSlice.reducer;
+// Add this with your other action creators in userMatchesSlice.js
+export const refreshMatchesAfterSearch = createAction(
+  "userMatches/refreshMatchesAfterSearch"
+);

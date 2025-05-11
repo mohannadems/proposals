@@ -50,44 +50,14 @@ import {
   selectMatches,
 } from "../../store/slices/userMatchesSlice";
 import { LanguageContext } from "../../contexts/LanguageContext";
-const NoFiltersPlaceholder = memo(({ styles, onSearchPress }) => {
-  const { t } = useContext(LanguageContext);
-
-  return (
-    <View style={styles.noFiltersContainer}>
-      <View style={styles.noFiltersIconContainer}>
-        <Feather name="sliders" size={50} color={COLORS.primary} />
-      </View>
-      <Text style={styles.noFiltersTitle}>
-        {t ? t("matches.no_filters.title") : "Set Your Preferences"}
-      </Text>
-      <Text style={styles.noFiltersDescription}>
-        {t
-          ? t("matches.no_filters.description")
-          : "Select your preferences to see potential matches that meet your criteria."}
-      </Text>
-      <TouchableOpacity style={styles.noFiltersButton} onPress={onSearchPress}>
-        <LinearGradient
-          colors={COLORS.primaryGradient}
-          style={StyleSheet.absoluteFill}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        />
-        <Feather
-          name="search"
-          size={18}
-          color="#fff"
-          style={{ marginRight: 8 }}
-        />
-        <Text style={styles.noFiltersButtonText}>
-          {t ? t("matches.no_filters.button") : "Start Searching"}
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
+const getFlexDirection = (isRTL) => (isRTL ? "row-reverse" : "row");
+const getTextAlign = (isRTL) => (isRTL ? "right" : "left");
+const getMargins = (isRTL, left, right) => ({
+  marginLeft: isRTL ? right : left,
+  marginRight: isRTL ? left : right,
 });
 const EmptyStateCard = memo(({ type, styles }) => {
-  const { t } = useContext(LanguageContext);
+  const { t, isRTL } = useContext(LanguageContext);
 
   const messages = {
     preferences: {
@@ -114,8 +84,19 @@ const EmptyStateCard = memo(({ type, styles }) => {
       <View style={styles.emptyStateIconContainer}>
         <Feather name={content.icon} size={40} color={COLORS.primary} />
       </View>
-      <Text style={styles.emptyStateTitle}>{content.title}</Text>
-      <Text style={styles.emptyStateDescription}>{content.description}</Text>
+      <Text
+        style={[styles.emptyStateTitle, { textAlign: getTextAlign(isRTL) }]}
+      >
+        {content.title}
+      </Text>
+      <Text
+        style={[
+          styles.emptyStateDescription,
+          { textAlign: getTextAlign(isRTL) },
+        ]}
+      >
+        {content.description}
+      </Text>
     </View>
   );
 });
@@ -306,36 +287,50 @@ const QuickMatch = memo(({ user, onPress, styles }) => {
   );
 });
 
-const FilterChip = memo(({ label, icon, active, onPress, styles }) => (
-  <TouchableOpacity
-    style={[styles.filterChip, active && styles.filterChipActive]}
-    onPress={() => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      onPress();
-    }}
-    accessible={true}
-    accessibilityLabel={`${label} filter ${active ? "selected" : ""}`}
-    accessibilityRole="button"
-    accessibilityState={{ selected: active }}
-  >
-    <LinearGradient
-      colors={active ? COLORS.primaryGradient : ["transparent", "transparent"]}
-      style={StyleSheet.absoluteFill}
-      start={{ x: 0, y: 0 }}
-      end={{ x: 1, y: 1 }}
-    />
-    <Feather
-      name={icon}
-      size={16}
-      color={active ? COLORS.white : COLORS.text}
-    />
-    <Text
-      style={[styles.filterChipText, active && styles.filterChipTextActive]}
+const FilterChip = memo(({ label, icon, active, onPress, styles }) => {
+  const { isRTL } = useContext(LanguageContext);
+
+  return (
+    <TouchableOpacity
+      style={[styles.filterChip, active && styles.filterChipActive]}
+      onPress={() => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        onPress();
+      }}
+      accessible={true}
+      accessibilityLabel={`${label} filter ${active ? "selected" : ""}`}
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
     >
-      {label}
-    </Text>
-  </TouchableOpacity>
-));
+      <LinearGradient
+        colors={
+          active ? COLORS.primaryGradient : ["transparent", "transparent"]
+        }
+        style={StyleSheet.absoluteFill}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+      />
+      <View
+        style={{ flexDirection: getFlexDirection(isRTL), alignItems: "center" }}
+      >
+        <Feather
+          name={icon}
+          size={16}
+          color={active ? COLORS.white : COLORS.text}
+        />
+        <Text
+          style={[
+            styles.filterChipText,
+            active && styles.filterChipTextActive,
+            getMargins(isRTL, 6, 6),
+          ]}
+        >
+          {label}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+});
 
 const FiltersPanel = memo(
   ({
@@ -348,27 +343,47 @@ const FiltersPanel = memo(
     onReset,
     styles,
   }) => {
-    const { t } = useContext(LanguageContext);
+    const { t, isRTL } = useContext(LanguageContext);
 
     return (
       <Animated.View style={[styles.filtersPanel, { height: filtersHeight }]}>
         <BlurView intensity={80} style={StyleSheet.absoluteFill}>
           <ScrollView style={styles.filtersList}>
-            <Text style={styles.filtersTitle}>
+            <Text
+              style={[styles.filtersTitle, { textAlign: getTextAlign(isRTL) }]}
+            >
               {t("matches.filters.title")}
             </Text>
 
             <View style={styles.filterSection}>
-              <Text style={styles.filterSectionTitle}>
+              <Text
+                style={[
+                  styles.filterSectionTitle,
+                  { textAlign: getTextAlign(isRTL) },
+                ]}
+              >
                 {t("matches.filters.age_range")}
               </Text>
-              <View style={styles.ageRangeInputContainer}>
+              <View
+                style={[
+                  styles.ageRangeInputContainer,
+                  { flexDirection: getFlexDirection(isRTL) },
+                ]}
+              >
                 <View style={styles.ageInputWrapper}>
-                  <Text style={styles.ageInputLabel}>
+                  <Text
+                    style={[
+                      styles.ageInputLabel,
+                      { textAlign: getTextAlign(isRTL) },
+                    ]}
+                  >
                     {t("matches.filters.min")}
                   </Text>
                   <TextInput
-                    style={styles.ageInput}
+                    style={[
+                      styles.ageInput,
+                      { textAlign: getTextAlign(isRTL) },
+                    ]}
                     placeholder="18"
                     placeholderTextColor="rgba(255,255,255,0.5)"
                     keyboardType="number-pad"
@@ -389,11 +404,19 @@ const FiltersPanel = memo(
                 </View>
                 <View style={styles.ageSeparator} />
                 <View style={styles.ageInputWrapper}>
-                  <Text style={styles.ageInputLabel}>
+                  <Text
+                    style={[
+                      styles.ageInputLabel,
+                      { textAlign: getTextAlign(isRTL) },
+                    ]}
+                  >
                     {t("matches.filters.max")}
                   </Text>
                   <TextInput
-                    style={styles.ageInput}
+                    style={[
+                      styles.ageInput,
+                      { textAlign: getTextAlign(isRTL) },
+                    ]}
                     placeholder="50"
                     placeholderTextColor="rgba(255,255,255,0.5)"
                     keyboardType="number-pad"
@@ -441,12 +464,24 @@ const FiltersPanel = memo(
 
 const SectionHeader = memo(
   ({ title, percentage, showPercentage, onSeeAllPress, styles }) => {
-    const { t } = useContext(LanguageContext);
+    const { t, isRTL } = useContext(LanguageContext);
 
     return (
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>{title}</Text>
-        <View style={styles.sectionHeaderRight}>
+      <View
+        style={[
+          styles.sectionHeader,
+          { flexDirection: getFlexDirection(isRTL) },
+        ]}
+      >
+        <Text style={[styles.sectionTitle, { textAlign: getTextAlign(isRTL) }]}>
+          {title}
+        </Text>
+        <View
+          style={[
+            styles.sectionHeaderRight,
+            { flexDirection: getFlexDirection(isRTL) },
+          ]}
+        >
           {showPercentage && percentage > 0 && (
             <View style={styles.percentageContainer}>
               <Text style={styles.percentageText}>
@@ -508,7 +543,12 @@ const MatchesScreen = () => {
     const fetchInitialData = async () => {
       try {
         setActiveFilter("All");
-        dispatch(clearFilters());
+
+        // Don't clear filters if we just submitted search
+        // Only clear them if we're not coming from search
+        if (!hasSearched) {
+          dispatch(clearFilters());
+        }
 
         try {
           await dispatch(fetchProfileCompletionData()).unwrap();
@@ -521,9 +561,15 @@ const MatchesScreen = () => {
 
         if (!isMounted) return;
 
-        // Only fetch matches if filters have been previously submitted
-        if (hasSubmittedFilters) {
-          await dispatch(fetchUserMatches()).unwrap();
+        // Always fetch matches if hasSearched is true,
+        // which indicates we came from the search screen
+        if (hasSubmittedFilters || hasSearched) {
+          await dispatch(
+            fetchUserMatches({
+              // Pass forceLoad to ensure we get results
+              forceLoad: hasSearched ? true : false,
+            })
+          ).unwrap();
         }
 
         setTimeout(async () => {
@@ -540,7 +586,6 @@ const MatchesScreen = () => {
         if (isMounted) {
           if (retryCount < MAX_RETRIES) {
             retryCount++;
-
             setTimeout(fetchInitialData, 1000);
           } else {
             Alert.alert(t("common.error"), t("matches.errors.data_load"));
@@ -554,7 +599,7 @@ const MatchesScreen = () => {
     return () => {
       isMounted = false;
     };
-  }, [dispatch, t, hasSubmittedFilters]);
+  }, [dispatch, t, hasSubmittedFilters, hasSearched]);
 
   const isFirstMount = useRef(true);
   useEffect(() => {
@@ -573,7 +618,24 @@ const MatchesScreen = () => {
       }, 0);
     }
   }, [params.showLiked, activeTab, dispatch]);
+  useEffect(() => {
+    if (params.refreshTimestamp) {
+      dispatch(clearFilters());
 
+      dispatch(
+        fetchUserMatches({
+          forceLoad: true,
+          timestamp: params.refreshTimestamp,
+        })
+      )
+        .unwrap()
+
+        .catch((error) => {
+          console.error("Error fetching matches after search:", error);
+          Alert.alert(t("common.error"), t("matches.errors.data_load"));
+        });
+    }
+  }, [params.refreshTimestamp, dispatch, t]);
   const prevActiveFilterRef = useRef(activeFilter);
   useEffect(() => {
     if (
@@ -712,16 +774,19 @@ const MatchesScreen = () => {
         : t("matches.sections.suggested_matches"),
     [activeFilter, t]
   );
-  const renderContent = () => {
-    if (!hasSubmittedFilters && !hasSearched) {
-      return (
-        <NoFiltersPlaceholder
-          styles={styles}
-          onSearchPress={() => router.push("/Partner")}
-        />
-      );
-    }
+  useEffect(() => {
+    if (params.refreshTimestamp) {
+      dispatch(clearFilters());
 
+      dispatch(fetchUserMatches())
+        .unwrap()
+        .catch((error) => {
+          console.error("Error fetching matches after search:", error);
+          Alert.alert(t("common.error"), t("matches.errors.data_load"));
+        });
+    }
+  }, [params.refreshTimestamp, dispatch, t]);
+  const renderContent = () => {
     return (
       <>
         <View style={styles.filterContainer}>
@@ -729,6 +794,7 @@ const MatchesScreen = () => {
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.filterScroll}
+            style={{ flexDirection: isRTL ? "row-reverse" : "row" }}
           >
             <FilterChip
               label={t("matches.filters.all")}
@@ -771,6 +837,7 @@ const MatchesScreen = () => {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.spotlightScroll}
+                style={{ flexDirection: isRTL ? "row-reverse" : "row" }}
               >
                 {likedUsers.map((user, index) => (
                   <MatchCard
@@ -907,12 +974,22 @@ const MatchesScreen = () => {
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            <View style={styles.headerContent}>
-              <Text style={styles.headerTitle}>
+            <View
+              style={[
+                styles.headerContent,
+                { flexDirection: getFlexDirection(isRTL) },
+              ]}
+            >
+              <Text
+                style={[styles.headerTitle, { textAlign: getTextAlign(isRTL) }]}
+              >
                 {t("matches.header.discover")}
               </Text>
               <TouchableOpacity
-                style={styles.filterButton}
+                style={[
+                  styles.filterButton,
+                  isRTL ? { left: 15 } : { right: 15 },
+                ]}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                   setShowFilters(!showFilters);

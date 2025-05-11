@@ -53,8 +53,17 @@ import {
   selectDirectReligiosityLevels,
 } from "../../store/slices/profileAttributesSlice";
 import { SceneStyleInterpolators } from "@react-navigation/bottom-tabs";
-import { setHasSubmittedFilters } from "../../store/slices/userMatchesSlice";
+import {
+  setHasSubmittedFilters,
+  refreshMatchesAfterSearch,
+} from "../../store/slices/userMatchesSlice";
 import { LanguageContext } from "../../contexts/LanguageContext";
+const getFlexDirection = (isRTL) => (isRTL ? "row-reverse" : "row");
+const getTextAlign = (isRTL) => (isRTL ? "right" : "left");
+const getMargins = (isRTL, left, right) => ({
+  marginLeft: isRTL ? right : left,
+  marginRight: isRTL ? left : right,
+});
 const MAX_FILTERS = 10;
 
 const AdvancedSearchScreen = () => {
@@ -228,10 +237,23 @@ const AdvancedSearchScreen = () => {
     setIsLoading(true);
 
     try {
-      await dispatch(submitSearchPreferences(preferences)).unwrap();
+      // Submit the search preferences
+      const result = await dispatch(
+        submitSearchPreferences(preferences)
+      ).unwrap();
+
+      // Set flags to indicate search has been performed
       dispatch(setHasSubmittedFilters(true));
       dispatch(setHasSearched(true));
-      router.push("/(tabs)/matches");
+
+      // Dispatch refresh action
+      dispatch(refreshMatchesAfterSearch());
+
+      // Navigate to matches screen with explicit parameter to force refresh
+      router.push({
+        pathname: "/(tabs)/matches",
+        params: { refreshTimestamp: Date.now().toString() },
+      });
     } catch (error) {
       console.error("Error submitting search preferences:", error);
       Alert.alert("Error", "Failed to submit preferences. Please try again.");
@@ -288,12 +310,22 @@ const AdvancedSearchScreen = () => {
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
       <View style={styles.header}>
-        <View style={styles.headerContent}>
+        <View
+          style={[
+            styles.headerContent,
+            { flexDirection: getFlexDirection(isRTL) },
+          ]}
+        >
           <Ionicons
             name="search"
             size={24}
             color="#FFFFFF"
-            style={styles.headerIcon}
+            style={[
+              styles.headerIcon,
+              isRTL
+                ? { marginLeft: 10, marginRight: 0 }
+                : { marginRight: 10, marginLeft: 0 },
+            ]}
           />
           <Text style={styles.headerTitle}>{t("filters.title")}</Text>
         </View>
@@ -398,7 +430,6 @@ const AdvancedSearchScreen = () => {
               onChange={handleAgeRangeChange}
               isFilterDisabled={isFilterDisabled("preferred_age_min")}
               isMaxFiltersSelected={isMaxFiltersSelected}
-              isRTL={isRTL}
               labelText={t("filters.fields.ageRange")}
               minAgeLabel={t("filters.ageRange.minAge")}
               maxAgeLabel={t("filters.ageRange.maxAge")}
@@ -791,6 +822,9 @@ const AdvancedSearchScreen = () => {
           </FilterSection>
 
           {/* Action Buttons */}
+        </Animated.ScrollView>
+        <View style={styles.bottomSpacing} />
+        <View style={styles.fixedButtonContainer}>
           <SearchActionButtons
             loading={loading}
             hasSmokingError={hasSmokingError}
@@ -802,10 +836,9 @@ const AdvancedSearchScreen = () => {
             resetText={t("filters.actions.resetAll")}
             infoText={t("filters.info.selectFilters")}
             errorText={t("filters.errors.smokingTools")}
+            horizontal={true}
           />
-          {/* Bottom Spacing */}
-          <View style={styles.bottomSpacing} />
-        </Animated.ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </View>
   );
@@ -870,7 +903,7 @@ const styles = StyleSheet.create({
     color: "#555",
   },
   bottomSpacing: {
-    height: 40,
+    height: 100,
   },
   toggleSection: {
     marginBottom: 16,
@@ -970,6 +1003,24 @@ const styles = StyleSheet.create({
   selectedPetChipText: {
     color: COLORS.primary,
     fontWeight: "500",
+  },
+  fixedButtonContainer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: Platform.OS === "ios" ? 25 : 16,
+    borderTopWidth: 1,
+    borderTopColor: "#E1E4E8",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 5,
+    zIndex: 999,
   },
 });
 export default withProfileCompletion(AdvancedSearchScreen);

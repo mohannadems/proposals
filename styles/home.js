@@ -3,6 +3,9 @@ import COLORS from "../constants/colors";
 const { width } = Dimensions.get("window");
 
 export default function createHomeStyles(isRTL) {
+  function getTextAlign(isRTL) {
+    return isRTL ? "right" : "left";
+  }
   return StyleSheet.create({
     container: {
       flex: 1,
@@ -22,7 +25,7 @@ export default function createHomeStyles(isRTL) {
     },
     heroContent: {
       marginTop: 30,
-      alignItems: isRTL ? "flex-end " : "flex-start ",
+      alignItems: isRTL ? "flex-end" : "flex-start",
     },
     heroTitle: {
       fontSize: 48,
@@ -30,7 +33,7 @@ export default function createHomeStyles(isRTL) {
       color: COLORS.white,
       lineHeight: 56,
       marginBottom: 16,
-      textAlign: isRTL ? "left" : " right",
+      textAlign: isRTL ? "right" : "left",
       writingDirection: isRTL ? "rtl" : "ltr",
     },
     heroSubtitle: {
@@ -38,7 +41,7 @@ export default function createHomeStyles(isRTL) {
       color: COLORS.white,
       opacity: 0.8,
       marginBottom: 25,
-      textAlign: isRTL ? "left" : " right",
+      textAlign: isRTL ? "right" : "left",
       writingDirection: isRTL ? "rtl" : "ltr",
     },
     heroButton: {
@@ -55,7 +58,7 @@ export default function createHomeStyles(isRTL) {
       shadowRadius: 15,
       elevation: 12,
       shadowColor: COLORS.text,
-      alignSelf: isRTL ? "flex-end   " : "flex-start",
+      alignSelf: isRTL ? "flex-end" : "flex-start",
     },
     buttonBlur: {
       flex: 1,
@@ -120,7 +123,7 @@ export default function createHomeStyles(isRTL) {
       fontWeight: "700",
       color: COLORS.text,
       marginBottom: 24,
-      textAlign: isRTL ? "left" : " right",
+      textAlign: getTextAlign(isRTL),
       marginLeft: isRTL ? 0 : 10,
       marginRight: isRTL ? 10 : 0,
     },
@@ -181,11 +184,12 @@ export default function createHomeStyles(isRTL) {
     testimonialScroll: {
       marginHorizontal: -20,
       paddingHorizontal: 20,
-      transform: [{ scaleX: isRTL ? -1 : 1 }],
+      flexDirection: isRTL ? "row-reverse" : "row",
     },
     testimonialCard: {
       width: width - 80,
-      marginRight: 16,
+      marginRight: isRTL ? 0 : 16,
+      marginLeft: isRTL ? 16 : 0,
       padding: 20,
       backgroundColor: COLORS.white,
       borderRadius: 20,
@@ -197,7 +201,6 @@ export default function createHomeStyles(isRTL) {
       shadowOpacity: 0.1,
       shadowRadius: 12,
       elevation: 5,
-      transform: [{ scaleX: isRTL ? -1 : 1 }],
     },
     testimonialContentView: {
       alignItems: "center",
@@ -216,19 +219,19 @@ export default function createHomeStyles(isRTL) {
       resizeMode: "cover",
     },
     testimonialText: {
-      textAlign: isRTL ? "left" : " right",
+      textAlign: isRTL ? "left" : "right",
       fontSize: 16,
       marginVertical: 8,
-      writingDirection: isRTL ? "ltr" : " rtl",
+      writingDirection: isRTL ? "ltr" : "rtl",
     },
     testimonialName: {
       fontWeight: "bold",
-      textAlign: isRTL ? "left" : " right",
+      textAlign: isRTL ? "left" : "right",
       alignSelf: isRTL ? "flex-start" : "flex-start",
     },
     testimonialLocation: {
       color: "gray",
-      textAlign: isRTL ? "left" : " right",
+      textAlign: isRTL ? "left" : "right",
       alignSelf: isRTL ? "flex-start" : "flex-start",
     },
     featureIconContainer: {

@@ -10,17 +10,24 @@ import {
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { COLORS } from "../../../../constants/colors";
 import { useFormContext } from "react-hook-form";
+import { LanguageContext } from "../../../../contexts/LanguageContext";
+import FeatherIcon from "react-native-vector-icons/Feather";
 
 const FormDatePicker = ({
-  control,
   name,
   label,
   maximumDate,
   minimumDate,
   required,
-  isRTL = false,
-  t,
+  isRTL: propIsRTL,
+  t: propT,
+  leftIcon,
 }) => {
+  // Get RTL and translation from context, prioritize props if provided
+  const { isRTL: contextRTL, t: contextT } = useContext(LanguageContext) || {};
+  const _isRTL = propIsRTL !== undefined ? propIsRTL : contextRTL;
+  const _t = propT || contextT;
+
   const {
     setValue,
     watch,
@@ -35,12 +42,17 @@ const FormDatePicker = ({
     container: {
       marginBottom: 16,
     },
+    labelContainer: {
+      flexDirection: _isRTL ? "row-reverse" : "row",
+      alignItems: "center",
+      marginBottom: 8,
+    },
     label: {
       fontSize: 16,
       fontWeight: "600",
       color: COLORS.text,
-      marginBottom: 8,
-      textAlign: isRTL ? "right" : "left",
+      textAlign: _isRTL ? "right" : "left",
+      writingDirection: _isRTL ? "rtl" : "ltr",
     },
     required: {
       color: COLORS.error,
@@ -51,14 +63,25 @@ const FormDatePicker = ({
       padding: 16,
       borderWidth: 1,
       borderColor: COLORS.border,
+      flexDirection: _isRTL ? "row-reverse" : "row",
+      alignItems: "center",
     },
     dateButtonError: {
       borderColor: COLORS.error,
     },
+    iconContainer: {
+      marginRight: _isRTL ? 0 : 12,
+      marginLeft: _isRTL ? 12 : 0,
+    },
     dateText: {
+      flex: 1,
       color: COLORS.text,
       fontSize: 16,
-      textAlign: isRTL ? "right" : "left",
+      textAlign: _isRTL ? "right" : "left",
+      writingDirection: _isRTL ? "rtl" : "ltr",
+    },
+    placeholderText: {
+      color: "#A0A0A0",
     },
     modalOverlay: {
       flex: 1,
@@ -79,7 +102,7 @@ const FormDatePicker = ({
       backgroundColor: Platform.OS === "ios" ? COLORS.background : COLORS.white,
     },
     buttonContainer: {
-      flexDirection: isRTL ? "row-reverse" : "row",
+      flexDirection: _isRTL ? "row-reverse" : "row",
       justifyContent: "space-between",
       width: "100%",
       marginTop: 16,
@@ -106,7 +129,8 @@ const FormDatePicker = ({
       color: COLORS.error,
       fontSize: 12,
       marginTop: 8,
-      textAlign: isRTL ? "right" : "left",
+      textAlign: _isRTL ? "right" : "left",
+      writingDirection: _isRTL ? "rtl" : "ltr",
     },
   };
 
@@ -134,35 +158,78 @@ const FormDatePicker = ({
     setTempDate(null);
   };
 
+  // Modified formatDate function to always use Gregorian calendar
   const formatDate = (date) => {
-    if (!date) return t ? t("common.select_date") : "Select Date";
+    if (!date) return null;
 
-    const options = {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    };
+    // Always use en-US format for date calculations to ensure Gregorian
+    const day = date.getDate();
+    const month = date.getMonth();
+    const year = date.getFullYear();
 
-    const locale = isRTL ? "ar-SA" : "en-US";
+    // Get month names in English
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
 
-    return Platform.OS === "android"
-      ? date.toLocaleDateString(locale, options)
-      : date.toLocaleDateString(locale, options);
+    // Get month names in Arabic (if needed)
+    const monthNamesArabic = [
+      "يناير",
+      "فبراير",
+      "مارس",
+      "أبريل",
+      "مايو",
+      "يونيو",
+      "يوليو",
+      "أغسطس",
+      "سبتمبر",
+      "أكتوبر",
+      "نوفمبر",
+      "ديسمبر",
+    ];
+
+    // Format the date string based on language but using Gregorian calendar
+    if (_isRTL) {
+      // Arabic format: day month year
+      return `${day} ${monthNamesArabic[month]} ${year}`;
+    } else {
+      // English format: month day, year
+      return `${monthNames[month]} ${day}, ${year}`;
+    }
+  };
+
+  const getPlaceholderText = () => {
+    return _t ? _t("common.select_date") : "Select Date";
   };
 
   const renderDatePicker = () => {
     const currentDate = tempDate || selectedDate || new Date();
 
+    // For Android, ensure calendar type is explicitly set to gregorian
+    const datePickerProps = {
+      mode: "date",
+      value: currentDate,
+      maximumDate: maximumDate,
+      minimumDate: minimumDate,
+      onChange: handleDateChange,
+      // Force Gregorian calendar on Android
+      ...(Platform.OS === "android" && { calendar: "gregorian" }),
+    };
+
     if (Platform.OS === "android") {
       return isModalVisible ? (
-        <DateTimePicker
-          mode="date"
-          display="default"
-          value={currentDate}
-          maximumDate={maximumDate}
-          minimumDate={minimumDate}
-          onChange={handleDateChange}
-        />
+        <DateTimePicker {...datePickerProps} display="default" />
       ) : null;
     }
 
@@ -176,14 +243,11 @@ const FormDatePicker = ({
         <View style={dynamicStyles.modalOverlay}>
           <View style={dynamicStyles.modalContent}>
             <DateTimePicker
-              mode="date"
+              {...datePickerProps}
               display="spinner"
-              value={currentDate}
-              maximumDate={maximumDate}
-              minimumDate={minimumDate}
-              onChange={handleDateChange}
               textColor={COLORS.text}
               style={dynamicStyles.datePicker}
+              locale="en-US" // Force English locale for iOS to ensure Gregorian
             />
             <View style={dynamicStyles.buttonContainer}>
               <TouchableOpacity
@@ -191,7 +255,7 @@ const FormDatePicker = ({
                 onPress={handleCancel}
               >
                 <Text style={dynamicStyles.buttonText}>
-                  {t ? t("common.cancel") : "Cancel"}
+                  {_t ? _t("common.cancel") : "Cancel"}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -199,7 +263,7 @@ const FormDatePicker = ({
                 onPress={handleConfirm}
               >
                 <Text style={dynamicStyles.buttonText}>
-                  {t ? t("common.confirm") : "Confirm"}
+                  {_t ? _t("common.confirm") : "Confirm"}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -209,12 +273,18 @@ const FormDatePicker = ({
     );
   };
 
+  // Get formatted date or placeholder
+  const formattedDate = selectedDate ? formatDate(selectedDate) : null;
+  const displayText = formattedDate || getPlaceholderText();
+
   return (
     <View style={dynamicStyles.container}>
-      <Text style={dynamicStyles.label}>
-        {label}
-        {required && <Text style={dynamicStyles.required}> *</Text>}
-      </Text>
+      <View style={dynamicStyles.labelContainer}>
+        <Text style={dynamicStyles.label}>
+          {label}
+          {required && <Text style={dynamicStyles.required}> *</Text>}
+        </Text>
+      </View>
 
       <TouchableOpacity
         style={[
@@ -223,12 +293,16 @@ const FormDatePicker = ({
         ]}
         onPress={() => setModalVisible(true)}
       >
-        <Text style={dynamicStyles.dateText}>
-          {selectedDate
-            ? formatDate(selectedDate)
-            : t
-            ? t("common.select_date")
-            : "Select Date"}
+        {leftIcon && (
+          <View style={dynamicStyles.iconContainer}>{leftIcon}</View>
+        )}
+        <Text
+          style={[
+            dynamicStyles.dateText,
+            !formattedDate && dynamicStyles.placeholderText,
+          ]}
+        >
+          {displayText}
         </Text>
       </TouchableOpacity>
 
@@ -236,7 +310,7 @@ const FormDatePicker = ({
 
       {errors[name] && (
         <Text style={dynamicStyles.errorText}>
-          {t ? t("common.date_error") : errors[name].message}
+          {_t ? _t("common.date_error") : errors[name].message}
         </Text>
       )}
     </View>

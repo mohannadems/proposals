@@ -1,3 +1,4 @@
+// FormInput.js - Enhanced with better RTL support
 import React from "react";
 import { View, Text, TextInput, StyleSheet } from "react-native";
 import { Controller } from "react-hook-form";
@@ -8,59 +9,90 @@ const FormInput = ({
   name,
   label,
   placeholder,
-  rules = {},
+  required = false,
   multiline = false,
   numberOfLines = 1,
+  keyboardType = "default",
+  secureTextEntry = false,
   maxLength,
   showCharacterCount = false,
-  keyboardType = "default",
-  textAlign = "left",
-  containerStyle,
-  ...props
+  isRTL = false,
+  textAlign,
+  ...rest
 }) => {
+  // Calculate preferred textAlign based on parameters
+  const getTextAlignment = () => {
+    // If explicitly set, use it
+    if (textAlign) return textAlign;
+
+    // For RTL context, default to 'right'
+    // For LTR context, default to 'left'
+    return isRTL ? "right" : "left";
+  };
+
+  const inputTextAlign = getTextAlignment();
+
   return (
     <Controller
       control={control}
       name={name}
-      rules={rules}
       render={({
-        field: { onChange, value, onBlur },
+        field: { onChange, onBlur, value },
         fieldState: { error },
       }) => (
-        <View style={[styles.container, containerStyle]}>
-          {label && <Text style={styles.label}>{label}</Text>}
-
-          <View style={styles.inputWrapper}>
-            <TextInput
-              style={[
-                styles.input,
-                multiline && styles.multilineInput,
-                error && styles.inputError,
-                { textAlign },
-              ]}
-              onChangeText={onChange}
-              onBlur={onBlur}
-              value={value}
-              placeholder={placeholder}
-              placeholderTextColor={COLORS.grayDark}
-              multiline={multiline}
-              numberOfLines={numberOfLines}
-              maxLength={maxLength}
-              keyboardType={keyboardType}
-              {...props}
-            />
+        <View style={styles.inputContainer}>
+          <View
+            style={[
+              styles.labelContainer,
+              { flexDirection: isRTL ? "row-reverse" : "row" },
+            ]}
+          >
+            <Text
+              style={[styles.label, { textAlign: isRTL ? "right" : "left" }]}
+            >
+              {label}
+              {required && <Text style={styles.required}> *</Text>}
+            </Text>
 
             {showCharacterCount && maxLength && (
-              <Text style={styles.characterCount}>
-                {value?.length || 0}/{maxLength}
+              <Text style={styles.charCount}>
+                {(value || "").length}/{maxLength}
               </Text>
             )}
           </View>
 
+          <TextInput
+            style={[
+              styles.input,
+              multiline && styles.multilineInput,
+              error && styles.inputError,
+              {
+                textAlign: inputTextAlign,
+                writingDirection: isRTL ? "rtl" : "ltr",
+              },
+            ]}
+            placeholder={placeholder}
+            placeholderTextColor="#A0A0A0"
+            onChangeText={onChange}
+            onBlur={onBlur}
+            value={value || ""}
+            multiline={multiline}
+            numberOfLines={multiline ? numberOfLines : 1}
+            keyboardType={keyboardType}
+            secureTextEntry={secureTextEntry}
+            maxLength={maxLength}
+            {...rest}
+          />
+
           {error && (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>{error.message}</Text>
-            </View>
+            <Text
+              style={[
+                styles.errorText,
+                { textAlign: isRTL ? "right" : "left" },
+              ]}
+            >
+              {error.message}
+            </Text>
           )}
         </View>
       )}
@@ -69,51 +101,48 @@ const FormInput = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    marginBottom: 16,
+  inputContainer: {
+    marginBottom: 20,
+    width: "100%",
   },
-  label: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: COLORS.text,
+  labelContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 8,
   },
-  inputWrapper: {
-    position: "relative",
+  label: {
+    fontSize: 16,
+    fontWeight: "500",
+    color: COLORS.text,
+  },
+  required: {
+    color: COLORS.error,
   },
   input: {
-    backgroundColor: COLORS.white,
+    backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: 12,
-    padding: 12,
+    borderColor: "#ddd",
+    borderRadius: 10,
+    padding: 14,
     fontSize: 16,
     color: COLORS.text,
-    minHeight: 48,
   },
   multilineInput: {
-    height: 100,
+    minHeight: 100,
     textAlignVertical: "top",
-    paddingTop: 12,
   },
   inputError: {
     borderColor: COLORS.error,
   },
-  errorContainer: {
-    marginTop: 4,
-    flexDirection: "row",
-    alignItems: "center",
-  },
   errorText: {
     color: COLORS.error,
     fontSize: 12,
+    marginTop: 4,
   },
-  characterCount: {
-    position: "absolute",
-    bottom: 8,
-    right: 12,
+  charCount: {
     fontSize: 12,
-    color: COLORS.grayDark,
+    color: "#999",
   },
 });
 

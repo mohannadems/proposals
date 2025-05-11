@@ -1,5 +1,20 @@
 {
+  "language": {
+    "change_title": "تغيير اللغة",
+    "change_message": "هل أنت متأكد أنك تريد تغيير اللغة من {current} إلى {new}؟",
+    "restart_required_title": "إعادة التشغيل مطلوبة",
+    "restart_required_message": "يرجى إعادة تشغيل التطبيق لتطبيق تغيير اللغة.",
+    "reload_failed_title": "فشلت إعادة التحميل",
+    "reload_failed_message": "يرجى إعادة تشغيل التطبيق يدويًا لتطبيق تغيير اللغة.",
+    "change_error_title": "خطأ",
+    "change_error_message": "فشل تغيير اللغة. يرجى المحاولة مرة أخرى."
+  },
   "validation": {
+    "email_required": "البريد الإلكتروني مطلوب",
+    "email_invalid": "يرجى إدخال عنوان بريد إلكتروني صالح",
+    "password_required": "كلمة المرور مطلوبة",
+    "password_min_length": "يجب أن تكون كلمة المرور 6 أحرف على الأقل",
+    "invalid_credentials": "البريد الإلكتروني أو كلمة المرور غير صالحة",
     "firstName": {
       "required": "الاسم الأول مطلوب",
       "minLength": "يجب أن يكون الاسم الأول مكونًا من حرفين على الأقل",

@@ -9,6 +9,7 @@ export const loginStyles = StyleSheet.create({
     position: "absolute",
     top: 40,
     right: 40,
+    // No need to change this position as it's just decorative
   },
   decorationHeart: {
     transform: [{ rotate: "15deg" }],
@@ -17,20 +18,23 @@ export const loginStyles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     justifyContent: "center",
+    // Removed alignItems to use dynamic RTL-aware styles
   },
   logoContainer: {
-    alignItems: "center",
     marginBottom: 40,
+    // Removed alignItems to use dynamic RTL-aware styles
   },
   welcomeText: {
     fontSize: 28,
     fontWeight: "bold",
     color: "#9e086c",
     marginBottom: 8,
+    // Removed textAlign to use dynamic RTL-aware styles
   },
   subtitle: {
     fontSize: 16,
     color: "#666",
+    // Removed textAlign to use dynamic RTL-aware styles
   },
   formContainer: {
     backgroundColor: "#fff",
@@ -44,17 +48,19 @@ export const loginStyles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
+    width: "100%",
+    // Removed alignItems to use dynamic RTL-aware styles
   },
   forgotPassword: {
-    alignSelf: "flex-end",
     marginBottom: 24,
+    // Removed alignSelf to use dynamic RTL-aware styles
   },
   forgotPasswordText: {
     color: "#9e086c",
     fontSize: 14,
+    // Will add textAlign dynamically
   },
   loginButton: {
-    flexDirection: "row",
     height: 56,
     padding: 15,
     borderRadius: 18,
@@ -62,6 +68,8 @@ export const loginStyles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     gap: 12,
+    width: "100%",
+    // Will set flexDirection dynamically
   },
   buttonDisabled: {
     opacity: 0.7,
@@ -72,7 +80,6 @@ export const loginStyles = StyleSheet.create({
     fontWeight: "600",
   },
   biometricButton: {
-    flexDirection: "row",
     height: 56,
     borderRadius: 28,
     backgroundColor: "#fff",
@@ -82,6 +89,8 @@ export const loginStyles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     marginTop: 16,
+    width: "100%",
+    // Will set flexDirection dynamically
   },
   biometricButtonText: {
     color: "#9e086c",
@@ -89,25 +98,27 @@ export const loginStyles = StyleSheet.create({
     fontWeight: "600",
   },
   errorContainer: {
-    flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#FF3B3010",
     padding: 12,
     borderRadius: 8,
     marginBottom: 16,
+    width: "100%",
+    // Will set flexDirection dynamically
   },
   errorText: {
     color: "#FF3B30",
-    marginLeft: 8,
     fontSize: 14,
+    // Will set margins dynamically
   },
   registerLink: {
     marginTop: 24,
-    alignItems: "center",
+    // Will set alignItems dynamically
   },
   registerLinkText: {
     fontSize: 16,
     color: "#666",
+    // Will set textAlign dynamically
   },
   registerLinkBold: {
     color: "#9e086c",

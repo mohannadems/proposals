@@ -123,42 +123,51 @@ export const LanguageProvider = ({ children }) => {
     loadLocale();
   }, []);
 
+  // Replace the changeLanguage function with this improved version:
   const changeLanguage = async (lang) => {
     try {
       if (lang !== locale) {
         const shouldBeRTL = lang === "ar";
 
+        // Save the language preference first
         await AsyncStorage.setItem("userLanguage", lang);
 
+        // Update the locale state immediately
+        setLocale(lang);
+        setIsRTL(shouldBeRTL);
+
+        // Check if RTL settings need to change
         if (I18nManager.isRTL !== shouldBeRTL) {
+          // Apply RTL changes
           I18nManager.allowRTL(shouldBeRTL);
           I18nManager.forceRTL(shouldBeRTL);
 
+          // Force a full reload (needed for RTL layout changes)
           if (Updates.isAvailable && Updates.reloadAsync) {
             try {
-              await Updates.reloadAsync();
+              // Add a small delay before reloading to ensure settings are applied
+              setTimeout(async () => {
+                await Updates.reloadAsync();
+              }, 100);
             } catch (error) {
               console.error("Failed to reload the app:", error);
-              setLocale(lang);
-              setIsRTL(shouldBeRTL);
+              // Alert user to manually reload
+              alert(
+                "Please restart the app for layout changes to take effect."
+              );
             }
           } else {
-            setLocale(lang);
-            setIsRTL(shouldBeRTL);
+            // If Updates API is not available
             alert(
-              "Please restart the app for RTL layout changes to take effect.Language changed. Please manually reload the app to see changes."
+              "Please restart the app for RTL layout changes to take effect."
             );
           }
-        } else {
-          setLocale(lang);
-          setIsRTL(shouldBeRTL);
         }
       }
     } catch (error) {
       console.error("Failed to save language setting:", error);
     }
   };
-
   // Set up i18n configuration
   i18n.locale = locale;
   i18n.enableFallback = true;

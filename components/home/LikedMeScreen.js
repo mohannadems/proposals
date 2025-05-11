@@ -29,13 +29,58 @@ import {
   setActiveTab,
 } from "../../store/slices/userMatchesSlice";
 import { showMessage } from "react-native-flash-message";
-
+import { useContext } from "react";
+import { LanguageContext } from "../../contexts/LanguageContext";
 const { width, height } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.85;
 const CARD_HEIGHT = height * 0.18;
 const HEADER_HEIGHT = Platform.OS === "ios" ? 90 : 70;
 
 const LikedMeScreen = () => {
+  const rtlStyles = {
+    headerContent: {
+      alignItems: isRTL ? "flex-end" : "flex-start",
+      width: "100%",
+    },
+    cardInner: {
+      flexDirection: isRTL ? "row-reverse" : "row",
+    },
+    cardImageContainer: {
+      borderTopLeftRadius: isRTL ? 0 : 18,
+      borderBottomLeftRadius: isRTL ? 0 : 18,
+      borderTopRightRadius: isRTL ? 18 : 0,
+      borderBottomRightRadius: isRTL ? 18 : 0,
+    },
+    profileImage: {
+      borderTopLeftRadius: isRTL ? 0 : 18,
+      borderBottomLeftRadius: isRTL ? 0 : 18,
+      borderTopRightRadius: isRTL ? 18 : 0,
+      borderBottomRightRadius: isRTL ? 18 : 0,
+    },
+    imageGradient: {
+      borderBottomLeftRadius: isRTL ? 0 : 18,
+      borderBottomRightRadius: isRTL ? 18 : 0,
+    },
+    likedBadge: {
+      left: isRTL ? null : 10,
+      right: isRTL ? 10 : null,
+    },
+    modalButtons: {
+      flexDirection: isRTL ? "row-reverse" : "row",
+    },
+    cancelButton: {
+      marginRight: isRTL ? 0 : 10,
+      marginLeft: isRTL ? 10 : 0,
+    },
+    confirmButton: {
+      marginLeft: isRTL ? 0 : 10,
+      marginRight: isRTL ? 10 : 0,
+    },
+    textAlign: {
+      textAlign: isRTL ? "right" : "left",
+    },
+  };
+  const { isRTL } = useContext(LanguageContext);
   const [likes, setLikes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -240,18 +285,20 @@ const LikedMeScreen = () => {
           activeOpacity={0.9}
           style={styles.cardTouchable}
         >
-          <View style={styles.cardInner}>
-            <View style={styles.cardImageContainer}>
+          <View style={[styles.cardInner, rtlStyles.cardInner]}>
+            <View
+              style={[styles.cardImageContainer, rtlStyles.cardImageContainer]}
+            >
               <Image
                 source={{ uri: imageUrl }}
-                style={styles.profileImage}
+                style={[styles.profileImage, rtlStyles.profileImage]}
                 resizeMode="cover"
               />
               <LinearGradient
                 colors={["transparent", "rgba(0,0,0,0.6)"]}
-                style={styles.imageGradient}
+                style={[styles.imageGradient, rtlStyles.imageGradient]}
               />
-              <View style={styles.likedBadge}>
+              <View style={[styles.likedBadge, rtlStyles.likedBadge]}>
                 <LinearGradient
                   colors={["#FF4D67", "#FF8A9B"]}
                   start={{ x: 0, y: 0 }}
@@ -268,7 +315,7 @@ const LikedMeScreen = () => {
             <View style={styles.cardContent}>
               <View style={styles.userInfoContainer}>
                 <Text
-                  style={styles.name}
+                  style={[styles.name, rtlStyles.textAlign]}
                   numberOfLines={1}
                   ellipsizeMode="tail"
                 >
@@ -278,7 +325,10 @@ const LikedMeScreen = () => {
                   user.location ||
                   user.city_of_residence ||
                   user.country_of_residence) && (
-                  <Text style={styles.userDetails} numberOfLines={1}>
+                  <Text
+                    style={[styles.userDetails, rtlStyles.textAlign]}
+                    numberOfLines={1}
+                  >
                     {user.age ? `${user.age}, ` : ""}
                     {user.city_of_residence || user.location || ""}
                     {user.city_of_residence && user.country_of_residence
@@ -338,8 +388,17 @@ const LikedMeScreen = () => {
             },
           ]}
         >
-          <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>
+          <View style={[styles.headerContent, rtlStyles.headerContent]}>
+            <Text
+              style={[
+                styles.headerTitle,
+                {
+                  textAlign: isRTL ? "right" : "left",
+                  alignSelf: isRTL ? "flex-end" : "flex-start",
+                  width: "100%",
+                },
+              ]}
+            >
               {currentLanguage === "ar" ? "معجبون بك" : "Likes You"}
             </Text>
           </View>
@@ -489,13 +548,13 @@ const LikedMeScreen = () => {
               />
             </View>
 
-            <Text style={styles.emptyStateTitle}>
+            <Text style={[styles.emptyStateTitle, rtlStyles.textAlign]}>
               {currentLanguage === "ar"
                 ? "لم يعجب بك أحد بعد"
                 : "No One Liked You Yet"}
             </Text>
 
-            <Text style={styles.emptyStateDescription}>
+            <Text style={[styles.emptyStateDescription, rtlStyles.textAlign]}>
               {currentLanguage === "ar"
                 ? "لا تقلق! استمر في استكشاف الملفات الشخصية واظهر شخصيتك الرائعة"
                 : "Don't worry! Keep exploring profiles and showing your amazing personality"}
@@ -592,8 +651,17 @@ const LikedMeScreen = () => {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
+            <Text style={[styles.modalTitle, rtlStyles.textAlign]}>
               {currentLanguage === "ar" ? "إعجاب متبادل" : "Like Back"}
+            </Text>
+            <Text style={[styles.modalText, rtlStyles.textAlign]}>
+              {currentLanguage === "ar"
+                ? `هل أنت متأكد أنك تريد الإعجاب بـ ${
+                    selectedUser?.first_name || ""
+                  }؟`
+                : `Are you sure you want to like ${
+                    selectedUser?.first_name || ""
+                  } back?`}
             </Text>
             <Text style={styles.modalText}>
               {currentLanguage === "ar"
@@ -604,9 +672,13 @@ const LikedMeScreen = () => {
                     selectedUser?.first_name || ""
                   } back?`}
             </Text>
-            <View style={styles.modalButtons}>
+            <View style={[styles.modalButtons, rtlStyles.modalButtons]}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
+                style={[
+                  styles.modalButton,
+                  styles.cancelButton,
+                  rtlStyles.cancelButton,
+                ]}
                 onPress={() => setShowLikeModal(false)}
                 disabled={likeLoading}
               >
@@ -615,7 +687,11 @@ const LikedMeScreen = () => {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.modalButton, styles.confirmButton]}
+                style={[
+                  styles.modalButton,
+                  styles.confirmButton,
+                  rtlStyles.confirmButton,
+                ]}
                 onPress={handleLikeConfirm}
                 disabled={likeLoading}
               >
@@ -661,9 +737,7 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 8,
   },
-  headerContent: {
-    alignItems: "flex-start",
-  },
+
   headerTitle: {
     fontSize: width * 0.08,
     fontWeight: "800",
@@ -780,7 +854,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.error || "#ff0000",
     marginBottom: 16,
-    textAlign: "center",
     paddingHorizontal: 20,
   },
   retryButton: {
@@ -853,7 +926,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#4A5568",
     marginBottom: 24,
-    textAlign: "center",
     lineHeight: 22,
   },
   modalButtons: {
@@ -920,13 +992,11 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#2D3748",
     marginBottom: 12,
-    textAlign: "center",
   },
   emptyStateDescription: {
     fontSize: 16,
     lineHeight: 24,
     color: "#718096",
-    textAlign: "center",
     marginBottom: 24,
     paddingHorizontal: 10,
   },

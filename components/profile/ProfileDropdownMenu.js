@@ -1,5 +1,7 @@
 // components/profile/ProfileDropdownMenu.js
 import React, { useState, useRef, useContext } from "react";
+import * as Updates from "expo-updates";
+
 import {
   View,
   Text,
@@ -10,6 +12,7 @@ import {
   TouchableWithoutFeedback,
   Animated,
   Dimensions,
+  Alert,
   StatusBar,
 } from "react-native";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
@@ -86,11 +89,87 @@ const ProfileDropdownMenu = ({ onLogout, onLanguageChange }) => {
 
   const handleLanguageToggle = () => {
     const newLanguage = locale === "en" ? "ar" : "en";
-    if (onLanguageChange) {
-      onLanguageChange(newLanguage);
-    }
-  };
 
+    // Close the menu first
+    closeMenu();
+
+    // Add small delay to let the menu close smoothly
+    setTimeout(() => {
+      // Show confirmation alert
+      const currentLanguageName = locale === "en" ? "English" : "العربية";
+      const newLanguageName = newLanguage === "en" ? "English" : "العربية";
+      const changeMessage = t
+        ? t("language.change_message")
+            .replace("{current}", currentLanguageName)
+            .replace("{new}", newLanguageName)
+        : `Are you sure you want to change the language from ${currentLanguageName} to ${newLanguageName}?`;
+      Alert.alert(
+        t("language.change_title") || "Change Language",
+        changeMessage,
+        [
+          {
+            text: t("common.cancel") || "Cancel",
+            style: "cancel",
+          },
+          {
+            text: t("common.confirm") || "Confirm",
+            style: "default",
+            onPress: async () => {
+              try {
+                // Change the language
+                if (onLanguageChange) {
+                  await onLanguageChange(newLanguage);
+                }
+
+                // Safely check if Updates is available and has the reloadAsync method
+                if (
+                  typeof Updates !== "undefined" &&
+                  Updates &&
+                  typeof Updates.reloadAsync === "function"
+                ) {
+                  // Add a small delay to ensure language change is processed
+                  setTimeout(async () => {
+                    try {
+                      // Force reload the app
+                      await Updates.reloadAsync();
+                    } catch (reloadError) {
+                      console.error("Failed to reload app:", reloadError);
+
+                      // If reload fails, show a message to manually restart
+                      Alert.alert(
+                        t("language.reload_failed_title") || "Reload Failed",
+                        t("language.reload_failed_message") ||
+                          "Please restart the app manually to apply the language change.",
+                        [{ text: t("common.ok") || "OK" }]
+                      );
+                    }
+                  }, 300);
+                } else {
+                  // If Updates API is not available, show a message to manually restart
+                  Alert.alert(
+                    t("language.restart_required_title") || "Restart Required",
+                    t("language.restart_required_message") ||
+                      "Please restart the app to apply the language change.",
+                    [{ text: t("common.ok") || "OK" }]
+                  );
+                }
+              } catch (error) {
+                console.error("Error changing language:", error);
+
+                // Show error message
+                Alert.alert(
+                  t("language.change_error_title") || "Error",
+                  t("language.change_error_message") ||
+                    "Failed to change language. Please try again.",
+                  [{ text: t("common.ok") || "OK" }]
+                );
+              }
+            },
+          },
+        ]
+      );
+    }, 300);
+  };
   const menuItems = [
     {
       icon: "language",

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { validateLoginCredentials } from "../utils/login-validation";
 
-export const useLoginForm = () => {
+export const useLoginForm = (t) => {
+  // Accept translation function as a parameter
   const [credentials, setCredentials] = useState({
     email: "",
     password: "",
@@ -23,10 +24,13 @@ export const useLoginForm = () => {
     }));
 
     if (touched[field]) {
-      const errors = validateLoginCredentials({
-        ...credentials,
-        [field]: value,
-      });
+      const errors = validateLoginCredentials(
+        {
+          ...credentials,
+          [field]: value,
+        },
+        t
+      ); // Pass translation function
       setValidationErrors((prev) => ({
         ...prev,
         [field]: errors[field] || "",
@@ -41,7 +45,7 @@ export const useLoginForm = () => {
       [field]: true,
     }));
 
-    const errors = validateLoginCredentials(credentials);
+    const errors = validateLoginCredentials(credentials, t); // Pass translation function
     setValidationErrors((prev) => ({
       ...prev,
       [field]: errors[field] || "",
@@ -49,7 +53,7 @@ export const useLoginForm = () => {
   };
 
   const validateForm = () => {
-    const errors = validateLoginCredentials(credentials);
+    const errors = validateLoginCredentials(credentials, t); // Pass translation function
     setValidationErrors(errors);
     setTouched({
       email: true,

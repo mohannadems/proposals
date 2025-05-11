@@ -38,7 +38,26 @@ import ModernLoadingScreen from "../../components/common/ModernLoader";
 import LanguageSelector from "../../components/Language/LanguageSelector";
 import RTLWrapper from "../../components/common/RTLWrapper";
 import { LanguageContext } from "../../contexts/LanguageContext";
+const getTextAlign = (isRTL) => (isRTL ? "right" : "left");
 
+const getFlexDirection = (isRTL) => (isRTL ? "row-reverse" : "row");
+
+const getMargins = (isRTL, value) => ({
+  marginLeft: isRTL ? 0 : value,
+  marginRight: isRTL ? value : 0,
+});
+
+const getBorders = (isRTL, width = 1, color = COLORS.border) => ({
+  borderLeftWidth: isRTL ? 0 : width,
+  borderRightWidth: isRTL ? width : 0,
+  borderLeftColor: color,
+  borderRightColor: color,
+});
+
+const getPaddings = (isRTL, left = 15, right = 0) => ({
+  paddingLeft: isRTL ? right : left,
+  paddingRight: isRTL ? left : right,
+});
 const getProgressColor = (value) => {
   if (value >= 100) return COLORS.primary || "#4CAF50";
   if (value >= 70) return COLORS.info || "#2196F3";
@@ -56,6 +75,7 @@ const ProfileItem = ({ icon, label, value, isRequired = false }) => {
     : label;
   const valueText =
     displayValue || (t ? t("profile.not_provided") : "Not provided");
+
   return (
     <View
       style={[
@@ -63,7 +83,13 @@ const ProfileItem = ({ icon, label, value, isRequired = false }) => {
         isComplete && { backgroundColor: COLORS.primary + "10" },
       ]}
     >
-      <RTLWrapper style={{ alignItems: "center", width: "100%" }}>
+      <View
+        style={{
+          flexDirection: getFlexDirection(isRTL),
+          alignItems: "center",
+          width: "100%",
+        }}
+      >
         <MaterialIcons
           name={icon}
           size={24}
@@ -73,20 +99,14 @@ const ProfileItem = ({ icon, label, value, isRequired = false }) => {
           style={[
             styles.profileItemContent,
             {
-              marginLeft: isRTL ? 0 : 15,
-              marginRight: isRTL ? 15 : 0,
-              borderLeftWidth: isRTL ? 0 : 1,
-              borderRightWidth: isRTL ? 1 : 0,
-              borderLeftColor: COLORS.border,
-              borderRightColor: COLORS.border,
-              paddingLeft: isRTL ? 15 : 15,
-              paddingRight: isRTL ? 15 : 0,
+              ...getMargins(isRTL, 15),
+              ...getBorders(isRTL),
+              ...getPaddings(isRTL),
+              flex: 1,
             },
           ]}
         >
-          <Text
-            style={[styles.itemLabel, { textAlign: isRTL ? "right" : "left" }]}
-          >
+          <Text style={[styles.itemLabel, { textAlign: getTextAlign(isRTL) }]}>
             {labelText}
             {isRequired && <Text style={{ color: COLORS.error }}> *</Text>}
           </Text>
@@ -94,7 +114,7 @@ const ProfileItem = ({ icon, label, value, isRequired = false }) => {
             style={[
               styles.itemValue,
               isComplete && { color: COLORS.primary },
-              { textAlign: isRTL ? "right" : "left" },
+              { textAlign: getTextAlign(isRTL) },
             ]}
           >
             {valueText}
@@ -105,14 +125,13 @@ const ProfileItem = ({ icon, label, value, isRequired = false }) => {
             name="check"
             size={16}
             color={COLORS.primary}
-            style={{ marginLeft: isRTL ? 8 : 0, marginRight: isRTL ? 0 : 8 }}
+            style={getMargins(isRTL, 8)}
           />
         )}
-      </RTLWrapper>
+      </View>
     </View>
   );
 };
-
 const ProfileSection = ({ title, children, fields, profile }) => {
   const { isRTL, t } = useContext(LanguageContext);
 
@@ -134,38 +153,33 @@ const ProfileSection = ({ title, children, fields, profile }) => {
       style={[
         styles.section,
         completion >= 100 && {
-          marginLeft: isRTL ? 15 : 0,
-          borderLeftWidth: isRTL ? 0 : 4,
-          borderRightWidth: isRTL ? 4 : 0,
-          borderLeftColor: COLORS.primary,
-          borderRightColor: COLORS.primary,
+          ...getMargins(isRTL, 15),
+          ...getBorders(isRTL, 4, COLORS.primary),
         },
       ]}
     >
-      <RTLWrapper
+      <View
         style={{
+          flexDirection: getFlexDirection(isRTL),
           justifyContent: "space-between",
           alignItems: "center",
           width: "100%",
         }}
       >
-        <Text
-          style={[styles.sectionTitle, { textAlign: isRTL ? "right" : "left" }]}
-        >
+        <Text style={[styles.sectionTitle, { textAlign: getTextAlign(isRTL) }]}>
           {title}
         </Text>
         {completion > 0 && (
           <View
             style={{
-              flexDirection: isRTL ? "row-reverse" : "row",
+              flexDirection: getFlexDirection(isRTL),
               alignItems: "center",
             }}
           >
             <Text
               style={{
                 color: getProgressColor(completion),
-                marginLeft: isRTL ? 8 : 0,
-                marginRight: isRTL ? 0 : 8,
+                ...getMargins(isRTL, 8),
                 fontSize: 12,
                 fontWeight: "500",
               }}
@@ -181,7 +195,7 @@ const ProfileSection = ({ title, children, fields, profile }) => {
             )}
           </View>
         )}
-      </RTLWrapper>
+      </View>
       {children}
     </View>
   );
@@ -305,49 +319,16 @@ const ProfileScreen = () => {
     );
   }, [dispatch, router, t]);
   const handleLanguageChange = async (newLanguage) => {
-    // Get the current language from LanguageContext
-    const currentLanguage = locale; // Note: it's 'locale' not 'language'
+    try {
+      // This is where the actual language change happens
+      await changeLanguage(newLanguage);
 
-    // First, ask the user if they want to change the language
-    const targetLanguageText = newLanguage === "ar" ? "العربية" : "English";
-    const currentLanguageText =
-      currentLanguage === "ar" ? "العربية" : "English";
-
-    Alert.alert(
-      t ? t("profile.change_language_title") : "Change Language",
-      t
-        ? t("profile.change_language_message", {
-            from: currentLanguageText,
-            to: targetLanguageText,
-          })
-        : `Do you want to change the language from ${currentLanguageText} to ${targetLanguageText}?`,
-      [
-        {
-          text: t ? t("common.cancel") : "Cancel",
-          style: "cancel",
-        },
-        {
-          text: t ? t("common.confirm") : "Confirm",
-          onPress: async () => {
-            try {
-              // Use changeLanguage from context instead of setLanguage
-              await changeLanguage(newLanguage);
-
-              // The changeLanguage function already handles reloading the app
-              // So we don't need to do anything else here
-            } catch (error) {
-              console.error("Error changing language:", error);
-              Alert.alert(
-                t ? t("common.error") : "Error",
-                t
-                  ? t("profile.language_change_error")
-                  : "Failed to change language. Please try again."
-              );
-            }
-          },
-        },
-      ]
-    );
+      // No need to handle the reload here as it's now done in the ProfileDropdownMenu
+      return true;
+    } catch (error) {
+      console.error("Error changing language:", error);
+      throw error; // Rethrow to allow the dropdown menu to handle it
+    }
   };
   const calculateProgress = () => {
     if (!profile) return 0;
@@ -448,7 +429,7 @@ const ProfileScreen = () => {
   return (
     <>
       <ScrollView
-        style={[styles.container, { direction: isRTL ? "rtl" : "ltr" }]}
+        style={[styles.container]}
         contentContainerStyle={{
           flexGrow: 1,
           paddingTop: Platform.OS === "ios" ? 0 : -50,

@@ -1,124 +1,143 @@
-import React, { useContext } from "react";
+import React from "react";
 import { View, Text, TextInput, StyleSheet } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { LanguageContext } from "../../../contexts/LanguageContext";
 
-export default function AuthInput({
+const AuthInput = ({
   label,
+  value,
+  onChangeText,
+  onBlur,
   error,
   touched,
+  placeholder,
+  secureTextEntry,
+  keyboardType,
+  autoCapitalize,
   leftIcon,
   isRTL,
-  ...props
-}) {
-  const languageContext = useContext(LanguageContext);
-  const rtl =
-    isRTL !== undefined
-      ? isRTL
-      : languageContext
-      ? languageContext.isRTL
-      : false;
-
+}) => {
   return (
     <View style={styles.container}>
-      <Text
-        style={[
-          styles.label,
-          rtl && { textAlign: "right", alignSelf: "flex-start", width: "100%" },
-        ]}
-      >
+      <Text style={[styles.label, { textAlign: isRTL ? "right" : "left" }]}>
         {label}
       </Text>
       <View
         style={[
           styles.inputContainer,
-          touched && error && styles.inputError,
-          rtl && { flexDirection: "row-reverse" },
+          touched && error ? styles.inputError : null,
+          isRTL && { flexDirection: "row-reverse" },
         ]}
       >
         {leftIcon && (
           <MaterialIcons
             name={leftIcon}
             size={20}
-            color={touched && error ? "#FF3B30" : "#9e086c"}
+            color="#666"
             style={[
               styles.icon,
-              rtl ? { marginLeft: 8, marginRight: 0 } : { marginRight: 8 },
+              isRTL
+                ? { marginRight: 12, marginLeft: 0 }
+                : { marginLeft: 12, marginRight: 0 },
             ]}
           />
         )}
         <TextInput
-          style={[styles.input, rtl && { textAlign: "right" }]}
+          style={[
+            styles.input,
+            {
+              textAlign: isRTL ? "right" : "left",
+              paddingLeft: isRTL ? 12 : leftIcon ? 8 : 12,
+              paddingRight: isRTL ? (leftIcon ? 8 : 12) : 12,
+            },
+          ]}
+          value={value}
+          onChangeText={onChangeText}
+          onBlur={onBlur}
+          placeholder={placeholder}
           placeholderTextColor="#999"
-          textAlign={rtl ? "right" : "left"}
-          writingDirection={rtl ? "rtl" : "ltr"}
-          {...props}
+          secureTextEntry={secureTextEntry}
+          keyboardType={keyboardType || "default"}
+          autoCapitalize={autoCapitalize || "sentences"}
+          textAlign={isRTL ? "right" : "left"}
+          writingDirection={isRTL ? "rtl" : "ltr"}
         />
       </View>
-      {touched && error && (
+      {touched && error ? (
         <View
           style={[
             styles.errorContainer,
-            rtl && { flexDirection: "row-reverse", alignSelf: "flex-start" },
+            isRTL ? { flexDirection: "row-reverse" } : { flexDirection: "row" },
           ]}
         >
-          <MaterialIcons name="error" size={16} color="#FF3B30" />
+          <MaterialIcons
+            name="error-outline"
+            size={16}
+            color="#FF3B30"
+            style={isRTL ? { marginLeft: 4 } : { marginRight: 4 }}
+          />
           <Text
             style={[
               styles.errorText,
-              rtl
-                ? { marginRight: 4, marginLeft: 0, textAlign: "right" }
-                : { marginLeft: 4 },
+              {
+                textAlign: isRTL ? "right" : "left",
+                color: "#FF3B30",
+                fontSize: 14,
+              },
             ]}
           >
             {error}
           </Text>
         </View>
-      )}
+      ) : null}
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
     width: "100%",
+    marginBottom: 20,
   },
   label: {
     fontSize: 16,
-    marginBottom: 8,
-    color: "#333",
     fontWeight: "500",
+    color: "#333",
+    marginBottom: 8,
+    // textAlign set dynamically
   },
   inputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    width: "100%",
+    height: 50,
     borderWidth: 1,
-    borderColor: "#E5E5EA",
-    borderRadius: 8,
-    backgroundColor: "#fff",
-    paddingHorizontal: 12,
+    borderColor: "#DDD",
+    borderRadius: 10,
+    flexDirection: "row", // Changed dynamically for RTL
+    alignItems: "center",
+    backgroundColor: "white",
   },
   inputError: {
     borderColor: "#FF3B30",
   },
   icon: {
-    marginRight: 8,
+    // Margins set dynamically
   },
   input: {
     flex: 1,
-    height: 48,
+    height: "100%",
     fontSize: 16,
     color: "#333",
+    // padding set dynamically
   },
   errorContainer: {
-    flexDirection: "row",
+    // flexDirection set dynamically
     alignItems: "center",
     marginTop: 4,
   },
   errorText: {
     color: "#FF3B30",
-    fontSize: 12,
-    marginLeft: 4,
+    fontSize: 14,
+    // textAlign set dynamically
   },
 });
+
+export default AuthInput;

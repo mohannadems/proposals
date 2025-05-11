@@ -307,7 +307,7 @@ const StepProgressBar = ({ progress }) => {
   );
 };
 
-const StepCard = ({ step, info, isActive }) => {
+const StepCard = ({ step, info, isActive, isRTL }) => {
   const scale = useSharedValue(1);
   const cardStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
@@ -317,8 +317,17 @@ const StepCard = ({ step, info, isActive }) => {
     <Animated.View
       style={[styles.stepCard, cardStyle, isActive && styles.activeStepCard]}
     >
-      <View style={styles.stepHeader}>
-        <Text style={styles.stepTitle}>Step {step}</Text>
+      <View
+        style={[
+          styles.stepHeader,
+          { flexDirection: isRTL ? "row-reverse" : "row" },
+        ]}
+      >
+        <Text
+          style={[styles.stepTitle, { textAlign: isRTL ? "right" : "left" }]}
+        >
+          Step {step}
+        </Text>
         <Text
           style={[
             styles.stepStatus,
@@ -329,7 +338,9 @@ const StepCard = ({ step, info, isActive }) => {
         </Text>
       </View>
       <StepProgressBar progress={info.percentage} />
-      <Text style={styles.stepDetails}>
+      <Text
+        style={[styles.stepDetails, { textAlign: isRTL ? "right" : "left" }]}
+      >
         {info.completed}/{info.total} fields completed
       </Text>
     </Animated.View>
@@ -338,7 +349,45 @@ const StepCard = ({ step, info, isActive }) => {
 
 const withProfileCompletion = (WrappedComponent) => {
   return (props) => {
-    const { t } = useContext(LanguageContext);
+    const { t, isRTL } = useContext(LanguageContext);
+    const rtlStyles = {
+      messageCard: {
+        alignItems: isRTL ? "flex-end" : "flex-start",
+      },
+      messageText: {
+        textAlign: isRTL ? "right" : "left",
+      },
+      messageTitle: {
+        textAlign: isRTL ? "right" : "left",
+        alignSelf: isRTL ? "flex-end" : "flex-start",
+      },
+      savedProgressCard: {
+        alignItems: isRTL ? "flex-end" : "flex-start",
+      },
+      savedProgressTitle: {
+        textAlign: isRTL ? "right" : "left",
+        alignSelf: isRTL ? "flex-end" : "flex-start",
+      },
+      savedProgressText: {
+        textAlign: isRTL ? "right" : "left",
+      },
+      savedProgressDate: {
+        textAlign: isRTL ? "right" : "left",
+      },
+      stepHeader: {
+        flexDirection: isRTL ? "row-reverse" : "row",
+      },
+      buttonGradient: {
+        flexDirection: isRTL ? "row-reverse" : "row",
+      },
+      refreshButton: {
+        flexDirection: isRTL ? "row-reverse" : "row",
+      },
+      refreshButtonText: {
+        marginLeft: isRTL ? 0 : moderateScale(8),
+        marginRight: isRTL ? moderateScale(8) : 0,
+      },
+    };
     const dispatch = useDispatch();
     const { data } = useSelector((state) => state.profile);
 
@@ -528,33 +577,50 @@ const withProfileCompletion = (WrappedComponent) => {
           >
             <ProgressCircle progress={progress} />
 
-            <View style={styles.messageCard}>
+            <View style={[styles.messageCard, rtlStyles.messageCard]}>
               <MaterialIcons
                 name="psychology"
                 size={28}
                 color={COLORS.primary}
                 style={styles.messageIcon}
               />
-              <Text style={styles.messageTitle}>
+              <Text style={[styles.messageTitle, rtlStyles.messageTitle]}>
                 {t("profile_completion.message_title")}
               </Text>
-              <Text style={styles.messageText}>
+              <Text style={[styles.messageText, rtlStyles.messageText]}>
                 {t("profile_completion.message_text")}
               </Text>
             </View>
 
             {savedProgress && (
-              <View style={styles.savedProgressCard}>
+              <View
+                style={[styles.savedProgressCard, rtlStyles.savedProgressCard]}
+              >
                 <Feather name="bookmark" size={24} color={COLORS.primary} />
-                <Text style={styles.savedProgressTitle}>
+                <Text
+                  style={[
+                    styles.savedProgressTitle,
+                    rtlStyles.savedProgressTitle,
+                  ]}
+                >
                   {t("profile_completion.resume_progress_title")}
                 </Text>
-                <Text style={styles.savedProgressText}>
+                <Text
+                  style={[
+                    styles.savedProgressText,
+                    rtlStyles.savedProgressText,
+                  ]}
+                >
                   {t("profile_completion.resume_progress_text", {
                     step: savedProgress.step,
                   })}
                 </Text>
-                <Text style={styles.savedProgressDate}>
+                <Text
+                  style={[
+                    styles.savedProgressDate,
+                    rtlStyles.savedProgressDate,
+                  ]}
+                >
                   {t("profile_completion.last_updated", {
                     date: new Date(savedProgress.lastUpdated).toLocaleString(),
                   })}
@@ -570,13 +636,14 @@ const withProfileCompletion = (WrappedComponent) => {
                   info={info}
                   isActive={savedProgress?.step === Number(step)}
                   t={t}
+                  isRTL={isRTL} // Pass isRTL to StepCard
                 />
               ))}
             </View>
 
             <View style={styles.actionButtonsContainer}>
               <TouchableOpacity
-                style={styles.refreshButton}
+                style={[styles.refreshButton, rtlStyles.refreshButton]}
                 onPress={onRefresh}
                 disabled={refreshing}
               >
@@ -588,7 +655,12 @@ const withProfileCompletion = (WrappedComponent) => {
                     ...(refreshing && { transform: [{ rotate: "45deg" }] }),
                   }}
                 />
-                <Text style={styles.refreshButtonText}>
+                <Text
+                  style={[
+                    styles.refreshButtonText,
+                    rtlStyles.refreshButtonText,
+                  ]}
+                >
                   {refreshing
                     ? t("profile_completion.refreshing")
                     : t("profile_completion.refresh")}
@@ -601,7 +673,7 @@ const withProfileCompletion = (WrappedComponent) => {
               >
                 <ExpoLinearGradient
                   colors={[COLORS.primary, COLORS.secondary]}
-                  style={styles.buttonGradient}
+                  style={[styles.buttonGradient, rtlStyles.buttonGradient]}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                 >
@@ -610,7 +682,11 @@ const withProfileCompletion = (WrappedComponent) => {
                       ? t("profile_completion.continue_profile")
                       : t("profile_completion.complete_profile")}
                   </Text>
-                  <Feather name="arrow-right" size={20} color="#fff" />
+                  <Feather
+                    name={isRTL ? "arrow-left" : "arrow-right"}
+                    size={20}
+                    color="#fff"
+                  />
                 </ExpoLinearGradient>
               </TouchableOpacity>
             </View>

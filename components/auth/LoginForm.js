@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { View, Text, TouchableOpacity, Vibration } from "react-native";
+import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import AuthInput from "../forms/login-forms/AuthInput";
@@ -37,30 +37,6 @@ const HapticTouchable = ({ onPress, feedback = "light", children, style }) => {
   );
 };
 
-const EnhancedLoginButton = ({ onPress, loading, buttonText }) => {
-  const handleLogin = async () => {
-    if (!loading) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      onPress?.();
-    }
-  };
-
-  return (
-    <LoginButton
-      onPress={handleLogin}
-      loading={loading}
-      buttonText={buttonText}
-    />
-  );
-};
-
-const EnhancedBiometricButton = ({ onPress, buttonText }) => {
-  const handleBiometric = async () => {
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onPress?.();
-  };
-};
-
 export const LoginForm = ({
   form,
   loading,
@@ -87,13 +63,32 @@ export const LoginForm = ({
     handleChange(field, text);
   };
 
+  // RTL-specific styles
+  const rtlStyles = {
+    formContainer: {
+      width: "100%",
+    },
+    forgotPassword: {
+      alignSelf: rtl ? "flex-start" : "flex-end",
+    },
+    errorContainer: {
+      flexDirection: rtl ? "row-reverse" : "row",
+    },
+    errorText: {
+      marginLeft: rtl ? 0 : 8,
+      marginRight: rtl ? 8 : 0,
+      textAlign: rtl ? "right" : "left",
+    },
+    textAlign: {
+      textAlign: rtl ? "right" : "left",
+    },
+    button: {
+      flexDirection: rtl ? "row-reverse" : "row",
+    },
+  };
+
   return (
-    <View
-      style={[
-        loginStyles.formContainer,
-        rtl && { alignItems: rtl ? "flex-end" : "flex-start" },
-      ]}
-    >
+    <View style={[loginStyles.formContainer, rtlStyles.formContainer]}>
       <AuthInput
         label={translate ? translate("auth.email") : "Email"}
         value={credentials.email}
@@ -128,16 +123,11 @@ export const LoginForm = ({
       />
 
       <HapticTouchable
-        style={[loginStyles.forgotPassword, rtl && { alignSelf: "flex-start" }]}
+        style={[loginStyles.forgotPassword, rtlStyles.forgotPassword]}
         feedback="light"
         onPress={() => {}}
       >
-        <Text
-          style={[
-            loginStyles.forgotPasswordText,
-            rtl && { textAlign: "right" },
-          ]}
-        >
+        <Text style={[loginStyles.forgotPasswordText, rtlStyles.textAlign]}>
           {translate
             ? translate("auth.forgot_password")
             : AUTH_MESSAGES.FORGOT_PASSWORD}
@@ -145,41 +135,42 @@ export const LoginForm = ({
       </HapticTouchable>
 
       {validationErrors.general && (
-        <View
-          style={[
-            loginStyles.errorContainer,
-            rtl && { flexDirection: "row-reverse" },
-          ]}
-        >
+        <View style={[loginStyles.errorContainer, rtlStyles.errorContainer]}>
           <MaterialIcons name="error" size={20} color="#FF3B30" />
-          <Text
-            style={[
-              loginStyles.errorText,
-              rtl && { textAlign: "right", marginRight: 8, marginLeft: 0 },
-            ]}
-          >
+          <Text style={[loginStyles.errorText, rtlStyles.errorText]}>
             {validationErrors.general}
           </Text>
         </View>
       )}
 
-      <EnhancedLoginButton
+      <TouchableOpacity
+        style={[loginStyles.loginButton, rtlStyles.button]}
         onPress={onLogin}
-        loading={loading}
-        buttonText={
-          translate ? translate("auth.continue_journey") : "Continue Journey"
-        }
-      />
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#FFFFFF" size="small" />
+        ) : (
+          <Text style={loginStyles.loginButtonText}>
+            {translate
+              ? translate("auth.continue_journey")
+              : "Continue Journey"}
+          </Text>
+        )}
+      </TouchableOpacity>
 
       {isBiometricEnabled && (
-        <EnhancedBiometricButton
+        <TouchableOpacity
+          style={[loginStyles.biometricButton, rtlStyles.button]}
           onPress={onBiometricAuth}
-          buttonText={
-            translate
+        >
+          <MaterialIcons name="fingerprint" size={24} color="#9e086c" />
+          <Text style={loginStyles.biometricButtonText}>
+            {translate
               ? translate("auth.sign_in_with_face_id")
-              : "Sign in with Face ID"
-          }
-        />
+              : "Sign in with Face ID"}
+          </Text>
+        </TouchableOpacity>
       )}
     </View>
   );

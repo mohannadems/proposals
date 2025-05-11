@@ -1,4 +1,21 @@
 {
+  "validation": {
+    "email_required": "Email is required",
+    "email_invalid": "Please enter a valid email address",
+    "password_required": "Password is required",
+    "password_min_length": "Password must be at least 6 characters long",
+    "invalid_credentials": "Invalid email or password"
+  },
+  "language": {
+    "change_title": "Change Language",
+    "change_message": "Are you sure you want to change the language from {current} to {new}?",
+    "restart_required_title": "Restart Required",
+    "restart_required_message": "Please restart the app to apply the language change.",
+    "reload_failed_title": "Reload Failed",
+    "reload_failed_message": "Please restart the app manually to apply the language change.",
+    "change_error_title": "Error",
+    "change_error_message": "Failed to change language. Please try again."
+  },
   "profile_completion": {
     "loading": "Loading profile...",
     "message_title": "Profile in Progress",

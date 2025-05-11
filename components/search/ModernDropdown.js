@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useContext } from "react";
 import {
   View,
   Text,
@@ -6,12 +6,15 @@ import {
   StyleSheet,
   Modal,
   FlatList,
+  Alert,
   TextInput,
   Animated,
   Dimensions,
+  I18nManager,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import COLORS from "../../constants/colors";
+import { LanguageContext } from "../../contexts/LanguageContext"; // Update this path if needed
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 const ModernDropdown = ({
@@ -21,8 +24,9 @@ const ModernDropdown = ({
   onValueChange,
   placeholder = "Select an option",
   disabled = false,
-  isRTL = false,
+  clearText = "Clear",
 }) => {
+  const { isRTL } = useContext(LanguageContext); // Get RTL status from context
   const [modalVisible, setModalVisible] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [filteredItems, setFilteredItems] = useState(items);
@@ -88,11 +92,18 @@ const ModernDropdown = ({
 
   return (
     <View style={[styles.container, disabled && styles.containerDisabled]}>
-      <View style={styles.headerContainer}>
-        <Text style={styles.label}>{label}</Text>
+      <View
+        style={[
+          styles.headerContainer,
+          { flexDirection: isRTL ? "row-reverse" : "row" },
+        ]}
+      >
+        <Text style={[styles.label, { textAlign: isRTL ? "right" : "left" }]}>
+          {label}
+        </Text>
         {value !== null && !disabled && (
           <TouchableOpacity onPress={handleClear} style={styles.clearButton}>
-            <Text style={styles.clearButtonText}>Clear</Text>
+            <Text style={styles.clearButtonText}>{clearText}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -100,6 +111,7 @@ const ModernDropdown = ({
       <TouchableOpacity
         style={[
           styles.dropdownButton,
+          { flexDirection: isRTL ? "row-reverse" : "row" },
           disabled && styles.dropdownButtonDisabled,
           !selectedItem && styles.dropdownButtonEmpty,
         ]}
@@ -109,6 +121,7 @@ const ModernDropdown = ({
         <Text
           style={[
             styles.dropdownText,
+            { textAlign: isRTL ? "right" : "left" },
             !selectedItem && styles.placeholderText,
             disabled && styles.disabledText,
           ]}
@@ -143,25 +156,46 @@ const ModernDropdown = ({
               { transform: [{ translateY: slideTranslation }] },
             ]}
           >
-            <View style={styles.modalHeader}>
+            <View
+              style={[
+                styles.modalHeader,
+                { flexDirection: isRTL ? "row-reverse" : "row" },
+              ]}
+            >
               <Text style={styles.modalTitle}>Select {label}</Text>
               <TouchableOpacity
                 onPress={animateModalOut}
-                style={styles.closeButton}
+                style={[
+                  styles.closeButton,
+                  isRTL ? { left: 20, right: "auto" } : { right: 20 },
+                ]}
               >
                 <Ionicons name="close" size={20} color="#333" />
               </TouchableOpacity>
             </View>
 
-            <View style={styles.searchContainer}>
+            <View
+              style={[
+                styles.searchContainer,
+                { flexDirection: isRTL ? "row-reverse" : "row" },
+              ]}
+            >
               <Ionicons
                 name="search"
                 size={18}
                 color="#999"
-                style={styles.searchIcon}
+                style={[
+                  styles.searchIcon,
+                  isRTL
+                    ? { marginLeft: 8, marginRight: 0 }
+                    : { marginRight: 8, marginLeft: 0 },
+                ]}
               />
               <TextInput
-                style={styles.searchInput}
+                style={[
+                  styles.searchInput,
+                  { textAlign: isRTL ? "right" : "left" },
+                ]}
                 placeholder="Search..."
                 value={searchText}
                 onChangeText={handleSearch}
@@ -176,6 +210,7 @@ const ModernDropdown = ({
                 <TouchableOpacity
                   style={[
                     styles.optionItem,
+                    { flexDirection: isRTL ? "row-reverse" : "row" },
                     value === item.value && styles.selectedOption,
                   ]}
                   onPress={() => handleSelect(item)}
@@ -183,6 +218,7 @@ const ModernDropdown = ({
                   <Text
                     style={[
                       styles.optionText,
+                      { textAlign: isRTL ? "right" : "left" },
                       value === item.value && styles.selectedOptionText,
                     ]}
                   >
@@ -233,7 +269,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   headerContainer: {
-    flexDirection: "row",
+    flexDirection: "row", // Will be overridden based on isRTL
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 8,
@@ -242,6 +278,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     color: "#333",
+    // textAlign will be set dynamically
   },
   clearButton: {
     backgroundColor: "rgba(74, 111, 161, 0.1)",
@@ -255,7 +292,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   dropdownButton: {
-    flexDirection: "row",
+    flexDirection: "row", // Will be overridden based on isRTL
     alignItems: "center",
     justifyContent: "space-between",
     height: 52,
@@ -276,6 +313,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#333",
     flex: 1,
+    // textAlign will be set dynamically
   },
   placeholderText: {
     color: "#A1A1A1",
@@ -306,7 +344,7 @@ const styles = StyleSheet.create({
     maxHeight: SCREEN_HEIGHT * 0.7,
   },
   modalHeader: {
-    flexDirection: "row",
+    flexDirection: "row", // Will be overridden based on isRTL
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
@@ -320,7 +358,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: "absolute",
-    right: 20,
+    // right/left will be set dynamically
     width: 30,
     height: 30,
     borderRadius: 15,
@@ -329,7 +367,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   searchContainer: {
-    flexDirection: "row",
+    flexDirection: "row", // Will be overridden based on isRTL
     alignItems: "center",
     backgroundColor: "#F5F7FA",
     marginHorizontal: 20,
@@ -339,15 +377,16 @@ const styles = StyleSheet.create({
     height: 46,
   },
   searchIcon: {
-    marginRight: 8,
+    // margin will be set dynamically
   },
   searchInput: {
     flex: 1,
     height: "100%",
     fontSize: 16,
+    // textAlign will be set dynamically
   },
   optionItem: {
-    flexDirection: "row",
+    flexDirection: "row", // Will be overridden based on isRTL
     alignItems: "center",
     justifyContent: "space-between",
     paddingVertical: 14,
@@ -361,6 +400,7 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 16,
     color: "#333",
+    // textAlign will be set dynamically
   },
   selectedOptionText: {
     fontWeight: "600",

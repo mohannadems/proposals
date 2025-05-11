@@ -1,25 +1,18 @@
 import React, { useContext } from "react";
-import { View, StyleSheet } from "react-native";
+import { View } from "react-native";
 import { LanguageContext } from "../../contexts/LanguageContext";
 
-const RTLWrapper = ({ children, style }) => {
+const RTLWrapper = ({ children, style, ...props }) => {
   const { isRTL } = useContext(LanguageContext);
 
   return (
-    <View style={[styles.container, isRTL && styles.rtl, style]}>
+    <View
+      style={[{ flexDirection: isRTL ? "row-reverse" : "row" }, style]}
+      {...props}
+    >
       {children}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  rtl: {
-    flexDirection: "row-reverse",
-  },
-});
 
 export default RTLWrapper;

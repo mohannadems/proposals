@@ -1,13 +1,15 @@
-import React from "react";
+import React, { useContext } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  I18nManager,
 } from "react-native";
 import MultiSlider from "@ptomasroos/react-native-multi-slider";
 import COLORS from "../../constants/colors";
+import { LanguageContext } from "../../contexts/LanguageContext"; // Make sure the path is correct
 
 // Age presets will be defined as a function to support translation
 const getAgePresets = (labels) => [
@@ -24,8 +26,7 @@ const AgeRangeSelector = ({
   onChange,
   isFilterDisabled,
   isMaxFiltersSelected,
-  isRTL,
-  // New internationalized labels
+  // Remove isRTL prop and use context instead
   labelText = "Age Range",
   minAgeLabel = "Min Age",
   maxAgeLabel = "Max Age",
@@ -39,6 +40,9 @@ const AgeRangeSelector = ({
     allAges: "All Ages",
   },
 }) => {
+  // Get isRTL from context instead of props
+  const { isRTL } = useContext(LanguageContext);
+
   // Get localized age presets
   const AGE_PRESETS = getAgePresets(presetLabels);
 
@@ -73,32 +77,19 @@ const AgeRangeSelector = ({
   const activePresetIndex = getActivePresetIndex();
   const isAgeFilterActive = minAge !== 18 || maxAge !== 70;
 
-  // Create RTL-aware styles
-  const rtlStyles = {
-    headerContainer: {
-      flexDirection: isRTL ? "row-reverse" : "row",
-    },
-    label: {
-      textAlign: isRTL ? "right" : "left",
-    },
-    ticksContainer: {
-      flexDirection: isRTL ? "row-reverse" : "row",
-    },
-    presetsContainer: {
-      // For RTL scrolling direction
-    },
-    presetButton: {
-      marginRight: isRTL ? 0 : 8,
-      marginLeft: isRTL ? 8 : 0,
-    },
-  };
-
   return (
     <View
       style={[styles.container, isFilterDisabled && styles.containerDisabled]}
     >
-      <View style={[styles.headerContainer, rtlStyles.headerContainer]}>
-        <Text style={[styles.label, rtlStyles.label]}>{labelText}</Text>
+      <View
+        style={[
+          styles.headerContainer,
+          { flexDirection: isRTL ? "row-reverse" : "row" },
+        ]}
+      >
+        <Text style={[styles.label, { textAlign: isRTL ? "right" : "left" }]}>
+          {labelText}
+        </Text>
         {isAgeFilterActive && !isFilterDisabled && (
           <TouchableOpacity
             onPress={() => onChange(18, 70)}
@@ -109,7 +100,12 @@ const AgeRangeSelector = ({
         )}
       </View>
 
-      <View style={styles.displayContainer}>
+      <View
+        style={[
+          styles.displayContainer,
+          { flexDirection: isRTL ? "row-reverse" : "row" },
+        ]}
+      >
         <View style={styles.ageDisplay}>
           <Text style={styles.ageValue}>{minAge}</Text>
           <Text style={styles.ageLabel}>{minAgeLabel}</Text>
@@ -129,16 +125,21 @@ const AgeRangeSelector = ({
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.presetScroll}
-          // RTL scrolling support
-          style={{ flexDirection: isRTL ? "row-reverse" : "row" }}
+          contentContainerStyle={[
+            styles.presetScroll,
+            { flexDirection: isRTL ? "row-reverse" : "row" },
+          ]}
+          // Do not transform the scroll view itself
         >
           {AGE_PRESETS.map((preset, index) => (
             <TouchableOpacity
               key={index}
               style={[
                 styles.presetButton,
-                rtlStyles.presetButton,
+                {
+                  marginRight: isRTL ? 0 : 8,
+                  marginLeft: isRTL ? 8 : 0,
+                },
                 index === activePresetIndex && styles.activePresetButton,
                 isFilterDisabled && styles.disabledPresetButton,
               ]}
@@ -159,82 +160,53 @@ const AgeRangeSelector = ({
       </View>
 
       <View style={styles.sliderContainer}>
+        {/* 
+          Fix for RTL mode: Instead of using transform, which causes issues with the multi-slider,
+          we'll invert the min/max values and the slider values when in RTL mode.
+          This approach ensures the slider behaves correctly in both LTR and RTL modes.
+        */}
         <MultiSlider
-          values={[minAge, maxAge]}
+          values={
+            isRTL ? [70 - maxAge + 18, 70 - minAge + 18] : [minAge, maxAge]
+          }
           min={18}
           max={70}
           step={1}
           allowOverlap={false}
           snapped
-          onValuesChange={(values) => handleSliderChange(values)}
+          onValuesChange={(values) => {
+            if (isRTL) {
+              // Convert the RTL values back to LTR values
+              const rtlMin = 70 - values[1] + 18;
+              const rtlMax = 70 - values[0] + 18;
+              handleSliderChange([rtlMin, rtlMax]);
+            } else {
+              handleSliderChange(values);
+            }
+          }}
           selectedStyle={styles.sliderTrackSelected}
           unselectedStyle={styles.sliderTrackUnselected}
-          markerStyle={[
-            styles.sliderMarker,
-            // Apply transform to the markers to ensure they appear correctly in RTL
-            isRTL ? { transform: [{ scaleX: -1 }] } : {},
-          ]}
+          markerStyle={styles.sliderMarker}
           trackStyle={styles.sliderTrack}
-          containerStyle={[
-            styles.sliderInnerContainer,
-            // Apply different transform for RTL layout to fix slider direction
-            isRTL ? { transform: [{ scaleX: -1 }] } : {},
-          ]}
+          containerStyle={styles.sliderInnerContainer}
           sliderLength={280}
           enabledOne={!isFilterDisabled}
           enabledTwo={!isFilterDisabled}
-          // RTL fixes for marker labels if needed
-          isRTL={isRTL}
         />
       </View>
 
       <View
         style={[
           styles.ticksContainer,
-          // Apply the same transform to the ticks container to match slider orientation
-          isRTL ? { flexDirection: "row", transform: [{ scaleX: -1 }] } : {},
+          { flexDirection: isRTL ? "row-reverse" : "row" },
         ]}
       >
-        <Text
-          style={[
-            styles.tickLabel,
-            isRTL ? { transform: [{ scaleX: -1 }] } : {},
-          ]}
-        >
-          18
-        </Text>
-        <Text
-          style={[
-            styles.tickLabel,
-            isRTL ? { transform: [{ scaleX: -1 }] } : {},
-          ]}
-        >
-          30
-        </Text>
-        <Text
-          style={[
-            styles.tickLabel,
-            isRTL ? { transform: [{ scaleX: -1 }] } : {},
-          ]}
-        >
-          45
-        </Text>
-        <Text
-          style={[
-            styles.tickLabel,
-            isRTL ? { transform: [{ scaleX: -1 }] } : {},
-          ]}
-        >
-          60
-        </Text>
-        <Text
-          style={[
-            styles.tickLabel,
-            isRTL ? { transform: [{ scaleX: -1 }] } : {},
-          ]}
-        >
-          70
-        </Text>
+        {/* Adjust tick labels for RTL */}
+        <Text style={styles.tickLabel}>{isRTL ? "70" : "18"}</Text>
+        <Text style={styles.tickLabel}>{isRTL ? "60" : "30"}</Text>
+        <Text style={styles.tickLabel}>{isRTL ? "45" : "45"}</Text>
+        <Text style={styles.tickLabel}>{isRTL ? "30" : "60"}</Text>
+        <Text style={styles.tickLabel}>{isRTL ? "18" : "70"}</Text>
       </View>
     </View>
   );
@@ -248,7 +220,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   headerContainer: {
-    flexDirection: "row",
+    flexDirection: "row", // Will be overridden in render
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 12,
@@ -257,6 +229,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
     color: "#333",
+    // textAlign will be set in render
   },
   clearButton: {
     backgroundColor: "rgba(74, 111, 161, 0.1)",
@@ -270,7 +243,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   displayContainer: {
-    flexDirection: "row",
+    flexDirection: "row", // Will be overridden in render
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 16,
@@ -304,12 +277,13 @@ const styles = StyleSheet.create({
   },
   presetScroll: {
     paddingVertical: 4,
+    // flexDirection will be set in render
   },
   presetButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    marginRight: 8,
+    // margins will be set in render
     borderWidth: 1,
     borderColor: COLORS.primary,
     backgroundColor: "#FFFFFF",
@@ -364,7 +338,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   ticksContainer: {
-    flexDirection: "row",
+    flexDirection: "row", // Will be overridden in render
     justifyContent: "space-between",
     paddingHorizontal: 10,
     marginTop: 4,

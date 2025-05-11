@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useContext } from "react";
 import {
   View,
   Text,
@@ -22,8 +22,38 @@ import {
   calculateProfileProgress,
   getProgressMessage,
 } from "../../utils/profileProgress";
+import { LanguageContext } from "../../contexts/LanguageContext";
 
 const ProfileCompletionAlert = () => {
+  const { isRTL } = useContext(LanguageContext);
+  const rtlStyles = {
+    buttonContainer: {
+      flexDirection: isRTL ? "row-reverse" : "row",
+    },
+    laterButton: {
+      marginRight: isRTL ? 0 : 12,
+      marginLeft: isRTL ? 12 : 0,
+    },
+    savedProgressHeader: {
+      flexDirection: isRTL ? "row-reverse" : "row",
+    },
+    stepHeader: {
+      flexDirection: isRTL ? "row-reverse" : "row",
+    },
+    textAlign: {
+      textAlign: isRTL ? "right" : "left",
+    },
+    missingFieldsTitle: {
+      flexDirection: isRTL ? "row-reverse" : "row",
+    },
+    missingFieldChip: {
+      marginRight: isRTL ? 0 : 8,
+      marginLeft: isRTL ? 8 : 0,
+    },
+    missingFieldsScroll: {
+      flexDirection: isRTL ? "row-reverse" : "row",
+    },
+  };
   const dispatch = useDispatch();
   const router = useRouter();
   const { data, showProfileAlert } = useSelector((state) => state.profile);
@@ -98,8 +128,10 @@ const ProfileCompletionAlert = () => {
       <View style={styles.stepProgressContainer}>
         {Object.entries(stepProgress).map(([step, progress]) => (
           <View key={step} style={styles.stepItem}>
-            <View style={styles.stepHeader}>
-              <Text style={styles.stepTitle}>Step {step}</Text>
+            <View style={[styles.stepHeader, rtlStyles.stepHeader]}>
+              <Text style={[styles.stepTitle, rtlStyles.textAlign]}>
+                Step {step}
+              </Text>
               <Text style={styles.stepPercentage}>{progress.percentage}%</Text>
             </View>
             <View style={styles.stepProgressBar}>
@@ -116,7 +148,7 @@ const ProfileCompletionAlert = () => {
                 ]}
               />
             </View>
-            <Text style={styles.stepDetails}>
+            <Text style={[styles.stepDetails, rtlStyles.textAlign]}>
               {progress.completed}/{progress.total} completed
             </Text>
           </View>
@@ -130,24 +162,35 @@ const ProfileCompletionAlert = () => {
 
     return (
       <View style={styles.missingFieldsContainer}>
-        <Text style={styles.missingFieldsTitle}>
-          <Ionicons name="warning" size={16} color="#FF6B6B" /> Required Fields
-        </Text>
+        <View style={[styles.missingFieldsTitle, rtlStyles.missingFieldsTitle]}>
+          <Ionicons name="warning" size={16} color="#FF6B6B" />
+          <Text style={[styles.missingFieldsTitleText, rtlStyles.textAlign]}>
+            {" "}
+            Required Fields
+          </Text>
+        </View>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.missingFieldsScroll}
+          contentContainerStyle={[
+            styles.missingFieldsScroll,
+            rtlStyles.missingFieldsScroll,
+          ]}
         >
           {missingFields.map((field, index) => (
-            <View key={index} style={styles.missingFieldChip}>
-              <Text style={styles.missingFieldText}>{field.label}</Text>
+            <View
+              key={index}
+              style={[styles.missingFieldChip, rtlStyles.missingFieldChip]}
+            >
+              <Text style={[styles.missingFieldText, rtlStyles.textAlign]}>
+                {field.label}
+              </Text>
             </View>
           ))}
         </ScrollView>
       </View>
     );
   };
-
   return (
     <Modal transparent animationType="fade" visible={showProfileAlert}>
       <Animated.View
@@ -158,6 +201,7 @@ const ProfileCompletionAlert = () => {
           },
         ]}
       >
+        {/* Modal container remains the same */}
         <Animated.View
           style={[
             styles.modalContainer,
@@ -177,7 +221,7 @@ const ProfileCompletionAlert = () => {
             colors={["#ffffff", "#f8f9ff"]}
             style={styles.modalContent}
           >
-            {/* Animated Lottie Animation */}
+            {/* Icon container remains the same */}
             <View style={styles.iconContainer}>
               <View style={styles.iconBackground}>
                 <Text style={styles.iconEmoji}>🚀</Text>
@@ -199,9 +243,12 @@ const ProfileCompletionAlert = () => {
               />
             </View>
 
+            {/* Text container with RTL support */}
             <View style={styles.textContainer}>
-              <Text style={styles.title}>Your Journey to Love</Text>
-              <Text style={styles.subtitle}>
+              <Text style={[styles.title, rtlStyles.textAlign]}>
+                Your Journey to Love
+              </Text>
+              <Text style={[styles.subtitle, rtlStyles.textAlign]}>
                 {getProgressMessage(progress)}
                 <Text style={styles.progressHighlight}> ({progress}%)</Text>
               </Text>
@@ -211,21 +258,32 @@ const ProfileCompletionAlert = () => {
               <>
                 {savedProgress && (
                   <View style={styles.savedProgressContainer}>
-                    <View style={styles.savedProgressHeader}>
+                    <View
+                      style={[
+                        styles.savedProgressHeader,
+                        rtlStyles.savedProgressHeader,
+                      ]}
+                    >
                       <Ionicons
                         name="bookmark"
                         size={18}
                         color={COLORS.primary}
                       />
-                      <Text style={styles.savedProgressTitle}>
+                      <Text
+                        style={[styles.savedProgressTitle, rtlStyles.textAlign]}
+                      >
                         {" "}
                         Saved Progress
                       </Text>
                     </View>
-                    <Text style={styles.savedProgressText}>
+                    <Text
+                      style={[styles.savedProgressText, rtlStyles.textAlign]}
+                    >
                       You were last on step {savedProgress.step} of 4
                     </Text>
-                    <Text style={styles.savedProgressDate}>
+                    <Text
+                      style={[styles.savedProgressDate, rtlStyles.textAlign]}
+                    >
                       Last updated:{" "}
                       {new Date(savedProgress.lastUpdated).toLocaleString()}
                     </Text>
@@ -237,10 +295,11 @@ const ProfileCompletionAlert = () => {
               </>
             )}
 
-            <View style={styles.buttonContainer}>
+            {/* Button container with RTL support */}
+            <View style={[styles.buttonContainer, rtlStyles.buttonContainer]}>
               <TouchableOpacity
                 onPress={handleLater}
-                style={styles.laterButton}
+                style={[styles.laterButton, rtlStyles.laterButton]}
               >
                 <Text style={styles.laterButtonText}>Later</Text>
               </TouchableOpacity>
@@ -327,11 +386,10 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#1a1a1a",
     marginBottom: 8,
-    textAlign: "center",
   },
   subtitle: {
     fontSize: 16,
-    textAlign: "center",
+
     color: "#666",
     lineHeight: 24,
     paddingHorizontal: 10,
@@ -450,7 +508,7 @@ const styles = StyleSheet.create({
   },
   laterButtonText: {
     color: COLORS.primary,
-    textAlign: "center",
+
     fontWeight: "600",
     fontSize: 16,
   },
@@ -465,7 +523,7 @@ const styles = StyleSheet.create({
   },
   completeButtonText: {
     color: "white",
-    textAlign: "center",
+
     fontWeight: "600",
     fontSize: 16,
   },

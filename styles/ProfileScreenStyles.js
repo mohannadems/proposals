@@ -151,7 +151,7 @@ export default StyleSheet.create({
     padding: 10,
     borderRadius: 8,
   },
-  profileprofileItemContent: {
+  profileItemContent: {
     marginLeft: 15,
     flex: 1,
     borderLeftWidth: 1,
@@ -285,5 +285,11 @@ export default StyleSheet.create({
   progressBarFill: {
     height: "100%",
     borderRadius: 3,
+  },
+  profileItemContent: {
+    flex: 1,
+    borderLeftWidth: 1,
+    borderLeftColor: COLORS.border,
+    paddingLeft: 15,
   },
 });
