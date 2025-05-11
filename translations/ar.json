@@ -215,7 +215,8 @@
       "sportsActivity": "اختر النشاط الرياضي (اختياري)",
       "sleepHabit": "اختر عادات النوم (اختياري)",
       "religiosityLevel": "اختر مستوى التدين (اختياري)"
-    }
+    },
+    "info": { "selectFilters": "Select Filters " }
   },
   "checkout": {
     "checkout": "الدفع",

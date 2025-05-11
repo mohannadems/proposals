@@ -183,7 +183,8 @@
       "sleepHabit": "Sleep Habit",
       "pets": "Pets",
       "religiosityLevel": "Religiosity Level"
-    }
+    },
+    "info": { "selectFilters": "Select Filters " }
   },
   "checkout": {
     "checkout": "Checkout",

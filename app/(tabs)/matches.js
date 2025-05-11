@@ -489,11 +489,6 @@ const SectionHeader = memo(
               </Text>
             </View>
           )}
-          <TouchableOpacity onPress={onSeeAllPress}>
-            <Text style={styles.seeAllButton}>
-              {t("matches.sections.see_all")}
-            </Text>
-          </TouchableOpacity>
         </View>
       </View>
     );

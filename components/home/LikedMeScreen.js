@@ -393,7 +393,7 @@ const LikedMeScreen = () => {
               style={[
                 styles.headerTitle,
                 {
-                  textAlign: isRTL ? "right" : "left",
+                  textAlign: isRTL ? "right" : "right",
                   alignSelf: isRTL ? "flex-end" : "flex-start",
                   width: "100%",
                 },
@@ -491,7 +491,16 @@ const LikedMeScreen = () => {
           ]}
         >
           <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>
+            <Text
+              style={[
+                styles.headerTitle,
+                {
+                  textAlign: isRTL ? "right" : "left",
+                  alignSelf: isRTL ? "flex-end" : "flex-start",
+                  width: "100%",
+                },
+              ]}
+            >
               {currentLanguage === "ar" ? "معجبون بك" : "Likes You"}
             </Text>
           </View>
