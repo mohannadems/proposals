@@ -138,7 +138,6 @@ export default function RegisterScreen() {
   };
 
   const toggleLanguage = async () => {
-    // Add haptic feedback
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     changeLanguage(locale === "en" ? "ar" : "en");
   };
@@ -205,33 +204,3 @@ export default function RegisterScreen() {
     </TouchableWithoutFeedback>
   );
 }
-
-const styles = StyleSheet.create({
-  languageToggle: {
-    position: "absolute",
-    top: 40,
-    right: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    zIndex: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  languageToggleRtl: {
-    right: "auto",
-    left: 20,
-  },
-  languageText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#666",
-  },
-  scrollViewRtl: {
-    textAlign: "right",
-  },
-});

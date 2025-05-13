@@ -1,4 +1,3 @@
-// index.js (MatchProfileScreen)
 import React, { useState, useRef, useEffect, useContext } from "react";
 import {
   View,
@@ -56,7 +55,6 @@ const MatchProfileScreen = () => {
   const [checkingMatch, setCheckingMatch] = useState(false);
   const [isMatch, setIsMatch] = useState(fromTab === "Matches");
 
-  // Redux state
   const revealedContact = useSelector((state) =>
     selectRevealedContact(state, userId)
   );
@@ -66,7 +64,6 @@ const MatchProfileScreen = () => {
   const isUserLikedInRedux =
     likedUsers && likedUsers.some((user) => user.id === userId);
 
-  // Profile data
   const {
     userProfile,
     profile,
@@ -82,14 +79,12 @@ const MatchProfileScreen = () => {
     isLiked || fromTab === "Liked" || isUserLikedInRedux
   );
 
-  // Sync liked state with Redux
   useEffect(() => {
     if (isLiked || isUserLikedInRedux) {
       setHasBeenLiked(true);
     }
   }, [isLiked, isUserLikedInRedux]);
 
-  // Profile actions
   const {
     likeLoading,
     dislikeLoading,
@@ -103,22 +98,18 @@ const MatchProfileScreen = () => {
     setShowDislikeModal,
   } = useProfileActions(userProfile, isLiked, isDisliked);
 
-  // Handle revealing contact info
   const handleRevealContact = async () => {
     try {
       await dispatch(revealContact(userId)).unwrap();
     } catch (error) {
       console.error("Error revealing contact:", error);
-      // Show error toast or alert here
     }
   };
 
-  // Handle liking a user
   const handleLocalLike = () => {
     handleLike();
   };
 
-  // Handle confirming a like with match checking
   const handleLocalLikeConfirm = async () => {
     setShowLikeModal(false);
     setCheckingMatch(true);
@@ -137,11 +128,9 @@ const MatchProfileScreen = () => {
       ) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-        // Add the match to Redux and update UI
         dispatch(addMatch(matchResult.matchData));
         setIsMatch(true);
 
-        // Navigate to matches tab and show the match there
         dispatch(setActiveTab("Matches"));
         router.replace({
           pathname: "(tabs)/matches",
@@ -157,19 +146,16 @@ const MatchProfileScreen = () => {
       dispatch(setActiveTab("Liked"));
     } catch (error) {
       console.error("Error checking for match:", error);
-      // Show error toast or alert here
     } finally {
       setCheckingMatch(false);
     }
   };
 
-  // Handle back navigation
   const handleBack = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.back();
   };
 
-  // Animation values
   const headerHeight = scrollY.interpolate({
     inputRange: [0, HEADER_HEIGHT - 100],
     outputRange: [HEADER_HEIGHT, 100],
@@ -182,7 +168,6 @@ const MatchProfileScreen = () => {
     extrapolate: "clamp",
   });
 
-  // Loading state
   if (loading.profile && !userProfile) {
     return (
       <View style={createStyles(isRTL).loadingContainer}>
@@ -194,7 +179,6 @@ const MatchProfileScreen = () => {
     );
   }
 
-  // Error state
   if (error.profile && !userProfile) {
     return (
       <View style={createStyles(isRTL).errorContainer}>
@@ -315,10 +299,8 @@ const MatchProfileScreen = () => {
           scrollEventThrottle={16}
         >
           <View style={createStyles(isRTL).content}>
-            {/* Show Match Banner for matches */}
             {isMatch && <MatchBanner userName={firstName} isVisible={true} />}
 
-            {/* Show success banner for liked profiles */}
             {hasBeenLiked && !isMatch && (
               <LikeSuccessBanner userName={firstName} />
             )}
@@ -447,12 +429,12 @@ const MatchProfileScreen = () => {
                   if (!value) return null;
 
                   const icons = {
-                    height: "maximize-2", // or "navigation"
+                    height: "maximize-2",
                     weight: "cloud",
                     marital_status: "user",
                     children: "users",
                     smoking: "x-circle",
-                    drinking: "coffee", // or "droplet"
+                    drinking: "coffee",
                     employment: "briefcase",
                     education: "book",
                     religion: "heart",

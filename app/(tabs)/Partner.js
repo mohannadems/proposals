@@ -237,19 +237,15 @@ const AdvancedSearchScreen = () => {
     setIsLoading(true);
 
     try {
-      // Submit the search preferences
       const result = await dispatch(
         submitSearchPreferences(preferences)
       ).unwrap();
 
-      // Set flags to indicate search has been performed
       dispatch(setHasSubmittedFilters(true));
       dispatch(setHasSearched(true));
 
-      // Dispatch refresh action
       dispatch(refreshMatchesAfterSearch());
 
-      // Navigate to matches screen with explicit parameter to force refresh
       router.push({
         pathname: "/(tabs)/matches",
         params: { refreshTimestamp: Date.now().toString() },

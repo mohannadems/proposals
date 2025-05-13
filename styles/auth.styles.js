@@ -9,7 +9,6 @@ export const loginStyles = StyleSheet.create({
     position: "absolute",
     top: 40,
     right: 40,
-    // No need to change this position as it's just decorative
   },
   decorationHeart: {
     transform: [{ rotate: "15deg" }],
@@ -18,23 +17,19 @@ export const loginStyles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
     justifyContent: "center",
-    // Removed alignItems to use dynamic RTL-aware styles
   },
   logoContainer: {
     marginBottom: 40,
-    // Removed alignItems to use dynamic RTL-aware styles
   },
   welcomeText: {
     fontSize: 28,
     fontWeight: "bold",
     color: "#9e086c",
     marginBottom: 8,
-    // Removed textAlign to use dynamic RTL-aware styles
   },
   subtitle: {
     fontSize: 16,
     color: "#666",
-    // Removed textAlign to use dynamic RTL-aware styles
   },
   formContainer: {
     backgroundColor: "#fff",
@@ -49,16 +44,13 @@ export const loginStyles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
     width: "100%",
-    // Removed alignItems to use dynamic RTL-aware styles
   },
   forgotPassword: {
     marginBottom: 24,
-    // Removed alignSelf to use dynamic RTL-aware styles
   },
   forgotPasswordText: {
     color: "#9e086c",
     fontSize: 14,
-    // Will add textAlign dynamically
   },
   loginButton: {
     height: 56,
@@ -69,7 +61,6 @@ export const loginStyles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     width: "100%",
-    // Will set flexDirection dynamically
   },
   buttonDisabled: {
     opacity: 0.7,
@@ -90,7 +81,6 @@ export const loginStyles = StyleSheet.create({
     gap: 12,
     marginTop: 16,
     width: "100%",
-    // Will set flexDirection dynamically
   },
   biometricButtonText: {
     color: "#9e086c",
@@ -104,24 +94,55 @@ export const loginStyles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 16,
     width: "100%",
-    // Will set flexDirection dynamically
   },
   errorText: {
     color: "#FF3B30",
     fontSize: 14,
-    // Will set margins dynamically
   },
   registerLink: {
     marginTop: 24,
-    // Will set alignItems dynamically
   },
   registerLinkText: {
     fontSize: 16,
     color: "#666",
-    // Will set textAlign dynamically
   },
   registerLinkBold: {
     color: "#9e086c",
     fontWeight: "600",
   },
+  languageText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#9e086c",
+  },
 });
+export const getRtlStyles = (isRTL) =>
+  StyleSheet.create({
+    content: {
+      alignItems: isRTL ? "flex-end" : "flex-start",
+    },
+    logoContainer: {
+      alignItems: isRTL ? "flex-end" : "flex-start",
+    },
+    textAlign: {
+      textAlign: isRTL ? "right" : "left",
+    },
+    languageToggle: {
+      position: "absolute",
+      top: 70,
+      ...(isRTL ? { left: 20 } : { right: 20 }),
+      backgroundColor: "rgba(255, 255, 255, 0.8)",
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+      zIndex: 10,
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    registerLink: {
+      alignSelf: isRTL ? "flex-end" : "flex-start",
+    },
+  });

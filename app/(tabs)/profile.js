@@ -320,14 +320,12 @@ const ProfileScreen = () => {
   }, [dispatch, router, t]);
   const handleLanguageChange = async (newLanguage) => {
     try {
-      // This is where the actual language change happens
       await changeLanguage(newLanguage);
 
-      // No need to handle the reload here as it's now done in the ProfileDropdownMenu
       return true;
     } catch (error) {
       console.error("Error changing language:", error);
-      throw error; // Rethrow to allow the dropdown menu to handle it
+      throw error;
     }
   };
   const calculateProgress = () => {
