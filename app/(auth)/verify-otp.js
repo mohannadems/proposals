@@ -30,7 +30,6 @@ export default function VerifyOTPScreen() {
   const [otp, setOTP] = useState("");
   const [validationError, setValidationError] = useState("");
 
-  // Get language context
   const { locale, isRTL, t } = useContext(LanguageContext);
 
   useEffect(() => {

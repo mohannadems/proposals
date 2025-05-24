@@ -23,7 +23,6 @@ const FormDatePicker = ({
   t: propT,
   leftIcon,
 }) => {
-  // Get RTL and translation from context, prioritize props if provided
   const { isRTL: contextRTL, t: contextT } = useContext(LanguageContext) || {};
   const _isRTL = propIsRTL !== undefined ? propIsRTL : contextRTL;
   const _t = propT || contextT;
@@ -158,16 +157,13 @@ const FormDatePicker = ({
     setTempDate(null);
   };
 
-  // Modified formatDate function to always use Gregorian calendar
   const formatDate = (date) => {
     if (!date) return null;
 
-    // Always use en-US format for date calculations to ensure Gregorian
     const day = date.getDate();
     const month = date.getMonth();
     const year = date.getFullYear();
 
-    // Get month names in English
     const monthNames = [
       "January",
       "February",
@@ -183,7 +179,6 @@ const FormDatePicker = ({
       "December",
     ];
 
-    // Get month names in Arabic (if needed)
     const monthNamesArabic = [
       "يناير",
       "فبراير",
@@ -199,12 +194,9 @@ const FormDatePicker = ({
       "ديسمبر",
     ];
 
-    // Format the date string based on language but using Gregorian calendar
     if (_isRTL) {
-      // Arabic format: day month year
       return `${day} ${monthNamesArabic[month]} ${year}`;
     } else {
-      // English format: month day, year
       return `${monthNames[month]} ${day}, ${year}`;
     }
   };
@@ -216,14 +208,12 @@ const FormDatePicker = ({
   const renderDatePicker = () => {
     const currentDate = tempDate || selectedDate || new Date();
 
-    // For Android, ensure calendar type is explicitly set to gregorian
     const datePickerProps = {
       mode: "date",
       value: currentDate,
       maximumDate: maximumDate,
       minimumDate: minimumDate,
       onChange: handleDateChange,
-      // Force Gregorian calendar on Android
       ...(Platform.OS === "android" && { calendar: "gregorian" }),
     };
 
@@ -247,7 +237,7 @@ const FormDatePicker = ({
               display="spinner"
               textColor={COLORS.text}
               style={dynamicStyles.datePicker}
-              locale="en-US" // Force English locale for iOS to ensure Gregorian
+              locale="en-US"
             />
             <View style={dynamicStyles.buttonContainer}>
               <TouchableOpacity
@@ -273,7 +263,6 @@ const FormDatePicker = ({
     );
   };
 
-  // Get formatted date or placeholder
   const formattedDate = selectedDate ? formatDate(selectedDate) : null;
   const displayText = formattedDate || getPlaceholderText();
 

@@ -103,7 +103,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#333",
     marginBottom: 8,
-    // textAlign set dynamically
   },
   inputContainer: {
     width: "100%",
@@ -111,32 +110,27 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#DDD",
     borderRadius: 10,
-    flexDirection: "row", // Changed dynamically for RTL
+    flexDirection: "row",
     alignItems: "center",
     backgroundColor: "white",
   },
   inputError: {
     borderColor: "#FF3B30",
   },
-  icon: {
-    // Margins set dynamically
-  },
+  icon: {},
   input: {
     flex: 1,
     height: "100%",
     fontSize: 16,
     color: "#333",
-    // padding set dynamically
   },
   errorContainer: {
-    // flexDirection set dynamically
     alignItems: "center",
     marginTop: 4,
   },
   errorText: {
     color: "#FF3B30",
     fontSize: 14,
-    // textAlign set dynamically
   },
 });
 

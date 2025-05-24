@@ -1,4 +1,3 @@
-// components/profile/ProfileDropdownMenu.js
 import React, { useState, useRef, useContext } from "react";
 import * as Updates from "expo-updates";
 
@@ -39,7 +38,6 @@ const ProfileDropdownMenu = ({ onLogout, onLanguageChange }) => {
       const statusBarHeight =
         Platform.OS === "ios" ? 0 : StatusBar.currentHeight || 0;
 
-      // Calculate position based on RTL
       const position = {
         top: py + height + 5 + statusBarHeight,
       };
@@ -90,12 +88,9 @@ const ProfileDropdownMenu = ({ onLogout, onLanguageChange }) => {
   const handleLanguageToggle = () => {
     const newLanguage = locale === "en" ? "ar" : "en";
 
-    // Close the menu first
     closeMenu();
 
-    // Add small delay to let the menu close smoothly
     setTimeout(() => {
-      // Show confirmation alert
       const currentLanguageName = locale === "en" ? "English" : "العربية";
       const newLanguageName = newLanguage === "en" ? "English" : "العربية";
       const changeMessage = t
@@ -116,26 +111,21 @@ const ProfileDropdownMenu = ({ onLogout, onLanguageChange }) => {
             style: "default",
             onPress: async () => {
               try {
-                // Change the language
                 if (onLanguageChange) {
                   await onLanguageChange(newLanguage);
                 }
 
-                // Safely check if Updates is available and has the reloadAsync method
                 if (
                   typeof Updates !== "undefined" &&
                   Updates &&
                   typeof Updates.reloadAsync === "function"
                 ) {
-                  // Add a small delay to ensure language change is processed
                   setTimeout(async () => {
                     try {
-                      // Force reload the app
                       await Updates.reloadAsync();
                     } catch (reloadError) {
                       console.error("Failed to reload app:", reloadError);
 
-                      // If reload fails, show a message to manually restart
                       Alert.alert(
                         t("language.reload_failed_title") || "Reload Failed",
                         t("language.reload_failed_message") ||
@@ -145,7 +135,6 @@ const ProfileDropdownMenu = ({ onLogout, onLanguageChange }) => {
                     }
                   }, 300);
                 } else {
-                  // If Updates API is not available, show a message to manually restart
                   Alert.alert(
                     t("language.restart_required_title") || "Restart Required",
                     t("language.restart_required_message") ||
@@ -156,7 +145,6 @@ const ProfileDropdownMenu = ({ onLogout, onLanguageChange }) => {
               } catch (error) {
                 console.error("Error changing language:", error);
 
-                // Show error message
                 Alert.alert(
                   t("language.change_error_title") || "Error",
                   t("language.change_error_message") ||
@@ -258,7 +246,6 @@ const ProfileDropdownMenu = ({ onLogout, onLanguageChange }) => {
                   styles.dropdown,
                   {
                     top: dropdownPosition.top,
-                    // Handle RTL positioning
                     ...(isRTL
                       ? { left: dropdownPosition.left }
                       : { right: dropdownPosition.right }),

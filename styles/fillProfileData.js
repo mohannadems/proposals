@@ -44,18 +44,15 @@ export default StyleSheet.create({
   },
   stepIndicator: {
     marginVertical: 16,
-    // Removed padding to allow full width
   },
   content: {
     flex: 1,
-    // Removed horizontal padding to allow content to take full width
   },
   scrollViewContent: {
     paddingBottom: 16,
   },
   stepContainer: {
     backgroundColor: "white",
-    // Removed border radius on the sides
     borderRadius: 0,
     padding: 16,
     shadowColor: "#000",
@@ -66,7 +63,6 @@ export default StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    // Making sure it stretches to the edges
     marginHorizontal: 0,
     width: "100%",
   },
@@ -105,7 +101,6 @@ export default StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
     gap: 12,
-    // Making sure it takes full width
     width: "100%",
   },
   button: {
@@ -133,7 +128,6 @@ export default StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  // Error Modal Styles
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",

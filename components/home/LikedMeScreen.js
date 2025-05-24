@@ -179,14 +179,12 @@ const LikedMeScreen = () => {
 
       const likeResponse = await dispatch(likeUser(selectedUser.id)).unwrap();
 
-      // Close modal and wait a moment for animation
       setShowLikeModal(false);
       await new Promise((resolve) => setTimeout(resolve, 500));
 
       const isMatch = likeResponse?.is_match === true;
 
       if (isMatch) {
-        // Navigate to match screen if it's a match
         router.push({
           pathname: "/(profile)/matchProfile",
           params: {
@@ -195,7 +193,6 @@ const LikedMeScreen = () => {
           },
         });
       } else {
-        // Show success message
         showMessage({
           message: "Success",
           description: `You liked ${selectedUser.first_name}!`,
@@ -204,7 +201,6 @@ const LikedMeScreen = () => {
 
         dispatch(setActiveTab("Liked"));
 
-        // Refresh the likes list
         fetchLikesData();
       }
     } catch (error) {

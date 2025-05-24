@@ -23,7 +23,6 @@ export const RegisterForm = ({
     handleBlur,
   } = form;
 
-  // Use context if props aren't provided
   const languageContext = useContext(LanguageContext);
   const _isRTL =
     isRTL !== undefined

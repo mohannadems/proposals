@@ -39,7 +39,6 @@ const ProfileImageSection = ({ isRTL = false, t }) => {
   const { setValue, watch } = useFormContext();
   const profileImage = watch("profile_image");
 
-  // Add isFirstRender ref to track initial mount
   const isFirstRender = useRef(true);
 
   const [loading, setLoading] = useState(false);
@@ -50,7 +49,6 @@ const ProfileImageSection = ({ isRTL = false, t }) => {
 
   const profileState = useSelector((state) => state.profile) || {};
 
-  // Get avatar URL and ensure it's a non-empty string
   const avatarUrl = profileState.data?.profile?.avatar_url;
   const currentAvatar =
     avatarUrl && typeof avatarUrl === "string" && avatarUrl.trim() !== ""
@@ -60,25 +58,20 @@ const ProfileImageSection = ({ isRTL = false, t }) => {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0);
 
-  // Initialize component state based on current data
   useEffect(() => {
-    // On first render, don't show any errors
     if (isFirstRender.current) {
       setError("");
       setImageLoadError(false);
       isFirstRender.current = false;
     }
 
-    // Reset error state on initialization
     if (!hasInitialized) {
       setError("");
       setImageLoadError(false);
     }
 
-    // Check if we actually have a valid avatar URL
     const avatarUrl = profileState.data?.profile?.avatar_url;
 
-    // Only set profile image if there's a valid avatar with a non-empty string URL
     if (
       !hasInitialized &&
       avatarUrl &&
@@ -100,17 +93,12 @@ const ProfileImageSection = ({ isRTL = false, t }) => {
     opacity: opacity.value,
   }));
 
-  // Only consider the image valid if:
-  // 1. It exists (profileImage?.uri or currentAvatar)
-  // 2. There's no loading error with the image
-  // 3. If we're not in a loading state - to prevent UI flashing
   const hasImage =
     !loading &&
     !imageLoadError &&
     ((profileImage?.uri && profileImage.uri.trim() !== "") ||
       (currentAvatar && currentAvatar.trim() !== ""));
 
-  // Request camera and media library permissions
   const requestPermissions = async (forCamera = false) => {
     if (Platform.OS !== "web") {
       let permissionResult;
@@ -138,21 +126,18 @@ const ProfileImageSection = ({ isRTL = false, t }) => {
     return true;
   };
 
-  // Handle the image upload process
   const handleImageUpload = async (selectedImage) => {
     try {
       setLoading(true);
       setError("");
       setImageLoadError(false);
 
-      // Validate image
       if (!selectedImage || !selectedImage.uri) {
         throw new Error(
           _t ? _t("profile.images.invalid_image") : "Invalid image selection"
         );
       }
 
-      // Create form data for upload
       const formData = new FormData();
       formData.append("profile_photo", {
         uri: selectedImage.uri,
@@ -160,7 +145,6 @@ const ProfileImageSection = ({ isRTL = false, t }) => {
         name: "profile_photo.jpg",
       });
 
-      // Upload the image
       const response = await dispatch(
         updateProfilePhoto({ formData })
       ).unwrap();
@@ -169,7 +153,6 @@ const ProfileImageSection = ({ isRTL = false, t }) => {
         throw new Error(response.error);
       }
 
-      // Animate the image container
       scale.value = withSpring(1.1, { damping: 15, stiffness: 200 }, () => {
         scale.value = withSpring(1, { damping: 15, stiffness: 200 });
       });
@@ -190,21 +173,16 @@ const ProfileImageSection = ({ isRTL = false, t }) => {
     }
   };
 
-  // Pick image from gallery or camera
   const pickImage = async (source) => {
     try {
-      // Mark that user has interacted with the component
       setUserInteracted(true);
 
-      // Clear any previous errors
       setError("");
       setImageLoadError(false);
 
-      // Request appropriate permissions
       const hasPermission = await requestPermissions(source === "camera");
       if (!hasPermission) return;
 
-      // Launch camera or gallery
       const options = {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
@@ -217,11 +195,9 @@ const ProfileImageSection = ({ isRTL = false, t }) => {
           ? await ImagePicker.launchCameraAsync(options)
           : await ImagePicker.launchImageLibraryAsync(options);
 
-      // Handle the result
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const selectedImage = result.assets[0];
 
-        // Check file size (5MB limit)
         const imageSize = selectedImage.fileSize || 0;
         if (imageSize > 5 * 1024 * 1024) {
           setError(
@@ -232,13 +208,11 @@ const ProfileImageSection = ({ isRTL = false, t }) => {
           return;
         }
 
-        // Update form value
         setValue("profile_image", {
           uri: selectedImage.uri,
           type: selectedImage.type || "image/jpeg",
         });
 
-        // Upload the image
         await handleImageUpload(selectedImage);
       }
     } catch (error) {
@@ -251,24 +225,19 @@ const ProfileImageSection = ({ isRTL = false, t }) => {
     }
   };
 
-  // Remove profile image
   const removeImage = async () => {
     try {
-      // Mark that user has interacted with the component
       setUserInteracted(true);
 
-      // Only proceed if there's an image to remove
       if (!hasImage) return;
 
       setLoading(true);
       setError("");
       setImageLoadError(false);
 
-      // Create form data for removal
       const formData = new FormData();
       formData.append("remove_profile_photo", "true");
 
-      // Remove the image
       const response = await dispatch(
         updateProfilePhoto({ formData })
       ).unwrap();
@@ -277,10 +246,8 @@ const ProfileImageSection = ({ isRTL = false, t }) => {
         throw new Error(response.error);
       }
 
-      // Clear the form value
       setValue("profile_image", null);
 
-      // Animate the image container
       scale.value = withSpring(0.9, { damping: 15, stiffness: 200 }, () => {
         scale.value = withSpring(1, { damping: 15, stiffness: 200 });
       });

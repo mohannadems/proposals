@@ -1,4 +1,3 @@
-// AdvancedSearchScreen.js
 import React, {
   useState,
   useRef,
@@ -277,7 +276,6 @@ const AdvancedSearchScreen = () => {
     );
   }, [dispatch]);
 
-  // Handle smoking tools change
   const handleSmokingToolsChange = useCallback(
     (tools) => {
       handlePreferenceChange("preferred_smoking_tools", tools);

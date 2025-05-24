@@ -15,7 +15,6 @@ export const StepOne = ({
   isRTL,
   t,
 }) => {
-  // Use context if props aren't provided
   const languageContext = useContext(LanguageContext);
   const _isRTL =
     isRTL !== undefined

@@ -26,9 +26,9 @@ const COLORS = {
 };
 
 const SelectableGrid = ({
-  none = false, // Whether to show "None of the above" option
-  noneText = "None of the above", // Custom text for the "None" option
-  noneId = "none", // Custom ID for the "None" option
+  none = false,
+  noneText = "None of the above",
+  noneId = "none",
   control,
   name,
   items,
@@ -50,7 +50,6 @@ const SelectableGrid = ({
   const screenHeight = Dimensions.get("window").height;
   const dropdownHeight = Math.min(maxHeight, screenHeight * 0.5);
 
-  // Sort items alphabetically whenever items prop changes
   useEffect(() => {
     if (items && items.length > 0) {
       const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name));
@@ -65,22 +64,18 @@ const SelectableGrid = ({
   };
 
   const handleSelect = (item) => {
-    // Handle the "None of the above" option
     if (item.id === noneId) {
       if (!multiple) {
-        // In single selection mode, just select the "None" option
         onChange(noneId);
         setIsOpen(false);
         return;
       } else {
-        // In multiple selection mode, clear other selections
         onChange([noneId]);
         setIsOpen(false);
         return;
       }
     }
 
-    // If selecting a regular option, remove "None" if it's selected
     if (!multiple) {
       onChange(parseInt(item.id));
       setIsOpen(false);
@@ -89,7 +84,6 @@ const SelectableGrid = ({
 
     const currentSelections = value || [];
 
-    // If "None" is selected and user selects something else, remove "None"
     if (currentSelections.includes(noneId)) {
       onChange([parseInt(item.id)]);
       return;
@@ -125,7 +119,6 @@ const SelectableGrid = ({
       return placeholder;
     }
 
-    // Check if "None" is selected
     if (!multiple && value === noneId) {
       return noneText;
     }
@@ -150,7 +143,6 @@ const SelectableGrid = ({
   const renderSelectedItemsPreview = () => {
     if (!multiple || !value || value.length === 0) return null;
 
-    // If "None" is selected, show it as a chip
     if (value.includes(noneId)) {
       return (
         <View style={styles.selectedItemsContainer}>
@@ -171,7 +163,6 @@ const SelectableGrid = ({
       );
     }
 
-    // Sort selected items alphabetically for the preview
     const selectedItemObjects = value
       .map((itemId) => {
         return items.find((i) => parseInt(i.id) === itemId);
@@ -209,9 +200,7 @@ const SelectableGrid = ({
     );
   };
 
-  // Custom button that supports LinearGradient if available
   const DropdownButton = ({ children, style, ...props }) => {
-    // Check if LinearGradient is available
     if (LinearGradient) {
       return (
         <TouchableOpacity {...props} style={[styles.gradientWrapper, style]}>
@@ -227,7 +216,6 @@ const SelectableGrid = ({
       );
     }
 
-    // Fallback if LinearGradient is not available
     return (
       <TouchableOpacity {...props} style={[styles.dropdownButton, style]}>
         {children}

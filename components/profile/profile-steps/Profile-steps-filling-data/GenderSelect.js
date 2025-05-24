@@ -5,7 +5,6 @@ import { COLORS } from "../../../../constants/colors";
 import { LanguageContext } from "../../../../contexts/LanguageContext";
 
 const GenderSelect = ({ value, onChange, error, touched, isRTL, t }) => {
-  // Use the language context if props aren't provided directly
   const languageContext = useContext(LanguageContext);
   const _isRTL =
     isRTL !== undefined
@@ -15,7 +14,6 @@ const GenderSelect = ({ value, onChange, error, touched, isRTL, t }) => {
       : false;
   const _t = t || (languageContext ? languageContext.t : null);
 
-  // Define genders with translated labels
   const genders = [
     {
       value: "male",
@@ -29,7 +27,6 @@ const GenderSelect = ({ value, onChange, error, touched, isRTL, t }) => {
     },
   ];
 
-  // Reverse the array if RTL to maintain the correct visual order
   const orderedGenders = _isRTL ? [...genders].reverse() : genders;
 
   return (

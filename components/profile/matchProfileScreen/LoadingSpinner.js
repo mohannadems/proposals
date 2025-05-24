@@ -1,4 +1,3 @@
-// LoadingSpinner.js
 import React from "react";
 import { View, Text, ActivityIndicator, Modal, StyleSheet } from "react-native";
 import { COLORS } from "../../../constants/colors";

@@ -24,7 +24,6 @@ export const TermsModal = ({
   const [isLoading, setIsLoading] = useState(false);
   const fadeAnim = useState(new Animated.Value(0))[0];
 
-  // Get language context if not provided via props
   const languageContext = useContext(LanguageContext);
   const isRTL =
     propIsRTL !== undefined
@@ -34,7 +33,6 @@ export const TermsModal = ({
       : I18nManager.isRTL;
   const t = propT || (languageContext ? languageContext.t : null);
 
-  // Translate function with fallback
   const translate = (key, fallback) => {
     if (t) {
       return t(key);
@@ -42,7 +40,6 @@ export const TermsModal = ({
     return fallback;
   };
 
-  // Translated section titles and points
   const sections = [
     {
       title: translate("terms.age_requirement", "1. Age Requirement"),

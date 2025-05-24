@@ -20,13 +20,10 @@ export const getAllTickets = createAsyncThunk(
     } catch (error) {
       let message = "";
       if (error.response) {
-        // Server responded with a status other than 200 range
         message = error.response.data?.message || "An error occurred";
       } else if (error.request) {
-        // Request was made but no response was received
         message = "No response from server. Please check your connection.";
       } else {
-        // Something else happened
         message = error.message || "An unknown error occurred";
       }
       return thunkAPI.rejectWithValue(message);
@@ -34,7 +31,6 @@ export const getAllTickets = createAsyncThunk(
   }
 );
 
-// Get ticket by ID
 export const getTicketById = createAsyncThunk(
   "tickets/getById",
   async (ticketId, thunkAPI) => {
@@ -54,7 +50,6 @@ export const getTicketById = createAsyncThunk(
   }
 );
 
-// Create a new ticket
 export const createTicket = createAsyncThunk(
   "tickets/create",
   async (ticketData, thunkAPI) => {
@@ -74,7 +69,6 @@ export const createTicket = createAsyncThunk(
   }
 );
 
-// Reply to a ticket
 export const replyToTicket = createAsyncThunk(
   "tickets/reply",
   async ({ ticketId, message }, thunkAPI) => {
@@ -111,7 +105,6 @@ export const ticketSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Get all tickets
       .addCase(getAllTickets.pending, (state) => {
         state.isLoading = true;
         state.isError = false;
@@ -127,7 +120,6 @@ export const ticketSlice = createSlice({
         state.isError = true;
         state.message = action.payload;
       })
-      // Get ticket by ID
       .addCase(getTicketById.pending, (state) => {
         state.isLoading = true;
         state.isError = false;
@@ -137,7 +129,6 @@ export const ticketSlice = createSlice({
         state.isLoading = false;
         state.isSuccess = true;
         state.currentTicket = action.payload;
-        // If the API returns replies as part of the ticket data
         if (action.payload && action.payload.replies) {
           state.replies = action.payload.replies;
         } else {
@@ -149,7 +140,6 @@ export const ticketSlice = createSlice({
         state.isError = true;
         state.message = action.payload;
       })
-      // Create a new ticket
       .addCase(createTicket.pending, (state) => {
         state.isLoading = true;
         state.isError = false;
@@ -167,7 +157,6 @@ export const ticketSlice = createSlice({
         state.isError = true;
         state.message = action.payload;
       })
-      // Reply to a ticket
       .addCase(replyToTicket.pending, (state) => {
         state.isLoading = true;
         state.isError = false;
@@ -177,7 +166,6 @@ export const ticketSlice = createSlice({
         state.isLoading = false;
         state.isSuccess = true;
 
-        // Add the new reply to the replies array
         if (action.payload?.data) {
           state.replies.push(action.payload.data);
         }

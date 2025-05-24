@@ -63,7 +63,6 @@ export const LoginForm = ({
     handleChange(field, text);
   };
 
-  // RTL-specific styles
   const rtlStyles = {
     formContainer: {
       width: "100%",

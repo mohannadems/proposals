@@ -357,14 +357,11 @@ export const useProfileForm = (
 
   const handleFormSubmit = useCallback(async () => {
     try {
-      // Validate all fields
       const isValid = await methods.trigger();
 
       if (isValid) {
-        // Get form data
         const formData = methods.getValues();
 
-        // Call onSubmit
         await onSubmit(formData);
       } else {
         const allErrors = Object.entries(methods.formState.errors).map(

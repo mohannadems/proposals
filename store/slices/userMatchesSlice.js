@@ -1,4 +1,3 @@
-// Modified userMatchesSlice.js
 import { createSlice, createAsyncThunk, createAction } from "@reduxjs/toolkit";
 import { showMessage } from "react-native-flash-message";
 import api from "../../services/api";
@@ -197,7 +196,6 @@ const initialState = {
     age_max: null,
     isLikedFilter: false,
   },
-  // Add this flag to track if filters have been submitted
   hasSubmittedFilters: false,
 };
 
@@ -217,7 +215,6 @@ const formatLikesData = (likes) => {
         : null;
 
       return {
-        // Create a unique ID by combining user ID and like ID
         id: `${user.id}_${like.id}`,
         originalUserId: user.id,
         first_name: user.first_name,
@@ -245,7 +242,6 @@ const formatMatches = (matches) => {
   if (!Array.isArray(matches)) return [];
 
   return matches.map((match) => {
-    // Format the photo URL
     const photoUrl = match.matched_user_photo;
     const fullPhotoUrl = photoUrl
       ? photoUrl.startsWith("http")
@@ -454,9 +450,8 @@ const userMatchesSlice = createSlice({
       .addCase(fetchUserMatchesList.rejected, (state, action) => {
         state.loading.matches = false;
         state.error.matches = action.payload;
-      }) // In the extraReducers builder
+      })
       .addCase(refreshMatchesAfterSearch, (state) => {
-        // Reset any necessary state here if needed
         state.activeTab = "All";
         state.activeFilters = {
           ...state.activeFilters,
@@ -477,7 +472,6 @@ export const {
   addMatch,
 } = userMatchesSlice.actions;
 
-// Selectors
 export const selectActiveTab = (state) => state.userMatches.activeTab;
 export const selectPreferenceMatches = (state) =>
   state.userMatches.preferenceMatches;
@@ -493,7 +487,6 @@ export const selectHasSubmittedFilters = (state) =>
 export const selectMatches = (state) => state.userMatches.matches;
 
 export default userMatchesSlice.reducer;
-// Add this with your other action creators in userMatchesSlice.js
 export const refreshMatchesAfterSearch = createAction(
   "userMatches/refreshMatchesAfterSearch"
 );

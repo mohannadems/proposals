@@ -1,4 +1,3 @@
-// components/PersonalInfoSection.js
 import React, { useContext } from "react";
 import {
   View,

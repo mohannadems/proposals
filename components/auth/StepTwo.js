@@ -18,7 +18,6 @@ export const StepTwo = ({
   isRTL,
   t,
 }) => {
-  // Use context if props aren't provided
   const languageContext = useContext(LanguageContext);
   const _isRTL =
     isRTL !== undefined
@@ -28,7 +27,6 @@ export const StepTwo = ({
       : false;
   const _t = t || (languageContext ? languageContext.t : null);
 
-  // Create dynamic styles for RTL layout
   const dynamicStyles = {
     errorContainer: [
       registerStyles.errorContainer,

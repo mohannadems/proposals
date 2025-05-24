@@ -5,7 +5,6 @@ import { registerStyles } from "../../styles/register.styles";
 import { LanguageContext } from "../../contexts/LanguageContext";
 
 export const StepIndicator = ({ currentStep, isRTL, t }) => {
-  // Use context if props aren't provided
   const languageContext = useContext(LanguageContext);
   const _isRTL =
     isRTL !== undefined
@@ -15,7 +14,6 @@ export const StepIndicator = ({ currentStep, isRTL, t }) => {
       : false;
   const _t = t || (languageContext ? languageContext.t : null);
 
-  // Create dynamic styles for RTL
   const dynamicStyles = {
     container: [
       registerStyles.stepsContainer,
